@@ -1,0 +1,5 @@
+contract Calculator =
+    entrypoint add(a: int, b: int) = a + b
+    entrypoint sub(a: int, b: int) = a - b
+    entrypoint mul(a: int, b: int) = a * b
+    entrypoint div(a: int, b: int) = a / b

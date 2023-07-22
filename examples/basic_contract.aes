@@ -1,0 +1,2 @@
+contract Test =
+    type t = int

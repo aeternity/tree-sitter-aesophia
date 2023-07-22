@@ -1,0 +1,20 @@
+==================
+Contract Declaration
+==================
+
+contract Test =
+    type t = int
+    type t = int
+
+---
+
+(source_file
+  (contract_declaration
+    (constructor)
+    (identifier)
+    (type 
+      (identifier))
+    (identifier)
+    (type 
+      (identifier))
+))

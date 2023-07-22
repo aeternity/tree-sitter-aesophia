@@ -1,0 +1,3 @@
+contract Test =
+  record r = {}
+  type m = Fat.Math.int

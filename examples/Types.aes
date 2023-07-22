@@ -1,0 +1,9 @@
+record   point = {x : int, y : int}
+type v1 = int
+type v2 = Fat.Math.int
+type v3 = unit
+type v4 = 'a
+type v5 = (string)
+type v6 = list('a')
+type v7 = 'a => list('a) => int
+type v8('a) = list('a)
