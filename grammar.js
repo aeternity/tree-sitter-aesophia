@@ -6,16 +6,20 @@ const PREC = {
 module.exports = grammar({
   name: 'aesophia',
 
+  conflicts: $ => [
+    [$.list_literal, $.map_access]
+  ],
+
   extras: $ => [
     $.comment,
     /[\s\f\uFEFF\u2060\u200B]|\\\r?\n/
   ],
 
-  externals: $ => [
-    $._indent,
-    $._dedent,
-    $._newline,
-  ],
+  // externals: $ => [
+  //   $._indent,
+  //   $._dedent,
+  //   $._newline,
+  // ],
 
   rules: {
     source_file: $ => seq(
@@ -44,11 +48,8 @@ module.exports = grammar({
       'contract',
       $._scope_name,
       '=',
-      seq(
-        $._indent,
-        repeat(seq($._scoped_declaration, $._newline)),
-        $._dedent
-      )
+      maybe_block($, $._scoped_declaration)
+      // $.function_declaration,
     ),
 
     _scoped_declaration: $ => choice(
@@ -58,47 +59,36 @@ module.exports = grammar({
 
     function_declaration: $ => seq(
       repeat($.function_modifier),
-      $._function_name,
-      choice(
+      $.function_head,
+      maybe_block($, choice(
         $.function_signature,
-        $.function_definition
-      )
+        $.function_clause
+      ))
     ),
 
     function_signature: $ => seq(
+      $._function_name,
       ':',
       $.type
     ),
 
-    function_definition: $ => seq(
-      $.function_clause,
-      repeat(seq($._function_name, $.function_clause))
-    ),
-
     function_clause: $ => seq(
       $._function_name,
-      $.arguments,
+      '(', sep($._pattern, ','), ')',
+      optional(seq(':', $.type)),
       '=',
-      choice(
-        $.statement,
-        seq(
-          $._indent,
-          repeat(seq($.statement, $._newline)),
-          $._dedent
-        )
-      )
+      $.expression
+    ),
+
+    function_head: $ => choice(
+      'function',
+      'entrypoint'
     ),
 
     function_modifier: $ => choice(
       'payable',
       'stateful',
       'private'
-    ),
-
-    arguments: $ => seq(
-      '(',
-      sep($._pattern, ','),
-      ')'
     ),
 
     type_declaration: $ => seq(
@@ -147,44 +137,13 @@ module.exports = grammar({
     ),
 
     expression: $ => choice(
-      prec(100,
-           $.expr_lambda
-          ),
-      prec.left(150,
-                _expr_op($, '|>')
-               ),
-      prec.right(200,
-                 _expr_op($, '||')
-                ),
-      prec.right(300,
-                 _expr_op($, '&&')
-                ),
-      prec(400,
-           _expr_op($, choice('<', '>', '=<', '>=', '==', '!='))
-          ),
-      prec.right(500,
-                 _expr_op($, choice('::', '++'))
-                ),
-      prec.left(600,
-                _expr_op($, choice('+', '-'))
-               ),
-      prec(650,
-           seq(repeat1('-'), $.expression)
-          ),
-      prec.left(700,
-                _expr_op($, choice('*', '/', 'mod'))
-               ),
-      prec.left(750,
-                _expr_op($, '^')
-               ),
-      prec(800,
-           seq(repeat1('!'), $.expression)
-          ),
-
-      $.application,
-      $.record_update,
-      $.map_update,
-      $.expr_if,
+      $.expr_lambda,
+      $.expr_typed,
+      $.expr_op,
+      $.expr_application,
+      $.expr_record_update,
+      $.expr_map_update,
+      $.expr_projection,
       $.expr_switch,
       $.expr_block,
       $._expr_atom
@@ -196,12 +155,48 @@ module.exports = grammar({
       $.expression
     ),
 
-    application: $ => seq(
+    expr_typed: $ => prec.left(100, seq(
+      $.expression, ':', $.type
+    )),
+
+    expr_op: $ => prec(200, choice(
+      prec.left(200, _expr_op($, '|>')
+               ),
+      prec.right(210,
+                 _expr_op($, '||')
+                ),
+      prec.right(220,
+                 _expr_op($, '&&')
+                ),
+      prec.left(230,
+           _expr_op($, choice('<', '>', '=<', '>=', '==', '!='))
+          ),
+      prec.right(240,
+                 _expr_op($, choice('::', '++'))
+                ),
+      prec.left(250,
+                _expr_op($, choice('+', '-'))
+               ),
+      prec(260,
+           seq(repeat1('-'), $.expression)
+          ),
+      prec.left(270,
+                _expr_op($, choice('*', '/', 'mod'))
+               ),
+      prec.left(280,
+                _expr_op($, '^')
+               ),
+      prec(290,
+           seq(repeat1('!'), $.expression)
+          )
+    )),
+
+    expr_application: $ => prec(300, seq(
       $.expression,
       '(',
       sep($._expr_argument, ','),
       ')'
-    ),
+    )),
 
     _expr_argument: $ => choice(
       $.expression,
@@ -212,7 +207,8 @@ module.exports = grammar({
       $._variable_name, '=', $.expression
     ),
 
-    _expr_atom: $ => choice(
+    _expr_atom: $ => prec(10000, choice(
+      seq('(', $.expression, ')'),
       $.variable,
       $.constructor,
       $.bytes,
@@ -221,14 +217,14 @@ module.exports = grammar({
       $.integer,
       $.bool,
       $.record,
-      $.projection,
+      $.expr_projection,
       $.map,
       $.map_access,
       $.empty_map_or_record,
       $._list,
       $.tuple,
       $.hole
-    ),
+    )),
 
     bytes: $ => $._lex_bytes,
 
@@ -257,13 +253,13 @@ module.exports = grammar({
     ),
 
     _record_field: $ => seq(
-      $.projection, '=', $.expression
+      $._field_name, '=', $.expression
     ),
 
-    record_update: $ => seq(
+    expr_record_update: $ => prec(400, seq(
       $.expression,
       '{', repeat1($._record_field_update), '}'
-    ),
+    )),
 
     _record_field_update: $ => seq(
       sep1($._field_name, '.'),
@@ -271,9 +267,9 @@ module.exports = grammar({
       '=', $.expression
     ),
 
-    projection: $ => seq(
+    expr_projection: $ => prec(500, seq(
       $.expression, '.', $._field_name
-    ),
+    )),
 
     map: $ => seq(
       '{', repeat1($._map_field), '}'
@@ -285,10 +281,10 @@ module.exports = grammar({
       $.expression
     ),
 
-    map_update: $ => seq(
+    expr_map_update: $ => prec(400, seq(
       $.expression,
       '{', repeat1($._map_field_update), '}'
-    ),
+    )),
 
     _map_field_update: $ => seq(
       $.map_access, '=',
@@ -347,7 +343,7 @@ module.exports = grammar({
     ),
 
     tuple: $ => seq(
-      '(', repeat($.expression), ')'
+      '(', sep2($.expression, ','), ')'
     ),
 
     hole: $ => '_',
@@ -360,26 +356,28 @@ module.exports = grammar({
 
     expr_switch: $ => seq(
       'switch', '(', $.expression, ')',
-      block(repeat($._switch_case))
+      block($, repeat($._switch_case))
     ),
 
     _switch_case: $ => seq(
-      $._pattern, $._switch_branch()
+      $._pattern, $._switch_branch
     ),
 
     _switch_branch: $ => choice(
       seq('=>', $.expression),
-      $.guarded_branche
+      $.guarded_branch
     ),
 
     guarded_branch: $ => repeat1(
-      seq('|'), sep1($.expression, ','), '=>', $.expression
+      seq('|', sep1($.expression, ','), '=>', $.expression)
     ),
 
-    expr_block: $ => block(seq(repeat($.statement), $.expression)),
+    expr_block: $ => block(
+      $, $.statement
+    ),
 
     _pattern: $ => choice(
-      $._variable_name
+      $._variable_name // TODO
     ),
 
 
@@ -401,75 +399,85 @@ module.exports = grammar({
       $.expression
     ),
 
-    type: $ => prec.right(1, choice(
-      $.variable,
-      $.type_variable,
-      // Function type
-      seq($.domain, '=>', $.type),
-      // Type application
-      seq(
-        $.type,
-        '(',
-        sep($.type, ','),
-        ')'
-      ),
-      // Parens
-      seq('(', $.type, ')'),
-      // Tuples
-      'unit',
-      // TODO
-      // prec(10, sep1($.type, '*'))
+
+    type: $ => choice(
+      $.type_function,
+      $.type_tuple,
+      $.type_application,
+      $._type_atom,
+    ),
+
+    type_function: $ => prec.right(seq(
+      $.type_domain, '=>', $.type
     )),
 
-    domain: $ => choice(
+    type_domain: $ => prec(150, choice(
+      // Zero arguments
+      seq('(', ')'),
       // Single argument
       $.type,
       // Multiple arguments
       seq(
         '(',
-        sep($.type, ','),
+        sep2($.type, ','),
         ')'
       )
+    )),
+
+    type_tuple: $ => prec.left(100, sep2($.type, '*')),
+
+    type_application: $ => prec.left(200, seq(
+      $.type,
+      '(',
+      sep($.type, ','),
+      ')'
+    )),
+
+    _type_atom: $ => choice(
+      $.type_variable,
+      $.variable,
+      seq('(', $.type, ')')
     ),
 
-    variable: $ => _lex_qual_low_id,
 
-    constructor: $ => _lex_qual_up_id,
+    variable: $ => $._lex_qual_low_id,
 
-    type_variable: $ => _lex_typevar,
+    constructor: $ => $._lex_qual_up_id,
 
-    _name: $ => choice(_lex_low_id, _lex_up_id),
+    type_variable: $ => $._lex_typevar,
 
-    _variable_name: $ => _lex_low_id,
+    _name: $ => choice($._lex_low_id, $._lex_up_id),
 
-    _type_variable_name: $ => _lex_typevar,
+    _variable_name: $ => $._lex_low_id,
 
-    _field_name: $ => _lex_low_id,
+    _type_variable_name: $ => $._lex_typevar,
 
-    _function_name: $ => _lex_low_id,
+    _field_name: $ => $._lex_low_id,
 
-    _type_name: $ => _lex_low_id,
+    _function_name: $ => $._lex_low_id,
 
-    _constructor_name: $ => _lex_up_id,
+    _type_name: $ => $._lex_low_id,
 
-    _scope: $ => _lex_qual_up_id,
+    _constructor_name: $ => $._lex_up_id,
 
-    _scope_name: $ => _lex_up_id,
+    _scope: $ => $._lex_qual_up_id,
 
-    _lex_int_dec: $ => /0|[1-9](_?[0-9]+)*/,
-    _lex_int_hex: $ => /0x([0-9a-fA-F](_?[0-9a-fA-F]+)*)/,
+    _scope_name: $ => $._lex_up_id,
 
-    _lex_low_id: $ => /[a-z_][a-zA-Z0-9_]*/,
-    _lex_up_id: $ => /[A-Z][a-zA-Z0-9_]*/,
+    _lex_int_dec: $ => token(/0|[1-9](_?[0-9]+)*/),
+    _lex_int_hex: $ => token(/0x([0-9a-fA-F](_?[0-9a-fA-F]+)*)/),
 
-    _lex_qual_low_id: $ => /([A-Z][a-zA-Z0-9_]*\.)*[a-z_][a-zA-Z0-9_]*/,
-    _lex_qual_up_id: $ => /([A-Z][a-zA-Z0-9_]*\.)*[A-Z][a-zA-Z0-9_]*/,
+    _lex_low_id: $ => token(/[a-z_][a-zA-Z0-9_]*/),
+    _lex_up_id: $ => token(/[A-Z][a-zA-Z0-9_]*/),
 
-    _lex_typevar: $ => /'*[a-z_][a-zA-Z0-9_]*/,
+    _lex_qual_low_id: $ => token(/([A-Z][a-zA-Z0-9_]*\.)*[a-z_][a-zA-Z0-9_]*/),
+    _lex_qual_up_id: $ => token(/([A-Z][a-zA-Z0-9_]*\.)*[A-Z][a-zA-Z0-9_]*/),
 
-    _lex_bytes: $ => /#[0-9a-fA-F]{2}(_?[0-9a-fA-F]{2})*/,
+    _lex_typevar: $ => token(/'*[a-z_][a-zA-Z0-9_]*/),
 
-    _lex_address: $ => /((ak)|(ok)|(oq)|(ct))_[0-9a-zA-Z]+/,
+    _lex_bytes: $ => token(/#[0-9a-fA-F]{2}(_?[0-9a-fA-F]{2})*/),
+
+    _lex_address: $ => token(/((ak)|(ok)|(oq)|(ct))_[0-9a-zA-Z]+/),
 
     comment: $ => token(choice(
       seq(
@@ -483,17 +491,29 @@ module.exports = grammar({
       )
     )),
 
-    indent: $ => $._indent,
-    dedent: $ => $._dedent
+    block_open: $ => 'begin',
+    block_close: $ => 'end',
+    block_semi: $ => ';'
+
+    // block_open: $ => $._indent,
+    // block_close: $ => $._dedent,
+    // block_semi: $ => $._newline
   }
 });
 
 
 function block($, rule) {
   return seq(
-    $.indent,
-    rule,
-    $.dedent
+    $.block_open,
+    repeat1(seq(rule, $.block_semi)),
+    $.block_close
+  )
+}
+
+function maybe_block($, rule) {
+  return choice(
+    block($, rule),
+    rule
   )
 }
 
@@ -503,6 +523,10 @@ function sep(rule, delimiter) {
 
 function sep1(rule, delimiter) {
   return seq(rule, repeat(seq(delimiter, rule)))
+}
+
+function sep2(rule, delimiter) {
+  return seq(rule, repeat1(seq(delimiter, rule)))
 }
 
 function _expr_op($, rule_op) {
