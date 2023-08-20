@@ -1,7 +1,7 @@
 {
   "name": "aesophia",
   "rules": {
-    "dispath": {
+    "source": {
       "type": "CHOICE",
       "members": [
         {

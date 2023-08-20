@@ -10,7 +10,7 @@
     "test": "tree-sitter test",
     "parse": "tree-sitter parse"
   },
-  "author": "Dincho Todorov",
+  "author": "Dincho Todorov, Radosław Rowicki",
   "license": "ISC",
   "dependencies": {
     "nan": "^2.15.0"
