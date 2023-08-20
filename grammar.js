@@ -21,7 +21,12 @@ module.exports = grammar({
   // ],
 
   rules: {
-    source_file: $ => seq(
+    _dispatch: $ => choice(
+      seq('')
+      $.top_level
+    )
+
+    top_level: $ => seq(
       field("pragmas", repeat($._top_pragma)),
       field("includes", repeat($.include)),
       field("usings", repeat($.using)),
@@ -675,6 +680,9 @@ module.exports = grammar({
     _lex_string: $ => token(/"([^"\\]|(\\.))*"/),
 
     _lex_char: $ => token(/'(([\x00-\x26\x28-\x5b\x5d-\x7f])|([\x00-\xff][\x80-\xff]{1,3})|(\\[befnrtv'\\])|(\\x[0-9a-fA-F]{2,2})|(\\x\{[0-9a-fA-F]*\}))'/),
+
+    _lex_dispatch_begin: $ => token(/!/),
+    _lex_dispatch_end: $ => token(/.*\n/),
 
     comment: $ => token(choice(
       seq(
