@@ -21,16 +21,20 @@ module.exports = grammar({
   // ],
 
   rules: {
-    _dispatch: $ => choice(
-      seq('')
-      $.top_level
-    )
+    dispath: $ => choice(
+      dispath($, 'PATTERN', $._pattern),
+      dispath($, 'TYPE', $._type),
+      dispath($, 'LITERAL', $._literal),
+      dispath($, 'EXPRESSION', $._expression),
+      dispath($, 'STATEMENT', $._statement),
+      $._top_level
+    ),
 
-    top_level: $ => seq(
+    _top_level: $ => seq(
       field("pragmas", repeat($._top_pragma)),
       field("includes", repeat($.include)),
       field("usings", repeat($.using)),
-      field("scopes", repeat($._scope_declaration))
+      field("scopes", repeat1($._scope_declaration))
     ),
 
     _top_pragma: $ => 'TODO',
@@ -681,8 +685,8 @@ module.exports = grammar({
 
     _lex_char: $ => token(/'(([\x00-\x26\x28-\x5b\x5d-\x7f])|([\x00-\xff][\x80-\xff]{1,3})|(\\[befnrtv'\\])|(\\x[0-9a-fA-F]{2,2})|(\\x\{[0-9a-fA-F]*\}))'/),
 
-    _lex_dispatch_begin: $ => token(/!/),
-    _lex_dispatch_end: $ => token(/.*\n/),
+    _lex_dispath_begin: $ => token.immediate(/@!/),
+    _lex_dispath_end: $ => token.immediate(/.*\n/),
 
     comment: $ => token(choice(
       seq(
@@ -739,4 +743,13 @@ function _expr_op($, rule_op) {
     field("op_l", $._expression),
     field("op", rule_op), // TODO this does not appear
     field("op_r", $._expression))
+}
+
+function dispath($, trigger, rule) {
+  return seq(
+    $._lex_dispath_begin,
+    trigger,
+    $._lex_dispath_end,
+    rule,
+  )
 }

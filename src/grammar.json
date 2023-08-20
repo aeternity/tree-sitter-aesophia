@@ -1,7 +1,121 @@
 {
   "name": "aesophia",
   "rules": {
-    "source_file": {
+    "dispath": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_begin"
+            },
+            {
+              "type": "STRING",
+              "value": "PATTERN"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_end"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_pattern"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_begin"
+            },
+            {
+              "type": "STRING",
+              "value": "TYPE"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_end"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_type"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_begin"
+            },
+            {
+              "type": "STRING",
+              "value": "LITERAL"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_end"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_literal"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_begin"
+            },
+            {
+              "type": "STRING",
+              "value": "EXPRESSION"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_end"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_expression"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_begin"
+            },
+            {
+              "type": "STRING",
+              "value": "STATEMENT"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_lex_dispath_end"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_statement"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_top_level"
+        }
+      ]
+    },
+    "_top_level": {
       "type": "SEQ",
       "members": [
         {
@@ -41,7 +155,7 @@
           "type": "FIELD",
           "name": "scopes",
           "content": {
-            "type": "REPEAT",
+            "type": "REPEAT1",
             "content": {
               "type": "SYMBOL",
               "name": "_scope_declaration"
@@ -3866,6 +3980,20 @@
       "content": {
         "type": "PATTERN",
         "value": "'(([\\x00-\\x26\\x28-\\x5b\\x5d-\\x7f])|([\\x00-\\xff][\\x80-\\xff]{1,3})|(\\\\[befnrtv'\\\\])|(\\\\x[0-9a-fA-F]{2,2})|(\\\\x\\{[0-9a-fA-F]*\\}))'"
+      }
+    },
+    "_lex_dispath_begin": {
+      "type": "IMMEDIATE_TOKEN",
+      "content": {
+        "type": "PATTERN",
+        "value": "@!"
+      }
+    },
+    "_lex_dispath_end": {
+      "type": "IMMEDIATE_TOKEN",
+      "content": {
+        "type": "PATTERN",
+        "value": ".*\\n"
       }
     },
     "comment": {
