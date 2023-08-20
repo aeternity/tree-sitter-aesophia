@@ -7,7 +7,7 @@ module.exports = grammar({
   name: 'aesophia',
 
   conflicts: $ => [
-    [$.list_literal, $.map_access]
+    [$.expr_list_literal, $.expr_map_access]
   ],
 
   extras: $ => [
@@ -58,8 +58,8 @@ module.exports = grammar({
     ),
 
     function_declaration: $ => seq(
-      repeat($.function_modifier),
-      $.function_head,
+      repeat($._function_modifier),
+      $._function_head,
       maybe_block($, choice(
         $.function_signature,
         $.function_clause
@@ -67,25 +67,23 @@ module.exports = grammar({
     ),
 
     function_signature: $ => seq(
-      $._function_name,
-      ':',
-      $.type
+      $._function_name, ':', $._type
     ),
 
     function_clause: $ => seq(
       $._function_name,
       '(', sep($._pattern, ','), ')',
-      optional(seq(':', $.type)),
+      optional(seq(':', $._type)),
       '=',
-      $.expression
+      $._expression
     ),
 
-    function_head: $ => choice(
+    _function_head: $ => choice(
       'function',
       'entrypoint'
     ),
 
-    function_modifier: $ => choice(
+    _function_modifier: $ => choice(
       'payable',
       'stateful',
       'private'
@@ -107,7 +105,7 @@ module.exports = grammar({
       )
     ),
 
-    type_alias: $ => $.type,
+    type_alias: $ => $._type,
 
     record_declaration: $ => seq(
       '{',
@@ -118,7 +116,7 @@ module.exports = grammar({
     field_declaration: $ => seq(
       $._field_name,
       ':',
-      $.type
+      $._type
     ),
 
     variant_declaration: $ => seq(
@@ -130,21 +128,23 @@ module.exports = grammar({
       optional(
         seq(
           '(',
-          sep1($.type, ','),
+          sep1($._type, ','),
           ')'
         )
       )
     ),
 
-    expression: $ => choice(
+    _expression: $ => choice(
       $.expr_lambda,
       $.expr_typed,
       $.expr_op,
       $.expr_application,
       $.expr_record_update,
       $.expr_map_update,
+      $.expr_map_access,
       $.expr_projection,
       $.expr_switch,
+      $.expr_if,
       $.expr_block,
       $._expr_atom
     ),
@@ -152,11 +152,11 @@ module.exports = grammar({
     expr_lambda: $ => seq(
       '(', sep($._pattern, ','),
       ')', '=>',
-      $.expression
+      $._expression
     ),
 
     expr_typed: $ => prec.left(100, seq(
-      $.expression, ':', $.type
+      $._expression, ':', $._type
     )),
 
     expr_op: $ => prec(200, choice(
@@ -178,7 +178,7 @@ module.exports = grammar({
                 _expr_op($, choice('+', '-'))
                ),
       prec(260,
-           seq(repeat1('-'), $.expression)
+           seq(repeat1('-'), $._expression)
           ),
       prec.left(270,
                 _expr_op($, choice('*', '/', 'mod'))
@@ -187,50 +187,117 @@ module.exports = grammar({
                 _expr_op($, '^')
                ),
       prec(290,
-           seq(repeat1('!'), $.expression)
+           seq(repeat1('!'), $._expression)
           )
     )),
 
     expr_application: $ => prec(300, seq(
-      $.expression,
+      $._expression,
       '(',
       sep($._expr_argument, ','),
       ')'
     )),
 
     _expr_argument: $ => choice(
-      $.expression,
+      $._expression,
       $.expr_named_argument
     ),
 
     expr_named_argument: $ => seq(
-      $._variable_name, '=', $.expression
+      $._variable_name, '=', $._expression
+    ),
+
+    expr_record_update: $ => prec(400, seq(
+      $._expression,
+      '{', repeat1($._record_field_update), '}'
+    )),
+
+    _record_field_update: $ => seq(
+      sep1($._field_name, '.'),
+      field("old_value", optional(seq('@', $._variable_name))),
+      '=', $._expression
+    ),
+
+    expr_map_update: $ => prec(400, seq(
+      $._expression,
+      '{', repeat1($._map_field_update), '}'
+    )),
+
+    _map_field_update: $ => seq(
+      $.expr_map_access, '=',
+      field("old_value", optional(seq('@', $._variable_name))),
+      $._expression
+    ),
+
+    expr_map_access: $ => seq(
+      '[',
+      $._expression,
+      field("default_value", optional(seq('=', $._expression))),
+      ']',
+    ),
+
+    expr_if : $ => seq(
+      'if', '(', $._expression, ')', $._expression,
+      repeat(seq('elif', '(', $._expression, ')', $._expression)),
+      'else', $._expression
+    ),
+
+    expr_switch: $ => seq(
+      'switch', '(', $._expression, ')',
+      block($, repeat($._switch_case))
+    ),
+
+    _switch_case: $ => seq(
+      $._pattern, $._switch_branch
+    ),
+
+    _switch_branch: $ => choice(
+      seq('=>', $._expression),
+      $.guarded_branch
+    ),
+
+    guarded_branch: $ => repeat1(
+      seq('|', sep1($._expression, ','), '=>', $._expression)
+    ),
+
+    expr_block: $ => block(
+      $, $._statement
     ),
 
     _expr_atom: $ => prec(10000, choice(
-      seq('(', $.expression, ')'),
-      $.variable,
-      $.constructor,
-      $.bytes,
-      $.address,
-      $.lambda_op,
-      $.integer,
-      $.bool,
-      $.record,
+      seq('(', $._expression, ')'),
+      $.expr_variable,
+      $.expr_constructor,
+      $.expr_bytes,
+      $.expr_address,
+      $.expr_lambda_op,
+      $.expr_integer,
+      $.expr_bool,
+      $.expr_record,
       $.expr_projection,
-      $.map,
-      $.map_access,
-      $.empty_map_or_record,
-      $._list,
-      $.tuple,
-      $.hole
+      $.expr_map,
+      $.expr_empty_map_or_record,
+      $._expr_list,
+      $.expr_tuple,
+      $.expr_hole
     )),
 
-    bytes: $ => $._lex_bytes,
+    expr_variable: $ => $._lex_qual_low_id,
 
-    address: $ => $._lex_address,
+    expr_constructor: $ => $._lex_qual_up_id,
 
-    lambda_op: $ => seq(
+    expr_bytes: $ => $._lex_bytes,
+
+    expr_address: $ => $._lex_address,
+
+    expr_integer: $ => choice(
+      $._lex_int_dec,
+      $._lex_int_hex,
+    ),
+
+    expr_bool: $ => choice('true', 'false'),
+
+    expr_lambda_op: $ => seq(
       '(',
       choice('&&', '||',
              '+', '-', '*', '/', '^', 'mod',
@@ -241,84 +308,48 @@ module.exports = grammar({
       ')'
     ),
 
-    integer: $ => choice(
-      field("dec", $._lex_int_dec),
-      field("hex", $._lex_int_hex),
-    ),
-
-    bool: $ => choice('true', 'false'),
-
-    record: $ => seq(
+    expr_record: $ => seq(
       '{', repeat1($._record_field), '}'
     ),
 
     _record_field: $ => seq(
-      $._field_name, '=', $.expression
-    ),
-
-    expr_record_update: $ => prec(400, seq(
-      $.expression,
-      '{', repeat1($._record_field_update), '}'
-    )),
-
-    _record_field_update: $ => seq(
-      sep1($._field_name, '.'),
-      field("old_value", optional(seq('@', $._variable_name))),
-      '=', $.expression
+      $._field_name, '=', $._expression
     ),
 
     expr_projection: $ => prec(500, seq(
-      $.expression, '.', $._field_name
+      $._expression, '.', $._field_name
     )),
 
-    map: $ => seq(
+    expr_map: $ => seq(
       '{', repeat1($._map_field), '}'
     ),
 
     _map_field: $ => seq(
-      $.map_access, '=',
+      $.expr_map_access, '=',
       field("old_value", optional(seq('@', $._variable_name))),
-      $.expression
+      $._expression
     ),
 
-    expr_map_update: $ => prec(400, seq(
-      $.expression,
-      '{', repeat1($._map_field_update), '}'
-    )),
+    expr_empty_map_or_record: $ => seq('{', '}'),
 
-    _map_field_update: $ => seq(
-      $.map_access, '=',
-      field("old_value", optional(seq('@', $._variable_name))),
-      $.expression
+    _expr_list: $ => choice(
+      $.expr_list_literal,
+      $.expr_list_range,
+      $.expr_list_comprehension
     ),
 
-    map_access: $ => seq(
+    expr_list_literal: $ => seq(
       '[',
-      $.expression,
-      field("default_value", optional(seq('=', $.expression))),
-      ']',
-    ),
-
-    empty_map_or_record: $ => seq('{', '}'),
-
-    _list: $ => choice(
-      $.list_literal,
-      $.list_range,
-      $.list_comprehension
-    ),
-
-    list_literal: $ => seq(
-      '[',
-      sep($.expression, ','),
+      sep($._expression, ','),
       ']'
     ),
 
-    list_range: $ => seq(
-      '[', $.expression, '..', $.expression, ']'
+    expr_list_range: $ => seq(
+      '[', $._expression, '..', $._expression, ']'
     ),
 
-    list_comprehension: $ => seq(
-      '[', $.expression, '|',
+    expr_list_comprehension: $ => seq(
+      '[', $._expression, '|',
       sep1($._list_comprehension_expr, ','),
       ']'
     ),
@@ -329,114 +360,93 @@ module.exports = grammar({
       $.list_comprehension_if
     ),
 
-
     list_comprehension_bind: $ => seq(
-      $._pattern, '<-', $.expression
+      $._pattern, '<-', $._expression
     ),
 
     list_comprehension_decl: $ => seq(
-      'let', $._pattern, '=', $.expression
+      'let', $._pattern, '=', $._expression
     ),
 
     list_comprehension_if: $ => seq(
-      'if', '(', $.expression, ')'
+      'if', '(', $._expression, ')'
     ),
 
-    tuple: $ => seq(
-      '(', sep2($.expression, ','), ')'
+    expr_tuple: $ => seq(
+      '(', sep2($._expression, ','), ')'
     ),
 
-    hole: $ => '_',
-
-    expr_if : $ => seq(
-      'if', '(', $.expression, ')', $.expression,
-      repeat(seq('elif', '(', $.expression, ')', $.expression)),
-      'else', $.expression
-    ),
-
-    expr_switch: $ => seq(
-      'switch', '(', $.expression, ')',
-      block($, repeat($._switch_case))
-    ),
-
-    _switch_case: $ => seq(
-      $._pattern, $._switch_branch
-    ),
-
-    _switch_branch: $ => choice(
-      seq('=>', $.expression),
-      $.guarded_branch
-    ),
-
-    guarded_branch: $ => repeat1(
-      seq('|', sep1($.expression, ','), '=>', $.expression)
-    ),
-
-    expr_block: $ => block(
-      $, $.statement
-    ),
+    expr_hole: $ => '_',
 
     _pattern: $ => choice(
       $._variable_name // TODO
     ),
 
 
-    statement: $ => choice(
-      $.expression,
-      $.let_definition,
-      $.statement_if
+    _statement: $ => choice(
+      $.stmt_expr,
+      $.stmt_let,
+      $.stmt_if
     ),
 
-    statement_if: $ => seq(
-      'if', '(', $.expression, ')', $.expression,
-      repeat(seq('elif', '(', $.expression, ')', $.expression))
+    stmt_expr: $ => $._expression,
+
+    stmt_if: $ => seq(
+      'if', '(', $._expression, ')', $._expression,
+      repeat(seq('elif', '(', $._expression, ')', $._expression))
     ),
 
-    let_definition: $ => seq(
+    stmt_let: $ => seq(
       'let', $._pattern,
       optional(seq('(', sep($._pattern, ','), ')')),
-      optional(seq(':', $.type)), '=',
-      $.expression
+      optional(seq(':', $._type)), '=',
+      $._expression
     ),
 
-
-    type: $ => choice(
+    _type: $ => choice(
       $.type_function,
       $.type_tuple,
-      $.type_application,
-      $._type_atom,
+      $._type_in_tuple
     ),
 
-    type_function: $ => prec.right(seq(
-      $.type_domain, '=>', $.type
+    type_function: $ => prec.right(100, seq(
+      $._type_domain, '=>', $._type
     )),
 
-    type_domain: $ => prec(150, choice(
-      // Zero arguments
-      seq('(', ')'),
-      // Single argument
-      $.type,
-      // Multiple arguments
-      seq(
-        '(',
-        sep2($.type, ','),
-        ')'
-      )
+    _type_domain: $ => prec(150, choice(
+      $.type_domain_zero,
+      $.type_domain_one,
+      $.type_domain_many
     )),
 
-    type_tuple: $ => prec.left(100, sep2($.type, '*')),
+    type_domain_zero: $ => seq('(', ')'),
 
-    type_application: $ => prec.left(200, seq(
-      $.type,
+    type_domain_one: $ => $._type,
+
+    type_domain_many: $ => seq(
       '(',
-      sep($.type, ','),
+      sep2($._type, ','),
+        ')'
+    ),
+
+    type_tuple: $ => prec(200, sep2($._type_in_tuple, '*')),
+
+    _type_in_tuple: $ => prec(201, choice(
+      $.type_application,
+      $._type_atom,
+    )),
+
+    type_application: $ => prec.left(300, seq(
+      $._type_in_tuple,
+      '(',
+      sep($._type, ','),
       ')'
     )),
 
     _type_atom: $ => choice(
       $.type_variable,
       $.variable,
-      seq('(', $.type, ')')
+      seq('(', $._type, ')')
     ),
 
 
@@ -505,7 +515,7 @@ module.exports = grammar({
 function block($, rule) {
   return seq(
     $.block_open,
-    repeat1(seq(rule, $.block_semi)),
+    sep1(rule, $.block_semi),
     $.block_close
   )
 }
@@ -530,5 +540,5 @@ function sep2(rule, delimiter) {
 }
 
 function _expr_op($, rule_op) {
-  return seq($.expression, rule_op, $.expression)
+  return seq($._expression, rule_op, $._expression)
 }
