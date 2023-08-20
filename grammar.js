@@ -21,7 +21,7 @@ module.exports = grammar({
   // ],
 
   rules: {
-    dispath: $ => choice(
+    source: $ => choice(
       dispath($, 'PATTERN', $._pattern),
       dispath($, 'TYPE', $._type),
       dispath($, 'LITERAL', $._literal),
