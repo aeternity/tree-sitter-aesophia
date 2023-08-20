@@ -2,54 +2,101 @@
   {
     "type": "constructor_declaration",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "constructor_name",
+            "named": true
+          }
+        ]
+      },
+      "params": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
     }
+  },
+  {
+    "type": "constructor_name",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "contract_declaration",
     "named": true,
-    "fields": {},
+    "fields": {
+      "header": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "scope_header",
+            "named": true
+          }
+        ]
+      },
+      "interface": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "interface",
+            "named": false
+          }
+        ]
+      },
+      "modifiers": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "scope_modifier",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": true,
       "types": [
-        {
-          "type": "block_close",
-          "named": true
-        },
-        {
-          "type": "block_open",
-          "named": true
-        },
-        {
-          "type": "block_semi",
-          "named": true
-        },
         {
           "type": "function_declaration",
           "named": true
@@ -62,127 +109,197 @@
     }
   },
   {
-    "type": "expr_address",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "expr_application",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_named_argument",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "args": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_named_argument",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "fun": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -194,23 +311,7 @@
       "required": true,
       "types": [
         {
-          "type": "block_close",
-          "named": true
-        },
-        {
-          "type": "block_open",
-          "named": true
-        },
-        {
-          "type": "block_semi",
-          "named": true
-        },
-        {
           "type": "stmt_expr",
-          "named": true
-        },
-        {
-          "type": "stmt_if",
           "named": true
         },
         {
@@ -221,390 +322,566 @@
     }
   },
   {
-    "type": "expr_bool",
+    "type": "expr_cases",
     "named": true,
-    "fields": {}
-  },
-  {
-    "type": "expr_bytes",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "expr_constructor",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "expr_empty_map_or_record",
-    "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "switch_case",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "expr_if",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "cond": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "else": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "else",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "then": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
-  },
-  {
-    "type": "expr_integer",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "expr_lambda",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "args": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "body": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
-  },
-  {
-    "type": "expr_lambda_op",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "expr_list_comprehension",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        },
-        {
-          "type": "list_comprehension_bind",
-          "named": true
-        },
-        {
-          "type": "list_comprehension_decl",
-          "named": true
-        },
-        {
-          "type": "list_comprehension_if",
-          "named": true
-        }
-      ]
+    "fields": {
+      "filters": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "list_comprehension_bind",
+            "named": true
+          },
+          {
+            "type": "list_comprehension_decl",
+            "named": true
+          },
+          {
+            "type": "list_comprehension_if",
+            "named": true
+          }
+        ]
+      },
+      "yield": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -616,10 +893,6 @@
       "required": false,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
           "type": "expr_application",
           "named": true
         },
@@ -628,39 +901,11 @@
           "named": true
         },
         {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
           "type": "expr_if",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
           "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
           "named": true
         },
         {
@@ -673,6 +918,10 @@
         },
         {
           "type": "expr_list_range",
+          "named": true
+        },
+        {
+          "type": "expr_literal",
           "named": true
         },
         {
@@ -725,113 +974,235 @@
   {
     "type": "expr_list_range",
     "named": true,
+    "fields": {
+      "end": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "start": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "expr_literal",
+    "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
-          "type": "expr_address",
+          "type": "lit_address",
           "named": true
         },
         {
-          "type": "expr_application",
+          "type": "lit_bool",
           "named": true
         },
         {
-          "type": "expr_block",
+          "type": "lit_bytes",
           "named": true
         },
         {
-          "type": "expr_bool",
+          "type": "lit_char",
           "named": true
         },
         {
-          "type": "expr_bytes",
+          "type": "lit_constructor",
           "named": true
         },
         {
-          "type": "expr_constructor",
+          "type": "lit_empty_map_or_record",
           "named": true
         },
         {
-          "type": "expr_empty_map_or_record",
+          "type": "lit_integer",
           "named": true
         },
         {
-          "type": "expr_hole",
+          "type": "lit_lambda_op",
           "named": true
         },
         {
-          "type": "expr_if",
+          "type": "lit_string",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
+          "type": "lit_wildcard",
           "named": true
         }
       ]
@@ -840,124 +1211,13 @@
   {
     "type": "expr_map",
     "named": true,
-    "fields": {
-      "old_value": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "@",
-            "named": false
-          }
-        ]
-      }
-    },
+    "fields": {},
     "children": {
       "multiple": true,
       "required": true,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
+          "type": "map_field",
           "named": true
         }
       ]
@@ -984,10 +1244,6 @@
             "named": false
           },
           {
-            "type": "expr_address",
-            "named": true
-          },
-          {
             "type": "expr_application",
             "named": true
           },
@@ -996,39 +1252,11 @@
             "named": true
           },
           {
-            "type": "expr_bool",
-            "named": true
-          },
-          {
-            "type": "expr_bytes",
-            "named": true
-          },
-          {
-            "type": "expr_constructor",
-            "named": true
-          },
-          {
-            "type": "expr_empty_map_or_record",
-            "named": true
-          },
-          {
-            "type": "expr_hole",
-            "named": true
-          },
-          {
             "type": "expr_if",
             "named": true
           },
           {
-            "type": "expr_integer",
-            "named": true
-          },
-          {
             "type": "expr_lambda",
-            "named": true
-          },
-          {
-            "type": "expr_lambda_op",
             "named": true
           },
           {
@@ -1041,6 +1269,100 @@
           },
           {
             "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "key": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
             "named": true
           },
           {
@@ -1095,10 +1417,6 @@
       "required": true,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
           "type": "expr_application",
           "named": true
         },
@@ -1107,39 +1425,11 @@
           "named": true
         },
         {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
           "type": "expr_if",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
           "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
           "named": true
         },
         {
@@ -1152,6 +1442,10 @@
         },
         {
           "type": "expr_list_range",
+          "named": true
+        },
+        {
+          "type": "expr_literal",
           "named": true
         },
         {
@@ -1205,6 +1499,370 @@
     "type": "expr_map_update",
     "named": true,
     "fields": {
+      "default_value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "key": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "map": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "new_value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
       "old_value": {
         "multiple": true,
         "required": false,
@@ -1212,248 +1870,384 @@
           {
             "type": "@",
             "named": false
+          },
+          {
+            "type": "variable_name",
+            "named": true
           }
         ]
       }
-    },
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
     }
   },
   {
     "type": "expr_named_argument",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "variable_name",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "expr_op",
     "named": true,
-    "fields": {},
+    "fields": {
+      "op": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "!=",
+            "named": false
+          },
+          {
+            "type": "&&",
+            "named": false
+          },
+          {
+            "type": "*",
+            "named": false
+          },
+          {
+            "type": "+",
+            "named": false
+          },
+          {
+            "type": "++",
+            "named": false
+          },
+          {
+            "type": "-",
+            "named": false
+          },
+          {
+            "type": "/",
+            "named": false
+          },
+          {
+            "type": "::",
+            "named": false
+          },
+          {
+            "type": "<",
+            "named": false
+          },
+          {
+            "type": "=<",
+            "named": false
+          },
+          {
+            "type": "==",
+            "named": false
+          },
+          {
+            "type": ">",
+            "named": false
+          },
+          {
+            "type": ">=",
+            "named": false
+          },
+          {
+            "type": "^",
+            "named": false
+          },
+          {
+            "type": "mod",
+            "named": false
+          },
+          {
+            "type": "|>",
+            "named": false
+          },
+          {
+            "type": "||",
+            "named": false
+          }
+        ]
+      },
+      "op_l": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "op_r": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
-      "multiple": true,
-      "required": true,
+      "multiple": false,
+      "required": false,
       "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
         {
           "type": "expr_application",
           "named": true
@@ -1463,39 +2257,11 @@
           "named": true
         },
         {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
           "type": "expr_if",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
           "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
           "named": true
         },
         {
@@ -1508,6 +2274,10 @@
         },
         {
           "type": "expr_list_range",
+          "named": true
+        },
+        {
+          "type": "expr_literal",
           "named": true
         },
         {
@@ -1560,116 +2330,107 @@
   {
     "type": "expr_projection",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "field": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_name",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1681,123 +2442,209 @@
       "required": true,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
+          "type": "expr_record_field",
           "named": true
         }
       ]
     }
   },
   {
+    "type": "expr_record_field",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_name",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "expr_record_update",
     "named": true,
     "fields": {
-      "old_value": {
+      "record": {
         "multiple": true,
-        "required": false,
+        "required": true,
         "types": [
           {
-            "type": "@",
+            "type": "(",
             "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
           }
         ]
       }
@@ -1807,107 +2654,7 @@
       "required": true,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
+          "type": "record_field_update",
           "named": true
         }
       ]
@@ -1916,132 +2663,107 @@
   {
     "type": "expr_switch",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "block_close",
-          "named": true
-        },
-        {
-          "type": "block_open",
-          "named": true
-        },
-        {
-          "type": "block_semi",
-          "named": true
-        },
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        },
-        {
-          "type": "guarded_branch",
-          "named": true
-        }
-      ]
+    "fields": {
+      "cases": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expr_cases",
+            "named": true
+          }
+        ]
+      },
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -2053,10 +2775,6 @@
       "required": true,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
           "type": "expr_application",
           "named": true
         },
@@ -2065,39 +2783,11 @@
           "named": true
         },
         {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
           "type": "expr_if",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
           "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
           "named": true
         },
         {
@@ -2110,6 +2800,10 @@
         },
         {
           "type": "expr_list_range",
+          "named": true
+        },
+        {
+          "type": "expr_literal",
           "named": true
         },
         {
@@ -2162,136 +2856,131 @@
   {
     "type": "expr_typed",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        },
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -2302,732 +2991,2227 @@
   {
     "type": "field_declaration",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_name",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
     }
+  },
+  {
+    "type": "field_name",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "function_clause",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        },
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "args": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "body": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "function_name",
+            "named": true
+          }
+        ]
+      },
+      "ret_type": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ":",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "function_declaration",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "block_close",
-          "named": true
-        },
-        {
-          "type": "block_open",
-          "named": true
-        },
-        {
-          "type": "block_semi",
-          "named": true
-        },
-        {
-          "type": "function_clause",
-          "named": true
-        },
-        {
-          "type": "function_signature",
-          "named": true
-        }
-      ]
+    "fields": {
+      "clauses": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "function_clause",
+            "named": true
+          },
+          {
+            "type": "function_signature",
+            "named": true
+          }
+        ]
+      },
+      "head": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "function_head",
+            "named": true
+          }
+        ]
+      },
+      "modifiers": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "payable",
+            "named": false
+          },
+          {
+            "type": "private",
+            "named": false
+          },
+          {
+            "type": "stateful",
+            "named": false
+          }
+        ]
+      }
     }
+  },
+  {
+    "type": "function_head",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "function_name",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "function_signature",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "type": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "guarded_branch",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "body": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "guards": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "include",
     "named": true,
-    "fields": {}
+    "fields": {
+      "path": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "path",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "list_comprehension_bind",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "list_comprehension_decl",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "list_comprehension_if",
     "named": true,
+    "fields": {
+      "cond": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "lit_address",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_bool",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_bytes",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_char",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_constructor",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_empty_map_or_record",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_integer",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_lambda_op",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_string",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "lit_wildcard",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "map_field",
+    "named": true,
+    "fields": {
+      "default_value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "key": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "[",
+            "named": false
+          },
+          {
+            "type": "]",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "new_value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "old_value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "@",
+            "named": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pat_application",
+    "named": true,
+    "fields": {
+      "args": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "fun": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pat_let",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pat_list",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "pat_application",
+          "named": true
+        },
+        {
+          "type": "pat_let",
+          "named": true
+        },
+        {
+          "type": "pat_list",
+          "named": true
+        },
+        {
+          "type": "pat_literal",
+          "named": true
+        },
+        {
+          "type": "pat_operator",
+          "named": true
+        },
+        {
+          "type": "pat_record",
+          "named": true
+        },
+        {
+          "type": "pat_tuple",
+          "named": true
+        },
+        {
+          "type": "pat_typed",
+          "named": true
+        },
+        {
+          "type": "pat_variable",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "pat_literal",
+    "named": true,
     "fields": {},
     "children": {
       "multiple": false,
       "required": true,
       "types": [
         {
-          "type": "expr_address",
+          "type": "lit_address",
           "named": true
         },
         {
-          "type": "expr_application",
+          "type": "lit_bool",
           "named": true
         },
         {
-          "type": "expr_block",
+          "type": "lit_bytes",
           "named": true
         },
         {
-          "type": "expr_bool",
+          "type": "lit_char",
           "named": true
         },
         {
-          "type": "expr_bytes",
+          "type": "lit_constructor",
           "named": true
         },
         {
-          "type": "expr_constructor",
+          "type": "lit_empty_map_or_record",
           "named": true
         },
         {
-          "type": "expr_empty_map_or_record",
+          "type": "lit_integer",
           "named": true
         },
         {
-          "type": "expr_hole",
+          "type": "lit_lambda_op",
           "named": true
         },
         {
-          "type": "expr_if",
+          "type": "lit_string",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
+          "type": "lit_wildcard",
           "named": true
         }
       ]
     }
+  },
+  {
+    "type": "pat_map_field",
+    "named": true,
+    "fields": {
+      "key": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pat_operator",
+    "named": true,
+    "fields": {
+      "op_l": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "op_r": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pat_record",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "pat_record_field",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "pat_record_field",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "field_name",
+          "named": true
+        },
+        {
+          "type": "pat_application",
+          "named": true
+        },
+        {
+          "type": "pat_let",
+          "named": true
+        },
+        {
+          "type": "pat_list",
+          "named": true
+        },
+        {
+          "type": "pat_literal",
+          "named": true
+        },
+        {
+          "type": "pat_operator",
+          "named": true
+        },
+        {
+          "type": "pat_record",
+          "named": true
+        },
+        {
+          "type": "pat_tuple",
+          "named": true
+        },
+        {
+          "type": "pat_typed",
+          "named": true
+        },
+        {
+          "type": "pat_variable",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "pat_tuple",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "pat_application",
+          "named": true
+        },
+        {
+          "type": "pat_let",
+          "named": true
+        },
+        {
+          "type": "pat_list",
+          "named": true
+        },
+        {
+          "type": "pat_literal",
+          "named": true
+        },
+        {
+          "type": "pat_operator",
+          "named": true
+        },
+        {
+          "type": "pat_record",
+          "named": true
+        },
+        {
+          "type": "pat_tuple",
+          "named": true
+        },
+        {
+          "type": "pat_typed",
+          "named": true
+        },
+        {
+          "type": "pat_variable",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "pat_typed",
+    "named": true,
+    "fields": {
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pat_variable",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "path",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "record_declaration",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "field_declaration",
-          "named": true
-        }
-      ]
+    "fields": {
+      "fields": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "field_declaration",
+            "named": true
+          }
+        ]
+      }
     }
+  },
+  {
+    "type": "record_field_update",
+    "named": true,
+    "fields": {
+      "new_value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      },
+      "old_value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "@",
+            "named": false
+          },
+          {
+            "type": "variable_name",
+            "named": true
+          }
+        ]
+      },
+      "path": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": ".",
+            "named": false
+          },
+          {
+            "type": "field_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "scope_header",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "scope_modifier",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "source_file",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "contract_declaration",
-          "named": true
-        },
-        {
-          "type": "include",
-          "named": true
-        },
-        {
-          "type": "using",
-          "named": true
-        }
-      ]
+    "fields": {
+      "includes": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "include",
+            "named": true
+          }
+        ]
+      },
+      "scopes": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "contract_declaration",
+            "named": true
+          }
+        ]
+      },
+      "usings": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "using",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -3039,10 +5223,6 @@
       "required": true,
       "types": [
         {
-          "type": "expr_address",
-          "named": true
-        },
-        {
           "type": "expr_application",
           "named": true
         },
@@ -3051,39 +5231,11 @@
           "named": true
         },
         {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
           "type": "expr_if",
           "named": true
         },
         {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
           "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
           "named": true
         },
         {
@@ -3099,118 +5251,7 @@
           "named": true
         },
         {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "stmt_if",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr_address",
-          "named": true
-        },
-        {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
+          "type": "expr_literal",
           "named": true
         },
         {
@@ -3263,133 +5304,306 @@
   {
     "type": "stmt_let",
     "named": true,
-    "fields": {},
+    "fields": {
+      "args": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ":",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "switch_case",
+    "named": true,
+    "fields": {
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "pat_application",
+            "named": true
+          },
+          {
+            "type": "pat_let",
+            "named": true
+          },
+          {
+            "type": "pat_list",
+            "named": true
+          },
+          {
+            "type": "pat_literal",
+            "named": true
+          },
+          {
+            "type": "pat_operator",
+            "named": true
+          },
+          {
+            "type": "pat_record",
+            "named": true
+          },
+          {
+            "type": "pat_tuple",
+            "named": true
+          },
+          {
+            "type": "pat_typed",
+            "named": true
+          },
+          {
+            "type": "pat_variable",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": true,
       "types": [
         {
-          "type": "expr_address",
+          "type": "guarded_branch",
           "named": true
         },
         {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_block",
-          "named": true
-        },
-        {
-          "type": "expr_bool",
-          "named": true
-        },
-        {
-          "type": "expr_bytes",
-          "named": true
-        },
-        {
-          "type": "expr_constructor",
-          "named": true
-        },
-        {
-          "type": "expr_empty_map_or_record",
-          "named": true
-        },
-        {
-          "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_integer",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_lambda_op",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
-          "named": true
-        },
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
+          "type": "unguarded_branch",
           "named": true
         }
       ]
@@ -3420,7 +5634,7 @@
           "named": true
         },
         {
-          "type": "variable",
+          "type": "type_variable_poly",
           "named": true
         }
       ]
@@ -3429,10 +5643,60 @@
   {
     "type": "type_application",
     "named": true,
+    "fields": {
+      "args": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_args",
+            "named": true
+          }
+        ]
+      },
+      "fun": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "type_args",
+    "named": true,
     "fields": {},
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "type_application",
@@ -3451,7 +5715,7 @@
           "named": true
         },
         {
-          "type": "variable",
+          "type": "type_variable_poly",
           "named": true
         }
       ]
@@ -3460,24 +5724,47 @@
   {
     "type": "type_declaration",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "record_declaration",
-          "named": true
-        },
-        {
-          "type": "type_alias",
-          "named": true
-        },
-        {
-          "type": "variant_declaration",
-          "named": true
-        }
-      ]
+    "fields": {
+      "args": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "type_variable_poly_name",
+            "named": true
+          }
+        ]
+      },
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "record_declaration",
+            "named": true
+          },
+          {
+            "type": "type_alias",
+            "named": true
+          },
+          {
+            "type": "variant_declaration",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -3505,7 +5792,7 @@
           "named": true
         },
         {
-          "type": "variable",
+          "type": "type_variable_poly",
           "named": true
         }
       ]
@@ -3536,7 +5823,7 @@
           "named": true
         },
         {
-          "type": "variable",
+          "type": "type_variable_poly",
           "named": true
         }
       ]
@@ -3550,44 +5837,59 @@
   {
     "type": "type_function",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_domain_many",
-          "named": true
-        },
-        {
-          "type": "type_domain_one",
-          "named": true
-        },
-        {
-          "type": "type_domain_zero",
-          "named": true
-        },
-        {
-          "type": "type_function",
-          "named": true
-        },
-        {
-          "type": "type_tuple",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "variable",
-          "named": true
-        }
-      ]
+    "fields": {
+      "codomain": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_tuple",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          }
+        ]
+      },
+      "domain": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_domain_many",
+            "named": true
+          },
+          {
+            "type": "type_domain_one",
+            "named": true
+          },
+          {
+            "type": "type_domain_zero",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -3615,7 +5917,7 @@
           "named": true
         },
         {
-          "type": "variable",
+          "type": "type_variable_poly",
           "named": true
         }
       ]
@@ -3627,28 +5929,163 @@
     "fields": {}
   },
   {
-    "type": "using",
+    "type": "type_variable_poly",
     "named": true,
     "fields": {}
   },
   {
-    "type": "variable",
+    "type": "type_variable_poly_name",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "unguarded_branch",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "expr_application",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          },
+          {
+            "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_lambda",
+            "named": true
+          },
+          {
+            "type": "expr_list_comprehension",
+            "named": true
+          },
+          {
+            "type": "expr_list_literal",
+            "named": true
+          },
+          {
+            "type": "expr_list_range",
+            "named": true
+          },
+          {
+            "type": "expr_literal",
+            "named": true
+          },
+          {
+            "type": "expr_map",
+            "named": true
+          },
+          {
+            "type": "expr_map_access",
+            "named": true
+          },
+          {
+            "type": "expr_map_update",
+            "named": true
+          },
+          {
+            "type": "expr_op",
+            "named": true
+          },
+          {
+            "type": "expr_projection",
+            "named": true
+          },
+          {
+            "type": "expr_record",
+            "named": true
+          },
+          {
+            "type": "expr_record_update",
+            "named": true
+          },
+          {
+            "type": "expr_switch",
+            "named": true
+          },
+          {
+            "type": "expr_tuple",
+            "named": true
+          },
+          {
+            "type": "expr_typed",
+            "named": true
+          },
+          {
+            "type": "expr_variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "using",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "using_for",
+          "named": true
+        },
+        {
+          "type": "using_hiding",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "using_for",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "using_hiding",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "variable_name",
     "named": true,
     "fields": {}
   },
   {
     "type": "variant_declaration",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "constructor_declaration",
-          "named": true
-        }
-      ]
+    "fields": {
+      "constructors": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "constructor_declaration",
+            "named": true
+          },
+          {
+            "type": "|",
+            "named": false
+          }
+        ]
+      }
     }
   },
   {
@@ -3752,10 +6189,6 @@
     "named": false
   },
   {
-    "type": "TODO",
-    "named": false
-  },
-  {
     "type": "[",
     "named": false
   },
@@ -3766,18 +6199,6 @@
   {
     "type": "^",
     "named": false
-  },
-  {
-    "type": "block_close",
-    "named": true
-  },
-  {
-    "type": "block_open",
-    "named": true
-  },
-  {
-    "type": "block_semi",
-    "named": true
   },
   {
     "type": "comment",
@@ -3798,10 +6219,6 @@
   {
     "type": "entrypoint",
     "named": false
-  },
-  {
-    "type": "expr_hole",
-    "named": true
   },
   {
     "type": "false",
@@ -3828,11 +6245,23 @@
     "named": false
   },
   {
+    "type": "interface",
+    "named": false
+  },
+  {
     "type": "let",
     "named": false
   },
   {
+    "type": "main",
+    "named": false
+  },
+  {
     "type": "mod",
+    "named": false
+  },
+  {
+    "type": "namespace",
     "named": false
   },
   {
