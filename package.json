@@ -19,5 +19,9 @@
     "node-gyp": "^8.4.0",
     "tree-sitter-cli": "^0.20.0",
     "tree-sitter-grammar-to-dot": "^0.0.2"
-  }
+  },
+    "tree-sitter": {
+        "scope": "source.aes",
+        "file-types": ".aes"
+    }
 }

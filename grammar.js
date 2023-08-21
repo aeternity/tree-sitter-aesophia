@@ -9,6 +9,11 @@ module.exports = grammar({
   conflicts: $ => [
   ],
 
+  words: $ => [
+    _lex_low_id,
+    _lex_up_id,
+  ],
+
   extras: $ => [
     $.comment,
     /[\s\f\uFEFF\u2060\u200B]|\\\r?\n/
@@ -395,11 +400,11 @@ module.exports = grammar({
     expr_list_comprehension: $ => seq(
       '[',
       field("yield", $._expression), '|',
-      field("filters", sep1($._list_comprehension_expr, ',')),
+      field("filters", sep1($._list_comprehension_filter, ',')),
       ']'
     ),
 
-    _list_comprehension_expr: $ => choice(
+    _list_comprehension_filter: $ => choice(
       $.list_comprehension_bind,
       $.list_comprehension_decl,
       $.list_comprehension_if
