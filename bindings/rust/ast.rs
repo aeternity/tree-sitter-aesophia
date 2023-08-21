@@ -375,14 +375,15 @@ pub enum Literal {
     String { val: String },
     Char { val: char },
     Wildcard,
-    LambdaOp { val: BinOp }
+    LambdaBinOp { val: BinOp },
+    LambdaUnOp { val: UnOp },
 }
 
 #[derive(Clone, Debug)]
 pub enum BinOp {
     Add, Sub, Mul, Div, Mod, Pow,
     LT, LE, GT, GE, EQ, NE,
-    And, Or, Not,
+    And, Or,
     Cons, Concat,
 }
 
