@@ -53,6 +53,101 @@ fn node_content<'a>(node: &'a tree_sitter::Node<'a>, src: &'a [u16]) -> ParseRes
     Ok(String::from_utf16(node.utf16_text(src)).unwrap())
 }
 
+
+    fn parse_char(token: &str) -> Option<char> {
+        let mut chars = token.chars();
+        let c = unescape('\'', &mut chars)?;
+        Some(c)
+    }
+
+    fn parse_str(token: &str) -> Option<String> {
+        let mut chars = token.chars().peekable();
+        let mut out = String::with_capacity(token.len());
+        while *(chars.peek()?) != '"' {
+            let c = unescape('"', &mut chars)?;
+        out.push(c)
+        }
+        Some(out)
+    }
+
+fn parse_int(token: &str) -> Option<i64> {
+    let (chars_trimmed, radix) = if &token[0..2] == "0x" {
+        (token[2..].chars(), 16)
+    } else {
+        (token.chars(), 10)
+    };
+
+    let mut chars = chars_trimmed.filter(|x| *x != '_' && *x != 'x');
+
+        let mut neg = false;
+
+        let mut out: i64 = match chars.next().unwrap() {
+            '-' => {
+                neg = true;
+            - (chars.next().unwrap().to_digit(radix).unwrap() as i64)
+            },
+            c => {
+                c.to_digit(radix).unwrap() as i64
+            }
+        };
+
+        for c in chars {
+            if c == '_' { continue }
+            if c == '-' {neg = true}
+
+            out *= radix as i64;
+
+            if neg {
+                out = out.checked_sub(c.to_digit(radix).unwrap() as i64).unwrap();
+            } else {
+                out = out.checked_add(c.to_digit(radix).unwrap() as i64).unwrap();
+            }
+        }
+        Some(out)
+    }
+
+    fn parse_bytes(token: &str) -> Option<Vec<u8>> {
+        let mut chars = token.chars();
+        let mut out: Vec<u8> = Vec::with_capacity(token.len() / 2);
+        while let Some(c0) = chars.next() {
+            if c0 == '_' { continue }
+
+            let c1 = chars.next()?;
+            let byte = c0.to_digit(16)? * 16 + c1.to_digit(16)?;
+
+            out.push(byte as u8)
+        }
+        Some(out)
+    }
+
+    fn parse_qual(token: &str) -> Option<Vec<String>> {
+        Some(token.split('.').map(String::from).collect())
+    }
+
+    // fn unescape(close: char, chars: &[char]) -> Option<(char, &[char])> {
+    fn unescape<T>(close: char, chars: &mut T) -> Option<char>
+    where T: Iterator<Item=char>
+    {
+        let c0 = chars.next()?;
+        if c0 == '\\' {
+            match chars.next()? {
+                '\\' => Some('\\'),
+                'b' => Some('\u{8}'),
+                'e' => Some('\u{27}'),
+                'f' => Some('\u{12}'),
+                'n' => Some('\n'),
+                'r' => Some('\r'),
+                't' => Some('\t'),
+                'v' => Some('\u{11}'),
+                // 'x' => _,
+                c if c == close => Some(c),
+                _ => None
+            }
+        } else {
+            Some(c0)
+        }
+    }
+
 impl<'a> Ast<'a, ast::Literal> for tree_sitter::Node<'a> {
     fn parse(&self, src: &'a [u16]) -> ParseResult<ast::Literal> {
         use ast::Literal;
@@ -61,6 +156,43 @@ impl<'a> Ast<'a, ast::Literal> for tree_sitter::Node<'a> {
                 Ok(Literal::Constructor {
                     name: node_content(self, src)?
                 }),
+            "lit_bytes" =>
+                Ok(Literal::Bytes {
+                    val: parse_bytes(&node_content(self, src)?).unwrap()
+                }),
+            // "lit_lambda_op" =>
+            //     Ok(Literal::LambdaOp {
+            //         name: node_content(self, src)?
+            //     }),
+            "lit_integer" =>
+                Ok(Literal::Int {
+                    val: parse_int(&node_content(self, src)?).unwrap()
+                }),
+            "lit_bool" =>
+                if node_content(self, src)? == "true" {
+                    Ok(Literal::Bool {
+                        val: true
+                    })
+                }
+            else if node_content(self, src)? == "false" {
+                Ok(Literal::Bool {
+                    val: false
+                })}
+            else {
+                Err(())
+            },
+            "lit_empty_map_or_record" =>
+                Ok(Literal::EmptyMapOrRecord),
+            "lit_string" =>
+                Ok(Literal::String {
+                    val: node_content(self, src)?
+                }),
+            "lit_char" =>
+                Ok(Literal::Char {
+                    val: parse_char(&node_content(self, src)?).unwrap()
+                }),
+            "lit_wildcard" =>
+                Ok(Literal::Wildcard),
             _ => panic!("bad node")
         }
     }
