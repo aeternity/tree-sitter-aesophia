@@ -15,17 +15,23 @@ module.exports = grammar({
   ],
 
   extras: $ => [
-    $.comment,
-    /[\s\f\uFEFF\u2060\u200B]|\\\r?\n/
+    $.block_comment,
+    $.line_comment,
+    /[\s\uFEFF\u2060\u200B]|\\\r?\n/,
   ],
 
-  // externals: $ => [
-  //   $._indent,
-  //   $._dedent,
-  //   $._newline,
-  // ],
+    externals: $ => [
+      $._block_open,
+      $._block_semi,
+      $._block_close,
+      $._block_comment_content,
+      $._error_state,
+  ],
 
   rules: {
+
+    // test: $ => choice($.lit_integer, seq(':', maybe_block($, $.test))),
+
     source: $ => choice(
       dispath($, 'PATTERN', $._pattern),
       dispath($, 'TYPE', $._type),
@@ -427,7 +433,9 @@ module.exports = grammar({
     ),
 
     expr_tuple: $ => prec(10000, seq(
-      '(', sep2($._expression, ','), ')'
+        '(',
+        sep2($._expression, ','),
+        ')'
     )),
 
     expr_literal: $ => prec(10000, $._literal),
@@ -531,13 +539,16 @@ module.exports = grammar({
 
     lit_lambda_op: $ => seq(
       '(',
-      choice('&&', '||',
-             '+', '-', '*', '/', '^', 'mod',
-             '==', '!=', '<', '>', '<=', '=<', '>=',
-             '::', '++', '|>',
-             '!'
-            ),
+      field("op", $.op),
       ')'
+    ),
+
+    op: $ => choice(
+      '&&', '||',
+      '+', '-', '*', '/', '^', 'mod',
+      '==', '!=', '<', '>', '<=', '=<', '>=',
+      '::', '++', '|>',
+      '!'
     ),
 
     lit_integer: $ => choice(
@@ -693,17 +704,11 @@ module.exports = grammar({
     _lex_dispath_begin: $ => token.immediate(/@!/),
     _lex_dispath_end: $ => token.immediate(/.*\n/),
 
-    comment: $ => token(choice(
-      seq(
-        '//',
-        /.*/
-      ),
-      seq(
-        '/*',
-        /[^*]*\*+([^/*][^*]*\*+)*/,
-        '/'
-      )
-    )),
+
+    block_comment: ($) =>
+    seq("/*", $._block_comment_content, "*/"),
+
+    line_comment: ($) => token(seq(/\/\//, repeat(/[^\n]/))),
 
     _block_open: $ => 'begin',
     _block_close: $ => 'end',

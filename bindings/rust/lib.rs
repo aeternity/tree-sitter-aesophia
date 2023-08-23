@@ -1,7 +1,7 @@
 //! This crate provides aesophia language support for the [tree-sitter][] parsing library.
 //!
 //! Typically, you will use the [language][language func] function to add this language to a
-//! tree-sitter [Parser][], and then use the parser to parse some code:
+//! tree-sitter [Parser][], and then use the parser to parse Ok code:
 //!
 //! ```
 //! let code = "";
@@ -17,7 +17,6 @@
 
 use tree_sitter::Language;
 
-use crate::ast::Constructor;
 mod ast;
 
 extern "C" {
@@ -43,33 +42,43 @@ pub const NODE_TYPES: &str = include_str!("../../src/node-types.json");
 // pub const LOCALS_QUERY: &'static str = include_str!("../../queries/locals.scm");
 // pub const TAGS_QUERY: &'static str = include_str!("../../queries/tags.scm");
 
-type ParseResult<T> = Result<T, ()>;
-
-trait Ast<'a, T> {
-    fn parse(&self, src: &'a [u16]) -> ParseResult<T>;
+#[derive(Clone, Debug)]
+pub enum ParseError {
+    InvalidToken(String),
+    InvalidEscape,
+    UnexpectedNode(String),
+    MissingField(String),
+    MissingChild(usize),
 }
+
+type ParseResult<T> = Result<T, ParseError>;
+type ParseResultN<T> = ParseResult<ast::Node<T>>;
 
 fn node_content<'a>(node: &'a tree_sitter::Node<'a>, src: &'a [u16]) -> ParseResult<String> {
     Ok(String::from_utf16(node.utf16_text(src)).unwrap())
 }
 
-fn parse_char(token: &str) -> Option<char> {
-    let mut chars = token.chars();
+fn parse_char(token: &str) -> ParseResult<char> {
+    let mut chars = token[1..token.len() - 1].chars();
     let c = unescape('\'', &mut chars)?;
-    Some(c)
+    Ok(c)
 }
 
-fn parse_str(token: &str) -> Option<String> {
-    let mut chars = token.chars().peekable();
+fn parse_str(token: &str) -> ParseResult<String> {
+    let mut chars = token[1..token.len() - 1].chars().peekable();
     let mut out = String::with_capacity(token.len());
-    while *(chars.peek()?) != '"' {
+    while *(chars
+        .peek()
+        .ok_or(ParseError::InvalidToken(token.to_string()))?)
+        != '"'
+    {
         let c = unescape('"', &mut chars)?;
         out.push(c)
     }
-    Some(out)
+    Ok(out)
 }
 
-fn parse_int(token: &str) -> Option<i64> {
+fn parse_int(token: &str) -> ParseResult<i64> {
     let (chars_trimmed, radix) = if &token[0..2] == "0x" {
         (token[2..].chars(), 16)
     } else {
@@ -104,51 +113,66 @@ fn parse_int(token: &str) -> Option<i64> {
             out = out.checked_add(c.to_digit(radix).unwrap() as i64).unwrap();
         }
     }
-    Some(out)
+    Ok(out)
 }
 
-fn parse_bytes(token: &str) -> Option<Vec<u8>> {
+fn parse_bytes(token: &str) -> ParseResult<Vec<u8>> {
     let mut chars = token.chars();
     let mut out: Vec<u8> = Vec::with_capacity(token.len() / 2);
-    while let Some(c0) = chars.next() {
+    while let Ok(c0) = chars
+        .next()
+        .ok_or(ParseError::InvalidToken(token.to_string()))
+    {
         if c0 == '_' {
             continue;
         }
 
-        let c1 = chars.next()?;
-        let byte = c0.to_digit(16)? * 16 + c1.to_digit(16)?;
+        let c1 = chars
+            .next()
+            .ok_or(ParseError::InvalidToken(token.to_string()))?;
+
+        let c0d = c0
+            .to_digit(16)
+            .ok_or(ParseError::InvalidToken(token.to_string()))?;
+        let c1d = c1
+            .to_digit(16)
+            .ok_or(ParseError::InvalidToken(token.to_string()))?;
+
+        let byte = c0d * 16 + c1d;
 
         out.push(byte as u8)
     }
-    Some(out)
+    Ok(out)
 }
 
-fn parse_qual(token: &str) -> Option<Vec<String>> {
-    Some(token.split('.').map(String::from).collect())
+fn parse_qual(token: &str) -> ParseResult<(Vec<String>, String)> {
+    let path = token.split('.').map(String::from).collect::<Vec<_>>();
+    let name = path[path.len() - 1].to_owned();
+    let path_prefix = &path[0..path.len() - 1];
+    Ok((path_prefix.to_vec(), name))
 }
 
-// fn unescape(close: char, chars: &[char]) -> Option<(char, &[char])> {
-fn unescape<T>(close: char, chars: &mut T) -> Option<char>
+fn unescape<T>(close: char, chars: &mut T) -> ParseResult<char>
 where
     T: Iterator<Item = char>,
 {
-    let c0 = chars.next()?;
+    let c0 = chars.next().ok_or(ParseError::InvalidEscape)?;
     if c0 == '\\' {
-        match chars.next()? {
-            '\\' => Some('\\'),
-            'b' => Some('\u{8}'),
-            'e' => Some('\u{27}'),
-            'f' => Some('\u{12}'),
-            'n' => Some('\n'),
-            'r' => Some('\r'),
-            't' => Some('\t'),
-            'v' => Some('\u{11}'),
+        match chars.next().ok_or(ParseError::InvalidEscape)? {
+            '\\' => Ok('\\'),
+            'b' => Ok('\u{8}'),
+            'e' => Ok('\u{27}'),
+            'f' => Ok('\u{12}'),
+            'n' => Ok('\n'),
+            'r' => Ok('\r'),
+            't' => Ok('\t'),
+            'v' => Ok('\u{11}'),
             // 'x' => _,
-            c if c == close => Some(c),
-            _ => None,
+            c if c == close => Ok(c),
+            _ => Err(ParseError::InvalidEscape),
         }
     } else {
-        Some(c0)
+        Ok(c0)
     }
 }
 
@@ -170,53 +194,157 @@ fn parse_bin_op(token: &str) -> ParseResult<ast::BinOp> {
         "!=" => Ok(ast::BinOp::NE),
         "::" => Ok(ast::BinOp::Cons),
         "++" => Ok(ast::BinOp::Concat),
-        _ => Err(())
+        _ => Err(ParseError::InvalidToken(token.to_string())),
     }
 }
 
-impl<'a> Ast<'a, ast::Literal> for tree_sitter::Node<'a> {
-    fn parse(&self, src: &'a [u16]) -> ParseResult<ast::Literal> {
-        use ast::Literal;
-        match self.kind() {
-            "lit_constructor" => Ok(Literal::Constructor {
-                name: node_content(self, src)?,
-            }),
-            "lit_bytes" => Ok(Literal::Bytes {
-                val: parse_bytes(&node_content(self, src)?).unwrap(),
-            }),
-            "lit_lambda_op" =>
-                Ok(Literal::LambdaBinOp {
-                    val: parse_bin_op(&node_content(self, src)?)?
-                }),
-            "lit_integer" => Ok(Literal::Int {
-                val: parse_int(&node_content(self, src)?).unwrap(),
-            }),
-            "lit_bool" => {
-                if node_content(self, src)? == "true" {
-                    Ok(Literal::Bool { val: true })
-                } else if node_content(self, src)? == "false" {
-                    Ok(Literal::Bool { val: false })
-                } else {
-                    Err(())
-                }
+fn parse_literal<'a>(node: &tree_sitter::Node, src: &'a [u16]) -> ParseResultN<ast::Literal> {
+    use ast::Literal;
+    let content = node_content(node, src)?;
+    let lit = match node.kind() {
+        // "lit_constructor" => Literal::Constructor { val: content },
+        "lit_bytes" => Literal::Bytes {
+            val: parse_bytes(&content)?,
+        },
+        "lit_lambda_op" => {
+            let op_node = node.child_by_field_name("op").unwrap();
+            Literal::LambdaBinOp {
+                val: parse_bin_op(&node_content(&op_node, src)?)?,
             }
-            "lit_empty_map_or_record" => Ok(Literal::EmptyMapOrRecord),
-            "lit_string" => Ok(Literal::String {
-                val: node_content(self, src)?,
-            }),
-            "lit_char" => Ok(Literal::Char {
-                val: parse_char(&node_content(self, src)?).unwrap(),
-            }),
-            "lit_wildcard" => Ok(Literal::Wildcard),
-            _ => panic!("bad node"),
+        },
+        "lit_integer" => Literal::Int {
+            val: parse_int(&content)?,
+        },
+        "lit_bool" => {
+            if content == "true" {
+                Literal::Bool { val: true }
+            } else if content == "false" {
+                Literal::Bool { val: false }
+            } else {
+                Err(ParseError::InvalidToken(content))?
+            }
         }
+        "lit_empty_map_or_record" => Literal::EmptyMapOrRecord,
+        "lit_string" => Literal::String {
+            val: parse_str(&content)?,
+        },
+        "lit_char" => Literal::Char {
+            val: parse_char(&content)?,
+        },
+        "lit_wildcard" => Literal::Wildcard,
+        _ => panic!("bad node"),
+    };
+    Ok(mk_node(node, lit))
+}
+
+fn ann(_node: &tree_sitter::Node) -> ast::Ann {
+    ast::Ann {}
+}
+
+fn mk_node<T: Clone>(node: &tree_sitter::Node, value: T) -> ast::Node<T> {
+    ast::Node {
+        node: value,
+        ann: ann(node),
     }
+}
+
+fn mk_node_many<T: Clone>(node: &tree_sitter::Node, values: Vec<ast::Node<T>>) -> ast::NodeMany<T> {
+    ast::NodeMany {
+        nodes: values,
+        ann: ann(node),
+    }
+}
+
+fn get_child<'a>(node: &'a tree_sitter::Node, idx: usize) -> ParseResult<tree_sitter::Node<'a>> {
+    node.child(idx).ok_or(ParseError::MissingChild(idx))
+}
+
+fn get_field<'a>(node: &'a tree_sitter::Node, field: &str) -> ParseResult<tree_sitter::Node<'a>> {
+    node.child_by_field_name(field).ok_or(ParseError::MissingField(field.to_string()))
+}
+
+fn parse_expr<'a>(node: &tree_sitter::Node, src: &'a [u16]) -> ParseResultN<ast::Expr> {
+    use ast::Expr;
+    let expr = match node.kind() {
+        "expr_variable" => {
+            let content = node_content(node, src)?;
+            let (path, name) = parse_qual(&content)?;
+            Expr::Var {
+                var: ast::QName {
+                    path: mk_node_many(node, vec![]), // TODO fix path
+                    name: mk_node(node, name),
+                },
+            }
+        }
+        "expr_literal" => Expr::Literal {
+            val: parse_literal(&get_child(node, 0)?, src)?,
+        },
+        "expr_tuple" => {
+            let mut coursor = node.walk();
+            let kids = node.children(&mut coursor).map(|e| parse_expr(&e, src));
+            let nodes = mk_node_many(node, kids.collect::<ParseResult<Vec<_>>>()?);
+            Expr::Tuple{
+                elems: nodes
+            }
+        }
+        "expr_list" => {
+            let mut coursor = node.walk();
+            let kids = node.children(&mut coursor).map(|e| parse_expr(&e, src));
+            let nodes = mk_node_many(node, kids.collect::<ParseResult<Vec<_>>>()?);
+            Expr::Tuple{
+                elems: nodes
+            }
+        }
+        "expr_lambda" => {
+            unimplemented!()
+        }
+        "expr_typed" => {
+            unimplemented!()
+        }
+        "expr_op" => {
+            unimplemented!()
+        }
+        "expr_application" => {
+            unimplemented!()
+        }
+        "expr_record" => {
+            unimplemented!()
+        }
+        "expr_record_update" => {
+            unimplemented!()
+        }
+        "expr_map" => {
+            unimplemented!()
+        }
+        "expr_map_update" => {
+            unimplemented!()
+        }
+        "expr_map_access" => {
+            unimplemented!()
+        }
+        "expr_projection" => {
+            unimplemented!()
+        }
+        "expr_switch" => {
+            unimplemented!()
+        }
+        "expr_if" => {
+            unimplemented!()
+        }
+        "expr_block" => {
+            unimplemented!()
+        }
+        _ => {
+            panic!("bad node")
+        }
+    };
+    Ok(mk_node(node, expr))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::Literal;
     use super::*;
+    use crate::ast::Literal;
 
     #[test]
     fn test_can_load_grammar() {
@@ -233,11 +361,27 @@ mod tests {
             .set_language(super::language())
             .expect("Error loading aesophia language");
         // let src = "contract C = function f(x, y) = 123";
-        let src = "@!LITERAL\n123";
+        let src = "@!EXPRESSION\n(123, 321)";
         let ast = parser.parse(src, None).unwrap();
         let node = ast.root_node().child(1).unwrap();
-        println!("{}", node.to_sexp());
+
+        println!("SEXP: {}", node.to_sexp());
+        println!("NAMED: {}", node.named_child_count());
+        println!("CHILDR: {}", node.child_count());
+        println!(
+            "CN: {:?}",
+            node.named_children(&mut node.walk())
+                .map(|x| x.to_sexp())
+                .collect::<Vec<_>>()
+        );
+        println!(
+            "C: {:?}",
+            node.children(&mut node.walk())
+                .map(|x| x.to_sexp())
+                .collect::<Vec<_>>()
+        );
+
         let src_data: Vec<u16> = src.encode_utf16().collect();
-        panic!("{:?}", node.parse(&src_data))
+        panic!("{:?}", parse_expr(&node, &src_data))
     }
 }

@@ -1,5 +1,10 @@
 [
   {
+    "type": "block_comment",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "constructor_declaration",
     "named": true,
     "fields": {
@@ -3971,7 +3976,18 @@
   {
     "type": "lit_lambda_op",
     "named": true,
-    "fields": {}
+    "fields": {
+      "op": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "op",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "lit_string",
@@ -4284,6 +4300,11 @@
         ]
       }
     }
+  },
+  {
+    "type": "op",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "pat_application",
@@ -6299,6 +6320,10 @@
     "named": false
   },
   {
+    "type": "*/",
+    "named": false
+  },
+  {
     "type": "+",
     "named": false
   },
@@ -6324,6 +6349,10 @@
   },
   {
     "type": "/",
+    "named": false
+  },
+  {
+    "type": "/*",
     "named": false
   },
   {
@@ -6407,10 +6436,6 @@
     "named": false
   },
   {
-    "type": "comment",
-    "named": true
-  },
-  {
     "type": "contract",
     "named": false
   },
@@ -6457,6 +6482,10 @@
   {
     "type": "let",
     "named": false
+  },
+  {
+    "type": "line_comment",
+    "named": true
   },
   {
     "type": "main",

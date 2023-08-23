@@ -3,13 +3,6 @@ use std::hash::Hash;
 use std::ops::Range;
 
 pub type Name = String;
-pub type Path = Vec<String>;
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
-pub struct QName {
-    pub name: Name,
-    pub path: Path,
-}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Ann {}
@@ -82,8 +75,8 @@ impl UsingRange {
 
 #[derive(Clone, Debug)]
 pub struct Using {
-    pub path: Path,
-    pub range: UsingRange,
+    pub path: NodeMany<Name>,
+    pub range: NodeOne<UsingRange>,
 }
 
 pub type Vsn = String;
@@ -183,10 +176,10 @@ pub struct Constructor {
 #[derive(Clone, Debug)]
 pub enum Expr {
     Literal {
-        val: Literal,
+        val: NodeOne<Literal>,
     },
     Var {
-        name: QName,
+        var: QName,
     },
     Lambda {
         args: NodeMany<Pattern>,
@@ -368,7 +361,7 @@ pub struct PatternRecordField {
 pub enum Literal {
     Int { val: i64 }, // TODO: big int!
     Bool { val: bool },
-    Constructor { name: String },
+    Constructor { val: QName },
     Bytes { val: Vec<u8> },
     Address { val: Vec<u8> },
     EmptyMapOrRecord,
@@ -430,42 +423,8 @@ pub enum Type {
     },
 }
 
-// mod example {
-//     use super::*;
-//     pub const tp: Type = Type::Int;
-//     pub const lit: Literal = Literal::Int { val: 2137 };
-//     pub const simpl_expr: Expr = Expr::Literal { val: lit };
-//     pub fn stmt() -> Statement {
-//         Statement::LetVal {
-//             name: Node {
-//                 node: String::from("x"),
-//                 ann: Ann {},
-//             },
-//             typedecl: Some(Node {
-//                 node: tp,
-//                 ann: Ann {},
-//             }),
-//             body: Node {
-//                 node: simpl_expr,
-//                 ann: Ann {},
-//             },
-//         }
-//     }
-//     pub fn expr() -> Expr {
-//         Expr::Block {
-//             stmts: NodeMany {
-//                 nodes: vec![Node {
-//                     node: stmt(),
-//                     ann: Ann {},
-//                 }],
-//                 ann: Ann {},
-//             },
-//             value: Node {
-//                 node: Box::new(Expr::Var {
-//                     name: Q"x".to_string(),
-//                 }),
-//                 ann: Ann {},
-//             },
-//         }
-//     }
-// }
+#[derive(Clone, Debug)]
+pub struct QName {
+    pub name: NodeOne<Name>,
+    pub path: NodeMany<Name>,
+}
