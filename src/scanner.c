@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+/* #define DEBUG */
+
 #define ever (;;)
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -60,7 +62,9 @@ typedef struct {
 }
 Scanner;
 
-void print_scanner(Scanner* scanner) {
+
+#ifdef DEBUG
+inline static void print_scanner(Scanner* scanner) {
   printf("INDENTS:");
   for(size_t i = 0; i < scanner->indents.len; ++i) {
     printf(" %d", scanner->indents.data[i]);
@@ -68,7 +72,7 @@ void print_scanner(Scanner* scanner) {
   printf("\nDEDENTS: %ld\n", scanner->pending_dedents);
 }
 
-void print_symbols(const bool * valid_symbols) {
+inline static void print_symbols(const bool *valid_symbols) {
   printf("VALID SYMBOLS:\n");
   printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
   printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
@@ -77,7 +81,7 @@ void print_symbols(const bool * valid_symbols) {
   printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
 }
 
-void print_symbol(int t) {
+inline static void print_symbol(int t) {
   switch(t) {
   case BLOCK_OPEN:
     printf("BLOCK_OPEN");
@@ -96,6 +100,12 @@ void print_symbol(int t) {
     break;
   }
 }
+#else
+#define printf(...)
+#define print_symbol(...)
+#define print_symbols(...)
+#define print_scanner(...)
+#endif
 
 static inline void advance(TSLexer * lexer) {
   lexer->advance(lexer, false);
@@ -331,28 +341,7 @@ static bool scan(Scanner * scanner,
           goto NOT_ACCEPT;
         }
       }
-
-        /* // Our list is the wrong way around, reverse it */
-        /* VEC_REVERSE(scanner->runback); */
-        /* // Handle the first runback token if we have them, if there are more */
-        /* // they will be handled on the next scan operation */
-        /* if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 && */
-        /*     valid_symbols[BLOCK_SEMI]) { */
-        /*     VEC_POP(scanner->runback); */
-        /*     lexer->result_symbol = BLOCK_SEMI; */
-        /*     goto ACCEPT; */
-        /* } */
-        /* if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 && */
-        /*     valid_symbols[BLOCK_CLOSE]) { */
-        /*     VEC_POP(scanner->runback); */
-        /*     lexer->result_symbol = BLOCK_CLOSE; */
-        /*     goto ACCEPT; */
-        /* } */
-        /* if (lexer->eof(lexer) && valid_symbols[BLOCK_CLOSE]) { */
-        /*     lexer->result_symbol = BLOCK_CLOSE; */
-        /*     goto ACCEPT; */
-        /* } */
-      }
+    }
 
  NOT_ACCEPT:
     printf("NOT\n\n");

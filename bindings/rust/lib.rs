@@ -15,7 +15,7 @@
 //! [Parser]: https://docs.rs/tree-sitter/*/tree_sitter/struct.Parser.html
 //! [tree-sitter]: https://tree-sitter.github.io/
 
-use tree_sitter::Language;
+use tree_sitter::*;
 
 mod ast;
 
@@ -54,7 +54,7 @@ pub enum ParseError {
 type ParseResult<T> = Result<T, ParseError>;
 type ParseResultN<T> = ParseResult<ast::Node<T>>;
 
-fn node_content<'a>(node: &'a tree_sitter::Node<'a>, src: &'a [u16]) -> ParseResult<String> {
+fn node_content(node: &Node, src: &[u16]) -> ParseResult<String> {
     Ok(String::from_utf16(node.utf16_text(src)).unwrap())
 }
 
@@ -198,8 +198,9 @@ fn parse_bin_op(token: &str) -> ParseResult<ast::BinOp> {
     }
 }
 
-fn parse_literal<'a>(node: &tree_sitter::Node, src: &'a [u16]) -> ParseResultN<ast::Literal> {
+fn parse_literal(tc: &mut TreeCursor, src: &[u16]) -> ParseResultN<ast::Literal> {
     use ast::Literal;
+    let node = &tc.node();
     let content = node_content(node, src)?;
     let lit = match node.kind() {
         // "lit_constructor" => Literal::Constructor { val: content },
@@ -234,7 +235,7 @@ fn parse_literal<'a>(node: &tree_sitter::Node, src: &'a [u16]) -> ParseResultN<a
         "lit_wildcard" => Literal::Wildcard,
         _ => panic!("bad node"),
     };
-    Ok(mk_node(node, lit))
+    Ok(mk_node(&node, lit))
 }
 
 fn ann(_node: &tree_sitter::Node) -> ast::Ann {
@@ -263,8 +264,9 @@ fn get_field<'a>(node: &'a tree_sitter::Node, field: &str) -> ParseResult<tree_s
     node.child_by_field_name(field).ok_or(ParseError::MissingField(field.to_string()))
 }
 
-fn parse_expr<'a>(node: &tree_sitter::Node, src: &'a [u16]) -> ParseResultN<ast::Expr> {
+fn parse_expr<'a>(tc: &mut tree_sitter::TreeCursor, src: &'a [u16]) -> ParseResultN<ast::Expr> {
     use ast::Expr;
+    let node = &tc.node();
     let expr = match node.kind() {
         "expr_variable" => {
             let content = node_content(node, src)?;
@@ -276,21 +278,40 @@ fn parse_expr<'a>(node: &tree_sitter::Node, src: &'a [u16]) -> ParseResultN<ast:
                 },
             }
         }
-        "expr_literal" => Expr::Literal {
-            val: parse_literal(&get_child(node, 0)?, src)?,
+        "expr_literal" => {
+            if !tc.goto_first_child() {
+                Err(ParseError::MissingChild(0))?;
+            }
+
+            let lit = parse_literal(tc, src)?;
+            tc.goto_parent();
+
+            Expr::Literal {
+                val: lit,
+            }
         },
         "expr_tuple" => {
-            let mut coursor = node.walk();
-            let kids = node.children(&mut coursor).map(|e| parse_expr(&e, src));
-            let nodes = mk_node_many(node, kids.collect::<ParseResult<Vec<_>>>()?);
+            let mut elems = Vec::with_capacity(node.child_count());
+            tc.goto_first_child();
+            while {
+                elems.push(parse_expr(tc, src)?);
+                tc.goto_next_sibling()
+            } {}
+            tc.goto_parent();
+            let nodes = mk_node_many(node, elems);
             Expr::Tuple{
                 elems: nodes
             }
         }
         "expr_list" => {
-            let mut coursor = node.walk();
-            let kids = node.children(&mut coursor).map(|e| parse_expr(&e, src));
-            let nodes = mk_node_many(node, kids.collect::<ParseResult<Vec<_>>>()?);
+            let mut elems = Vec::with_capacity(node.child_count());
+            tc.goto_first_child();
+            while {
+                elems.push(parse_expr(tc, src)?);
+                tc.goto_next_sibling()
+            } {}
+            tc.goto_parent();
+            let nodes = mk_node_many(node, elems);
             Expr::Tuple{
                 elems: nodes
             }
@@ -382,6 +403,6 @@ mod tests {
         );
 
         let src_data: Vec<u16> = src.encode_utf16().collect();
-        panic!("{:?}", parse_expr(&node, &src_data))
+        panic!("{:?}", parse_expr(&mut node.walk(), &src_data))
     }
 }
