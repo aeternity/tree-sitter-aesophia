@@ -349,14 +349,14 @@ module.exports = grammar({
     ),
 
     _expr_atom: $ => prec(10000, choice(
-      seq('(', $._expression, ')'),
       $.expr_variable,
       $.expr_record,
       $.expr_projection,
       $.expr_map,
       $._expr_list,
       $.expr_tuple,
-      $.expr_literal
+      $.expr_literal,
+      $.expr_paren,
     )),
 
     expr_variable: $ => $._lex_qual_low_id,
@@ -433,12 +433,18 @@ module.exports = grammar({
     ),
 
     expr_tuple: $ => prec(10000, seq(
-        '(',
-        sep2($._expression, ','),
-        ')'
+      '(',
+      sep2(field("elem", $._expression), ','),
+      ')'
     )),
 
     expr_literal: $ => prec(10000, $._literal),
+
+    expr_paren: $ => seq(
+      '(',
+      $._expression,
+      ')',
+    ),
 
     //**************************************************************************
     // PATTERN

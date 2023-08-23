@@ -15,6 +15,7 @@
 //! [Parser]: https://docs.rs/tree-sitter/*/tree_sitter/struct.Parser.html
 //! [tree-sitter]: https://tree-sitter.github.io/
 
+extern crate tree_sitter;
 use tree_sitter::*;
 
 mod ast;
@@ -294,7 +295,9 @@ fn parse_expr<'a>(tc: &mut tree_sitter::TreeCursor, src: &'a [u16]) -> ParseResu
             let mut elems = Vec::with_capacity(node.child_count());
             tc.goto_first_child();
             while {
-                elems.push(parse_expr(tc, src)?);
+                if tc.field_name() == Some("elem") {
+                    elems.push(parse_expr(tc, src)?);
+                }
                 tc.goto_next_sibling()
             } {}
             tc.goto_parent();
@@ -382,7 +385,7 @@ mod tests {
             .set_language(super::language())
             .expect("Error loading aesophia language");
         // let src = "contract C = function f(x, y) = 123";
-        let src = "@!EXPRESSION\n(123, 321)";
+        let src = "@!EXPRESSION\n(111, 2137)";
         let ast = parser.parse(src, None).unwrap();
         let node = ast.root_node().child(1).unwrap();
 

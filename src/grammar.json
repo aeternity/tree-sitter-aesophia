@@ -2244,23 +2244,6 @@
         "type": "CHOICE",
         "members": [
           {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "STRING",
-                "value": "("
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_expression"
-              },
-              {
-                "type": "STRING",
-                "value": ")"
-              }
-            ]
-          },
-          {
             "type": "SYMBOL",
             "name": "expr_variable"
           },
@@ -2287,6 +2270,10 @@
           {
             "type": "SYMBOL",
             "name": "expr_literal"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "expr_paren"
           }
         ]
       }
@@ -2703,8 +2690,12 @@
             "type": "SEQ",
             "members": [
               {
-                "type": "SYMBOL",
-                "name": "_expression"
+                "type": "FIELD",
+                "name": "elem",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
               },
               {
                 "type": "REPEAT1",
@@ -2716,8 +2707,12 @@
                       "value": ","
                     },
                     {
-                      "type": "SYMBOL",
-                      "name": "_expression"
+                      "type": "FIELD",
+                      "name": "elem",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_expression"
+                      }
                     }
                   ]
                 }
@@ -2738,6 +2733,23 @@
         "type": "SYMBOL",
         "name": "_literal"
       }
+    },
+    "expr_paren": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_expression"
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        }
+      ]
     },
     "_pattern": {
       "type": "CHOICE",

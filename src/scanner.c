@@ -64,7 +64,7 @@ Scanner;
 
 
 #ifdef DEBUG
-inline static void print_scanner(Scanner* scanner) {
+static void print_scanner(Scanner* scanner) {
   printf("INDENTS:");
   for(size_t i = 0; i < scanner->indents.len; ++i) {
     printf(" %d", scanner->indents.data[i]);
@@ -72,7 +72,7 @@ inline static void print_scanner(Scanner* scanner) {
   printf("\nDEDENTS: %ld\n", scanner->pending_dedents);
 }
 
-inline static void print_symbols(const bool *valid_symbols) {
+static void print_symbols(const bool *valid_symbols) {
   printf("VALID SYMBOLS:\n");
   printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
   printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
@@ -81,7 +81,7 @@ inline static void print_symbols(const bool *valid_symbols) {
   printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
 }
 
-inline static void print_symbol(int t) {
+static void print_symbol(int t) {
   switch(t) {
   case BLOCK_OPEN:
     printf("BLOCK_OPEN");
@@ -408,43 +408,43 @@ unsigned tree_sitter_aesophia_external_scanner_serialize(void * payload,
   return size;
 }
 
-    /**
-     * Load another parser state into the currently active state.
-     * `payload` is the state of the previous parser execution, while `buffer` is
-     * the saved state of a different position (e.g. when doing incremental
-     * parsing).
-     */
-    void tree_sitter_aesophia_external_scanner_deserialize(void * payload,
-      const char * buffer,
-        unsigned length) {
-      Scanner * scanner = (Scanner * ) payload;
-      VEC_CLEAR(scanner->indents);
-      VEC_PUSH(scanner->indents, 0);
-      scanner->pending_dedents = 0;
+/**
+ * Load another parser state into the currently active state.
+ * `payload` is the state of the previous parser execution, while `buffer` is
+ * the saved state of a different position (e.g. when doing incremental
+ * parsing).
+ */
+void tree_sitter_aesophia_external_scanner_deserialize(void * payload,
+                                                       const char * buffer,
+                                                       unsigned length) {
+  Scanner * scanner = (Scanner * ) payload;
+  VEC_CLEAR(scanner->indents);
+  VEC_PUSH(scanner->indents, 0);
+  scanner->pending_dedents = 0;
 
-      if (length == 0) {
-        return;
-      }
+  if (length == 0) {
+    return;
+  }
 
-      size_t size = 0;
+  size_t size = 0;
 
-      size_t pending_dedents_length = (unsigned char) buffer[size++];
-      if (pending_dedents_length > 0) {
-        memcpy( & scanner->pending_dedents, & buffer[size], pending_dedents_length);
-        size += pending_dedents_length;
-      }
+  size_t pending_dedents_length = (unsigned char) buffer[size++];
+  if (pending_dedents_length > 0) {
+    memcpy( & scanner->pending_dedents, & buffer[size], pending_dedents_length);
+    size += pending_dedents_length;
+  }
 
-      for (; size < length; size++) {
-        VEC_PUSH(scanner->indents, (unsigned char) buffer[size]);
-      }
-      assert(size == length);
-    }
+  for (; size < length; size++) {
+    VEC_PUSH(scanner->indents, (unsigned char) buffer[size]);
+  }
+  assert(size == length);
+}
 
-    /**
-     * Destroy the state.
-     */
-    void tree_sitter_aesophia_external_scanner_destroy(void * payload) {
-      Scanner * scanner = (Scanner * ) payload;
-      VEC_FREE(scanner->indents);
-      free(scanner);
-    }
+/**
+ * Destroy the state.
+ */
+void tree_sitter_aesophia_external_scanner_destroy(void * payload) {
+  Scanner * scanner = (Scanner * ) payload;
+  VEC_FREE(scanner->indents);
+  free(scanner);
+}
