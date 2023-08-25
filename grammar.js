@@ -35,57 +35,53 @@ module.exports = grammar({
   ],
 
   precedences: $ => [
-    [ // expressions
-      'LAMBDA',
-
-      // operators
-      'PIPE',
-      'DISJ',
-      'CONJ',
-      'CMP',
-      'LIST',
-      'ADD',
-      'NEG',
-      'MUL',
-      'POW',
-      'NOT',
-
-      'TYPED',
-      'GUARD',
-      'APPLICATION',
-      'UPDATE_ACCESS',
-      'PROJECTION',
-      'SWITCH',
-      'IF',
-      'BLOCK',
-      'ATOM',
-    ],
-    [ // patterns
-      'PAT_TYPED',
-      'PAT_APP',
-      'PAT_LET',
-      'PAT_OP',
-      'PAT_LIST',
-      'PAT_ATOM',
+    [ // statements
+      'STMT_EXPR',
+      'STMT_LET',
     ],
     [ // types
-      'TYPE_FUN',
-      'TYPE_TUPLE',
-      'TYPE_DOMAIN',
-      'TYPE_APP',
       'TYPE_ATOM',
+      'TYPE_APP',
+      'TYPE_DOMAIN',
+      'TYPE_TUPLE',
+      'TYPE_FUN',
     ],
-    [ // statements
-      'STMT_LET',
-      'STMT_EXPR',
+    [ // patterns
+      'PAT_ATOM',
+      'PAT_LIST',
+      'PAT_OP',
+      'PAT_LET',
+      'PAT_APP',
+      'PAT_TYPED',
     ],
-    [
-      'ATOM', 'PAT_ATOM'
-    ],
-    [ 'GUARD', 'TYPE'
+    [ // expressions
+      'EXPR_ATOM',
+      'EXPR_PROJECTION',
+      'EXPR_APP',
+      'EXPR_BLOCK',
+      'EXPR_UPDATE_ACCESS',
+      'EXPR_GUARD',
+      'EXPR_TYPED',
 
+      'OP_NOT',
+      'OP_POW',
+      'OP_MUL',
+      'OP_NEG',
+      'OP_ADD',
+      'OP_LIST',
+      'OP_CMP',
+      'OP_CONJ',
+      'OP_DISJ',
+      'OP_PIPE',
 
-    ]
+      'EXPR_IF',
+      'EXPR_SWITCH',
+      'EXPR_LAMBDA'
+    ],
+    // conflicts
+    [ 'EXPR_ATOM', 'PAT_ATOM' ],
+    [ 'EXPR_TYPED', 'TYPE_DOMAIN' ],
+    [ 'PAT_TYPED', 'TYPE_DOMAIN' ],
   ],
 
   word: $ => $._lex_low_id,
@@ -275,36 +271,31 @@ module.exports = grammar({
       $._expr_atom
     ),
 
-    expr_lambda: $ => prec.right('LAMBDA', seq(
+    expr_lambda: $ => prec.right('EXPR_LAMBDA', seq(
       field("args", $.pat_args),
       '=>',
       field("body", $._expression)
     )),
 
-    expr_typed: $ => prec.left('TYPED', seq(
-      field("expr", $._expression), ':',
-      field("type", $._type)
-    )),
-
     expr_op: $ => choice(
       ...[
-        ['|>', 'PIPE', 'left'],
-        ['||', 'DISJ', 'right'],
-        ['&&', 'CONJ', 'right'],
-        ['<',  'CMP', 'left'],
-        ['>',  'CMP', 'left'],
-        ['=<', 'CMP', 'left'],
-        ['>=', 'CMP', 'left'],
-        ['==', 'CMP', 'left'],
-        ['!=', 'CMP', 'left'],
-        ['::', 'LIST', 'right'],
-        ['++', 'LIST', 'right'],
-        ['+',  'ADD', 'left'],
-        ['-',  'ADD', 'left'],
-        ['-',  'NEG', 'unary'],
-        ['*',  'MUL', 'left'],
-        ['^',  'POW', 'left'],
-        ['!',  'NOT', 'unary'],
+        ['|>', 'OP_PIPE', 'left'],
+        ['||', 'OP_DISJ', 'right'],
+        ['&&', 'OP_CONJ', 'right'],
+        ['<',  'OP_CMP', 'left'],
+        ['>',  'OP_CMP', 'left'],
+        ['=<', 'OP_CMP', 'left'],
+        ['>=', 'OP_CMP', 'left'],
+        ['==', 'OP_CMP', 'left'],
+        ['!=', 'OP_CMP', 'left'],
+        ['::', 'OP_LIST', 'right'],
+        ['++', 'OP_LIST', 'right'],
+        ['+',  'OP_ADD', 'left'],
+        ['-',  'OP_ADD', 'left'],
+        ['-',  'OP_NEG', 'unary'],
+        ['*',  'OP_MUL', 'left'],
+        ['^',  'OP_POW', 'left'],
+        ['!',  'OP_NOT', 'unary'],
       ].map(([operator, precedence, assoc]) =>
         (assoc === 'left' ? prec.left : assoc === 'right' ? prec.right : prec)(
           precedence,
@@ -320,7 +311,12 @@ module.exports = grammar({
       )
     ),
 
-    expr_application: $ => prec.left('APPLICATION', seq(
+    expr_typed: $ => prec.left('EXPR_TYPED', seq(
+      field("expr", $._expression), ':',
+      field("type", $._type)
+    )),
+
+    expr_application: $ => prec.left('EXPR_APP', seq(
       field("fun", $._expression),
       field("args", $.expr_args),
     )),
@@ -341,7 +337,7 @@ module.exports = grammar({
       field("value", $._expression)
     ),
 
-    expr_record_update: $ => prec.left('UPDATE_ACCESS', seq(
+    expr_record_update: $ => prec.left('EXPR_UPDATE_ACCESS', seq(
       field("record", $._expression),
       field("updates", $.record_field_updates),
     )),
@@ -363,7 +359,7 @@ module.exports = grammar({
       sep1(field("field", $.field_name), '.'),
     )),
 
-    expr_map_update: $ => prec.left('UPDATE_ACCESS', seq(
+    expr_map_update: $ => prec.left('EXPR_UPDATE_ACCESS', seq(
       field("map", $._expression),
       field("updates", $.map_updates),
     )),
@@ -380,7 +376,7 @@ module.exports = grammar({
       field("new_value", $._expression)
     ),
 
-    expr_map_access: $ => prec.left('UPDATE_ACCESS', seq(
+    expr_map_access: $ => prec.left('EXPR_UPDATE_ACCESS', seq(
       field("map", $._expression),
       field("key", $.expr_map_key)
     )),
@@ -392,12 +388,12 @@ module.exports = grammar({
       ']',
     ),
 
-    expr_projection: $ => prec.left('PROJECTION', seq(
+    expr_projection: $ => prec.left('EXPR_PROJECTION', seq(
       field("expr", $._expression), '.',
       field("field", $.field_name)
     )),
 
-    expr_if: $ => prec.right('IF', seq(
+    expr_if: $ => prec.right('EXPR_IF', seq(
       'if', '(',
       field("cond", $._expression), ')',
       field("then", $._expression),
@@ -406,13 +402,13 @@ module.exports = grammar({
       optional(seq('else', field("else", $._expression)))
     )),
 
-    _expr_elif: $ => seq(
+    _expr_elif: $ => prec('EXPR_IF', seq(
       'elif', '(',
       field("cond", $._expression), ')',
       field("then", $._expression)
-    ),
+    )),
 
-    expr_switch: $ => prec('SWITCH', seq(
+    expr_switch: $ => prec('EXPR_SWITCH', seq(
       'switch', '(',
       field("expr", $._expression), ')',
       field("cases", $.expr_cases)
@@ -430,19 +426,19 @@ module.exports = grammar({
       $.guarded_branches,
     )),
 
-    unguarded_branch: $ => prec('GUARD', seq(
+    unguarded_branch: $ => prec('EXPR_GUARD', seq(
       '=>',
       field("body", $._expression)
     )),
 
     guarded_branches: $ => maybe_block($, seq('|', field("branch", $.guarded_branch))),
 
-    guarded_branch: $ => seq(
+    guarded_branch: $ => prec('EXPR_GUARD', seq(
       sep1(field("guards", $._expression), ','), '=>',
       field("body", $._expression)
-    ),
+    )),
 
-    expr_block: $ => prec('BLOCK', block(
+    expr_block: $ => prec('EXPR_BLOCK', block(
       $, field("stmt", $._statement)
     )),
 
@@ -468,7 +464,7 @@ module.exports = grammar({
       field("value", $._expression)
     ),
 
-    expr_map: $ => prec('ATOM', seq(
+    expr_map: $ => prec('EXPR_ATOM', seq(
       '{',
       sep1(field("field", $.map_field), ','),
       '}'
@@ -480,17 +476,17 @@ module.exports = grammar({
       field("new_value", $._expression)
     ),
 
-    _expr_list: $ => prec('ATOM', choice(
+    _expr_list: $ => choice(
       $.expr_list_literal,
       $.expr_list_range,
       $.expr_list_comprehension
-    )),
+    ),
 
-    expr_list_literal: $ => seq(
+    expr_list_literal: $ => prec('EXPR_ATOM', seq(
       '[',
       sep(field("elem", $._expression), ','),
       ']'
-    ),
+    )),
 
     expr_list_range: $ => seq(
       '[',
@@ -527,15 +523,15 @@ module.exports = grammar({
       field("cond", $._expression), ')'
     ),
 
-    expr_tuple: $ => prec('ATOM', seq(
+    expr_tuple: $ => prec('EXPR_ATOM', seq(
       '(',
       sep2(field("elem", $._expression), ','),
       ')'
     )),
 
-    expr_literal: $ => prec('ATOM', $._literal),
+    expr_literal: $ => prec('EXPR_ATOM', $._literal),
 
-    expr_paren: $ => prec('ATOM', seq(
+    expr_paren: $ => prec('EXPR_ATOM', seq(
       '(',
       field("expr", $._expression),
       ')',
@@ -731,7 +727,7 @@ module.exports = grammar({
       ')'
     ),
 
-    type_tuple: $ => prec('TYPE_TUPLE', sep2(field("elem", $._type_in_tuple), '*')),
+    type_tuple: $ => prec.left('TYPE_TUPLE', sep2(field("elem", $._type_in_tuple), '*')),
 
     _type_in_tuple: $ => choice(
       $.type_application,
@@ -739,7 +735,7 @@ module.exports = grammar({
     ),
 
     type_application: $ => prec.left('TYPE_APP', seq(
-      field("fun", $._type_in_tuple),
+      field("fun", $.type_variable),
       field("params", $.type_params),
     )),
 
