@@ -2,7 +2,8 @@ module.exports = grammar({
   name: 'aesophia',
 
   conflicts: $ => [
-    // Both match (pat, pat), but they never coexist because pat_args requires something before.
+    // Both match (pat, pat), but they never coexist because pat_args requires something definite
+    // before.
     [$.pat_args, $.pat_tuple],
   ],
 
@@ -73,6 +74,10 @@ module.exports = grammar({
       'TYPE_DOMAIN',
       'TYPE_APP',
       'TYPE_ATOM',
+    ],
+    [ // statements
+      'STMT_LET',
+      'STMT_EXPR',
     ],
     [
       'ATOM', 'PAT_ATOM'
@@ -475,7 +480,7 @@ module.exports = grammar({
       field("new_value", $._expression)
     ),
 
-    _expr_list: $ => prec(10000, choice(
+    _expr_list: $ => prec('ATOM', choice(
       $.expr_list_literal,
       $.expr_list_range,
       $.expr_list_comprehension
@@ -684,7 +689,7 @@ module.exports = grammar({
       $.stmt_expr,
     ),
 
-    stmt_let: $ => prec(10, seq(
+    stmt_let: $ => prec('STMT_LET', seq(
       'let',
       field("pattern", $._pattern),
       field("args", optional($.pat_args)),
@@ -692,7 +697,7 @@ module.exports = grammar({
       field("value", $._expression)
     )),
 
-    stmt_expr: $ => prec(30, $._expression),
+    stmt_expr: $ => prec('STMT_EXPR', $._expression),
 
     //**************************************************************************
     // TYPE
