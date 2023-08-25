@@ -58,7 +58,6 @@ module.exports = grammar({
       'EXPR_ATOM',
       'EXPR_PROJECTION',
       'EXPR_APP',
-      'EXPR_BLOCK',
       'EXPR_UPDATE_ACCESS',
       'EXPR_GUARD',
       'EXPR_TYPED',
@@ -76,6 +75,7 @@ module.exports = grammar({
 
       'EXPR_IF',
       'EXPR_SWITCH',
+      'EXPR_BLOCK',
       'EXPR_LAMBDA'
     ],
     // conflicts
@@ -398,8 +398,9 @@ module.exports = grammar({
       field("cond", $._expression), ')',
       field("then", $._expression),
       repeat($._expr_elif),
+      seq('else', field("else", $._expression))
       // `else` is optional in statements
-      optional(seq('else', field("else", $._expression)))
+      // optional(seq('else', field("else", $._expression)))
     )),
 
     _expr_elif: $ => prec('EXPR_IF', seq(
@@ -484,7 +485,7 @@ module.exports = grammar({
 
     expr_list_literal: $ => prec('EXPR_ATOM', seq(
       '[',
-      sep(field("elem", $._expression), ','),
+      sep(seq(field("elem", $._expression), optional($._block_semi)), ','),
       ']'
     )),
 
@@ -864,13 +865,6 @@ function sep1(rule, delimiter) {
 
 function sep2(rule, delimiter) {
   return seq(rule, repeat1(seq(delimiter, rule)));
-}
-
-function _expr_op($, rule_op) {
-  return seq(
-    field("op_l", $._expression),
-    field("op", rule_op), // TODO this does not appear
-    field("op_r", $._expression));
 }
 
 function dispath($, trigger, rule) {

@@ -310,7 +310,7 @@
       },
       "else": {
         "multiple": false,
-        "required": false,
+        "required": true,
         "types": [
           {
             "type": "_expression",
