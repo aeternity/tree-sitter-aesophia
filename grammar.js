@@ -1,22 +1,3 @@
-const OP = {
-  '|>': 'PIPE',
-  '||': 'DISJ',
-  '&&': 'CONJ',
-  '<':  'CMP',
-  '>':  'CMP',
-  '=<': 'CMP',
-  '>=': 'CMP',
-  '==': 'CMP',
-  '!=': 'CMP',
-  '::': 'LIST',
-  '++': 'LIST',
-  '+':  'ADD',
-  '-':  ['ADD', 'NEG'],
-  '*':  'MUL',
-  '^':  'POW',
-  '!':  'NOT',
-};
-
 module.exports = grammar({
   name: 'aesophia',
 
@@ -53,19 +34,56 @@ module.exports = grammar({
   ],
 
   precedences: $ => [
-    [ // operators
-      'PIPE': {args: 2, bind: 'left', prec: 0},
-      'DISJ': {args: 2, bind: 'right', prec: 10},
-      'CONJ': {args: 2, bind: 'right', prec: 20},
-      'CMP':  {args: 2, bind: 'left', prec: 30},
-      'LIST': {args: 2, bind: 'right', prec: 40},
-      'ADD':  {args: 2, bind: 'left', prec: 50},
-      'NEG':  {args: 1, bind: 'none', prec: 60},
-      'MUL':  {args: 2, bind: 'left', prec: 70},
-      'POW':  {args: 2, bind: 'left', prec: 80},
-      'NOT':  {args: 2, bind: 'none', prec: 90},
+    [ // expressions
+      'LAMBDA',
+
+      // operators
+      'PIPE',
+      'DISJ',
+      'CONJ',
+      'CMP',
+      'LIST',
+      'ADD',
+      'NEG',
+      'MUL',
+      'POW',
+      'NOT',
+
+      'TYPED',
+      'GUARD',
+      'APPLICATION',
+      'UPDATE_ACCESS',
+      'PROJECTION',
+      'SWITCH',
+      'IF',
+      'BLOCK',
+      'ATOM',
+    ],
+    [ // patterns
+      'PAT_TYPED',
+      'PAT_APP',
+      'PAT_LET',
+      'PAT_OP',
+      'PAT_LIST',
+      'PAT_ATOM',
+    ],
+    [ // types
+      'TYPE_FUN',
+      'TYPE_TUPLE',
+      'TYPE_DOMAIN',
+      'TYPE_APP',
+      'TYPE_ATOM',
+    ],
+    [
+      'ATOM', 'PAT_ATOM'
+    ],
+    [ 'GUARD', 'TYPE'
+
+
     ]
   ],
+
+  word: $ => $._lex_low_id,
 
   rules: {
     source: $ => choice(
@@ -252,50 +270,52 @@ module.exports = grammar({
       $._expr_atom
     ),
 
-    expr_lambda: $ => prec.right(1000, seq(
+    expr_lambda: $ => prec.right('LAMBDA', seq(
       field("args", $.pat_args),
       '=>',
       field("body", $._expression)
     )),
 
-    expr_typed: $ => prec.left(1100, seq(
+    expr_typed: $ => prec.left('TYPED', seq(
       field("expr", $._expression), ':',
       field("type", $._type)
     )),
 
-    expr_op: $ => prec(1200, choice(
-      prec.left(1200, _expr_op($, '|>')
-               ),
-      prec.right(1210,
-                 _expr_op($, '||')
-                ),
-      prec.right(1220,
-                 _expr_op($, '&&')
-                ),
-      prec.left(1230,
-           _expr_op($, choice('<', '>', '=<', '>=', '==', '!='))
-          ),
-      prec.right(1240,
-                 _expr_op($, choice('::', '++'))
-                ),
-      prec.left(1250,
-                _expr_op($, choice('+', '-'))
-               ),
-      prec(1260,
-           seq('-', $._expression)
-          ),
-      prec.left(1270,
-                _expr_op($, choice('*', '/', 'mod'))
-               ),
-      prec.left(1280,
-                _expr_op($, '^')
-               ),
-      prec(1290,
-           seq('!', $._expression)
+    expr_op: $ => choice(
+      ...[
+        ['|>', 'PIPE', 'left'],
+        ['||', 'DISJ', 'right'],
+        ['&&', 'CONJ', 'right'],
+        ['<',  'CMP', 'left'],
+        ['>',  'CMP', 'left'],
+        ['=<', 'CMP', 'left'],
+        ['>=', 'CMP', 'left'],
+        ['==', 'CMP', 'left'],
+        ['!=', 'CMP', 'left'],
+        ['::', 'LIST', 'right'],
+        ['++', 'LIST', 'right'],
+        ['+',  'ADD', 'left'],
+        ['-',  'ADD', 'left'],
+        ['-',  'NEG', 'unary'],
+        ['*',  'MUL', 'left'],
+        ['^',  'POW', 'left'],
+        ['!',  'NOT', 'unary'],
+      ].map(([operator, precedence, assoc]) =>
+        (assoc === 'left' ? prec.left : assoc === 'right' ? prec.right : prec)(
+          precedence,
+          assoc === 'unary' ? seq(
+            field("op", operator),
+            field("op_r", $._expression),
+          ) : seq(
+            field("op_l", $._expression),
+            field("op", operator),
+            field("op_r", $._expression)
           )
-    )),
+        )
+      )
+    ),
 
-    expr_application: $ => prec.left(1300, seq(
+    expr_application: $ => prec.left('APPLICATION', seq(
       field("fun", $._expression),
       field("args", $.expr_args),
     )),
@@ -316,7 +336,7 @@ module.exports = grammar({
       field("value", $._expression)
     ),
 
-    expr_record_update: $ => prec(1400, seq(
+    expr_record_update: $ => prec.left('UPDATE_ACCESS', seq(
       field("record", $._expression),
       field("updates", $.record_field_updates),
     )),
@@ -338,36 +358,41 @@ module.exports = grammar({
       sep1(field("field", $.field_name), '.'),
     )),
 
-    expr_map_update: $ => prec(1400, seq(
+    expr_map_update: $ => prec.left('UPDATE_ACCESS', seq(
       field("map", $._expression),
       field("updates", $.map_updates),
     )),
 
     map_updates: $ => seq(
       '{',
-      repeat1(field("update", $.map_update)),
+      sep1(field("update", $.map_update), ','),
       '}'
     ),
 
     map_update: $ => seq(
-      $._expr_map_key, '=',
+      field("key", $.expr_map_key), '=',
       optional(seq('@', field("old_value", $.variable_name))),
       field("new_value", $._expression)
     ),
 
-    expr_map_access: $ => prec(1400, seq(
+    expr_map_access: $ => prec.left('UPDATE_ACCESS', seq(
       field("map", $._expression),
-      $._expr_map_key
+      field("key", $.expr_map_key)
     )),
 
-    _expr_map_key: $ => seq(
+    expr_map_key: $ => seq(
       '[',
       field("key", $._expression),
       optional(seq('=', field("default_value", $._expression))),
       ']',
     ),
 
-    expr_if: $ => prec.right(1000, seq(
+    expr_projection: $ => prec.left('PROJECTION', seq(
+      field("expr", $._expression), '.',
+      field("field", $.field_name)
+    )),
+
+    expr_if: $ => prec.right('IF', seq(
       'if', '(',
       field("cond", $._expression), ')',
       field("then", $._expression),
@@ -382,11 +407,11 @@ module.exports = grammar({
       field("then", $._expression)
     ),
 
-    expr_switch: $ => seq(
+    expr_switch: $ => prec('SWITCH', seq(
       'switch', '(',
       field("expr", $._expression), ')',
       field("cases", $.expr_cases)
-    ),
+    )),
 
     expr_cases: $ => maybe_block($, field("case", $.switch_case)),
 
@@ -400,10 +425,10 @@ module.exports = grammar({
       $.guarded_branches,
     )),
 
-    unguarded_branch: $ => seq(
+    unguarded_branch: $ => prec('GUARD', seq(
       '=>',
       field("body", $._expression)
-    ),
+    )),
 
     guarded_branches: $ => maybe_block($, seq('|', field("branch", $.guarded_branch))),
 
@@ -412,26 +437,25 @@ module.exports = grammar({
       field("body", $._expression)
     ),
 
-    expr_block: $ => block(
+    expr_block: $ => prec('BLOCK', block(
       $, field("stmt", $._statement)
-    ),
+    )),
 
-    _expr_atom: $ => prec(10000, choice(
+    _expr_atom: $ => choice(
       $.expr_variable,
       $.expr_record,
-      $.expr_projection,
       $.expr_map,
       $._expr_list,
       $.expr_tuple,
       $.expr_literal,
       $.expr_paren,
-    )),
+    ),
 
     expr_variable: $ => $._lex_qual_low_id,
 
     expr_record: $ => seq(
       '{',
-      repeat1(field("field", $.expr_record_field)), '}'
+      sep1(field("field", $.expr_record_field), ','), '}'
     ),
 
     expr_record_field: $ => seq(
@@ -439,18 +463,14 @@ module.exports = grammar({
       field("value", $._expression)
     ),
 
-    expr_projection: $ => prec.left(1500, seq(
-      field("expr", $._expression), '.',
-      field("field", $.field_name)
+    expr_map: $ => prec('ATOM', seq(
+      '{',
+      sep1(field("field", $.map_field), ','),
+      '}'
     )),
 
-    expr_map: $ => seq(
-      '{',
-      repeat1(field("field", $.map_field)), '}'
-    ),
-
     map_field: $ => seq(
-      field("key", $._expr_map_key), '=',
+      field("key", $.expr_map_key), '=',
       optional(seq('@', field("old_value", $._variable_name))),
       field("new_value", $._expression)
     ),
@@ -502,25 +522,25 @@ module.exports = grammar({
       field("cond", $._expression), ')'
     ),
 
-    expr_tuple: $ => prec(10000, seq(
+    expr_tuple: $ => prec('ATOM', seq(
       '(',
       sep2(field("elem", $._expression), ','),
       ')'
     )),
 
-    expr_literal: $ => prec(10000, $._literal),
+    expr_literal: $ => prec('ATOM', $._literal),
 
-    expr_paren: $ => seq(
+    expr_paren: $ => prec('ATOM', seq(
       '(',
       field("expr", $._expression),
       ')',
-    ),
+    )),
 
     //**************************************************************************
     // PATTERN
     //**************************************************************************
 
-    _pattern: $ => choice(
+    _pattern: $ => prec('PAT_ATOM', choice(
       $.pat_typed,
       $.pat_application,
       $.pat_let,
@@ -531,14 +551,14 @@ module.exports = grammar({
       $.pat_tuple,
       $.pat_record,
       $.pat_parens,
-    ),
+    )),
 
-    pat_typed: $ => prec.left(100, seq(
+    pat_typed: $ => prec.left('PAT_TYPED', seq(
       field("pattern", $._pattern), ':',
       field("type", $._type)
     )),
 
-    pat_application: $ => prec.left(200, seq(
+    pat_application: $ => prec.left('PAT_APP', seq(
       field("fun", $._pattern),
       field("args", $.pat_args),
     )),
@@ -549,21 +569,21 @@ module.exports = grammar({
       ')'
     ),
 
-    pat_let: $ => prec.left(200, seq(
+    pat_let: $ => prec.left('PAT_LET', seq(
       field("name", $.pat_variable), '=',
       field("pattern", $._pattern)
     )),
 
-    pat_operator: $ => prec.right(300, seq(
+    pat_operator: $ => prec.right('PAT_OP', seq(
       field("op_l", $._pattern), '::',
       field("op_r", $._pattern)
     )),
 
-    pat_literal: $ => prec(1000, $._literal),
+    pat_literal: $ => prec('PAT_ATOM', $._literal),
 
     pat_variable: $ => $._variable_name,
 
-    pat_list: $ => prec(1000, seq(
+    pat_list: $ => prec('PAT_ATOM', seq(
       '[',
       sep(field("elem", $._pattern), ','), ']'
     )),
@@ -678,19 +698,19 @@ module.exports = grammar({
     // TYPE
     //**************************************************************************
 
-    _type: $ => choice(
+    _type: $ => prec('TYPE_ATOM', choice(
       $.type_function,
       $.type_tuple,
       $._type_in_tuple
-    ),
+    )),
 
-    type_function: $ => prec.right(100, seq(
+    type_function: $ => prec.right('TYPE_FUN', seq(
       field("domain", $._type_domain),
       '=>',
       field("codomain", $._type)
     )),
 
-    _type_domain: $ => prec(150, choice(
+    _type_domain: $ => prec('TYPE_DOMAIN', choice(
       $.type_domain_zero,
       $.type_domain_one,
       $.type_domain_many
@@ -698,7 +718,7 @@ module.exports = grammar({
 
     type_domain_zero: $ => seq('(', ')'),
 
-    type_domain_one: $ => field("param", $._type),
+    type_domain_one: $ => prec('TYPE_DOMAIN', field("param", $._type)),
 
     type_domain_many: $ => seq(
       '(',
@@ -706,14 +726,14 @@ module.exports = grammar({
       ')'
     ),
 
-    type_tuple: $ => prec(200, sep2(field("elem", $._type_in_tuple), '*')),
+    type_tuple: $ => prec('TYPE_TUPLE', sep2(field("elem", $._type_in_tuple), '*')),
 
-    _type_in_tuple: $ => prec(201, choice(
+    _type_in_tuple: $ => choice(
       $.type_application,
       $._type_atom,
-    )),
+    ),
 
-    type_application: $ => prec.left(300, seq(
+    type_application: $ => prec.left('TYPE_APP', seq(
       field("fun", $._type_in_tuple),
       field("params", $.type_params),
     )),
@@ -724,11 +744,11 @@ module.exports = grammar({
       ')'
     ),
 
-    _type_atom: $ => choice(
+    _type_atom: $ => prec('TYPE_ATOM', choice(
       $.type_variable_poly,
       $.type_variable,
       $.type_paren,
-    ),
+    )),
 
     type_paren: $ => seq(
       '(',
