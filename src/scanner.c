@@ -40,6 +40,16 @@
 
 #define VEC_CLEAR(vec) (vec).len = 0;
 
+#define VEC_REVERSE(vec)                                                       \
+    do {                                                                       \
+        if ((vec).len > 1) {                                                   \
+            for (size_t i = 0, j = (vec).len - 1; i < j; i++, j--) {           \
+                uint8_t tmp = (vec).data[i];                                   \
+                (vec).data[i] = (vec).data[j];                                 \
+                (vec).data[j] = tmp;                                           \
+            }                                                                  \
+        }                                                                      \
+    } while (0)
 
 enum TokenType {
   BLOCK_OPEN,
@@ -59,9 +69,9 @@ typedef struct {
 vec;
 
 typedef struct {
+  uint32_t indent_length;
   vec indents;
-  size_t pending_dedents;
-  bool just_closed;
+  vec runback;
 }
 Scanner;
 
@@ -203,25 +213,20 @@ static bool scan(Scanner * scanner,
       goto NOT_ACCEPT;
     }
 
-    // First handle eventual runback pending_dedents
-    if (scanner->pending_dedents > 0 &&
-      valid_symbols[BLOCK_CLOSE]) {
-      printf("FOUND PENDING DEDENT\n");
-      scanner->pending_dedents--;
-      lexer->result_symbol = BLOCK_CLOSE;
-      goto ACCEPT;
+    // First handle eventual runback tokens, we saved on a previous scan op
+    if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 &&
+        valid_symbols[BLOCK_SEMI]) {
+        VEC_POP(scanner->runback);
+        lexer->result_symbol = BLOCK_SEMI;
+        return true;
     }
-
-    // We have just closed a block, so we can continue on the previous one
-    if (scanner->just_closed &&
-      valid_symbols[BLOCK_SEMI]) {
-      printf("RESUMING BLOCK AT %d\n", lexer->get_column(lexer));
-      scanner->just_closed = false;
-      lexer->result_symbol = BLOCK_SEMI;
-      goto ACCEPT;
+    if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
+        valid_symbols[BLOCK_CLOSE]) {
+        VEC_POP(scanner->runback);
+        lexer->result_symbol = BLOCK_CLOSE;
+        return true;
     }
-
-    scanner->just_closed = false;
+    VEC_CLEAR(scanner->runback);
 
     // Check if we have newlines and how much indentation
     bool has_line_end = false;
@@ -284,8 +289,14 @@ static bool scan(Scanner * scanner,
           goto NOT_ACCEPT;
         }
       } else if (lexer->eof(lexer)) {
-        indent = 0;
-
+        if (valid_symbols[BLOCK_CLOSE]) {
+          lexer->result_symbol = BLOCK_CLOSE;
+          goto ACCEPT;
+        }
+        if (valid_symbols[BLOCK_SEMI]) {
+          lexer->result_symbol = BLOCK_SEMI;
+          goto ACCEPT;
+        }
         if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
           lexer->result_symbol = BLOCK_COMMENT_CONTENT;
           goto ACCEPT;
@@ -294,6 +305,12 @@ static bool scan(Scanner * scanner,
       } else {
         break;
       }
+    }
+
+    if (valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) {
+        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+        lexer->result_symbol = BLOCK_OPEN;
+        return true;
     }
 
     if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
@@ -334,6 +351,7 @@ static bool scan(Scanner * scanner,
       lexer->result_symbol = END_OF_FILE;
       goto ACCEPT;
     }
+
     if (has_line_end && valid_symbols[INNOCENT_NEWLINE]) {
       // We are in a list or something
       lexer->mark_end(lexer);
@@ -341,63 +359,56 @@ static bool scan(Scanner * scanner,
       goto ACCEPT;
     }
 
-    if (has_line_end || lexer->eof(lexer)) {
+    if (has_line_end) {
 
-      if (indent > VEC_BACK(scanner->indents) &&
-        valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)
-          ) {
-        VEC_PUSH(scanner->indents, indent);
-        lexer->mark_end(lexer),
-        lexer->result_symbol = BLOCK_OPEN;
-        goto ACCEPT;
-      } else if (indent == VEC_BACK(scanner->indents) &&
-        valid_symbols[BLOCK_SEMI] && !lexer->eof(lexer)) {
-
-        /* // Don't insert BLOCK_SEMI when there is a line */
-        /* // comment incoming */
-
-        /* if (lexer->lookahead == '/') { */
-        /*   skip(lexer); */
-        /*   if (lexer->lookahead == '/') { */
-        /*     goto NOT_ACCEPT; */
-        /*   } */
-        /* } */
-        /* // Don't insert BLOCK_SEMI when there is a block */
-        /* // comment incoming */
-        /* if (lexer->lookahead == '/') { */
-        /*   skip(lexer); */
-        /*   if (lexer->lookahead == '*') { */
-        /*     goto NOT_ACCEPT; */
-        /*   } */
-        /* } */
-
-        lexer->mark_end(lexer),
-        lexer->result_symbol = BLOCK_SEMI;
-        goto ACCEPT;
-      } else if (indent < VEC_BACK(scanner->indents) &&
-                 valid_symbols[BLOCK_CLOSE]
-                 ) {
-        printf("LOWER INDENT: %d < %d\n", indent, VEC_BACK(scanner->indents));
-        while (indent < VEC_BACK(scanner->indents)) {
-          scanner->pending_dedents++;
-          VEC_POP(scanner->indents);
-
-          printf("DECREASED TO %d\n", VEC_BACK(scanner->indents));
+      while (scanner->indent_length <= VEC_BACK(scanner->indents)) {
+        if (scanner->indent_length == VEC_BACK(scanner->indents)) {
+          /* // Don't insert VIRTUAL_END_DECL when there is a line */
+          /* // comment incoming */
+          /* if (lexer->lookahead == '-') { */
+          /*   skip(lexer); */
+          /*   if (lexer->lookahead == '-') { */
+          /*     break; */
+          /*   } */
+          /* } */
+          /* // Don't insert VIRTUAL_END_DECL when there is a block */
+          /* // comment incoming */
+          /* if (lexer->lookahead == '{') { */
+          /*   skip(lexer); */
+          /*   if (lexer->lookahead == '-') { */
+          /*     break; */
+          /*   } */
+          /* } */
+          VEC_PUSH(scanner->runback, 0);
+          break;
         }
-        if (indent == VEC_BACK(scanner->indents)) {
-          printf("FOUND MATCHING\n");
-          lexer->mark_end(lexer),
-          lexer->result_symbol = BLOCK_CLOSE;
-          scanner->just_closed = true;
-          scanner->pending_dedents--;
-          goto ACCEPT;
-        } else {
-          printf("COULD NOT MATCH\n");
-          goto NOT_ACCEPT;
+        if (scanner->indent_length < VEC_BACK(scanner->indents)) {
+          VEC_POP(scanner->indents);
+          VEC_PUSH(scanner->runback, 1);
         }
       }
+
+      // Our list is the wrong way around, reverse it
+      VEC_REVERSE(scanner->runback);
+      // Handle the first runback token if we have them, if there are more
+      // they will be handled on the next scan operation
+      if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 &&
+          valid_symbols[BLOCK_SEMI]) {
+        VEC_POP(scanner->runback);
+        lexer->result_symbol = BLOCK_SEMI;
+        return true;
+      }
+      if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
+          valid_symbols[BLOCK_CLOSE]) {
+            VEC_POP(scanner->runback);
+            lexer->result_symbol = BLOCK_CLOSE;
+            return true;
+      }
+      if (lexer->eof(lexer) && valid_symbols[BLOCK_CLOSE]) {
+        lexer->result_symbol = BLOCK_CLOSE;
+        return true;
+      }
     }
-    printf("NO NEWLINES NOR EOFS FOUND\n");
 
  NOT_ACCEPT:
     printf("NOT ACCEPT\n\n");
@@ -439,36 +450,40 @@ bool tree_sitter_aesophia_external_scanner_scan(void * payload, TSLexer * lexer,
      */
 unsigned tree_sitter_aesophia_external_scanner_serialize(void * payload,
                                                          char * buffer) {
-  Scanner * scanner = (Scanner * ) payload;
-  size_t size = 0;
+  Scanner *scanner = (Scanner *)payload;
+    size_t size = 0;
 
-  if (3 + scanner->indents.len >=
-      TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
-    return 0;
-  }
+    if (3 + scanner->indents.len + scanner->runback.len >=
+        TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+        return 0;
+    }
 
-  size_t pending_dedents_length = sizeof(scanner->pending_dedents);
-  buffer[size++] = (char) pending_dedents_length;
-  if (pending_dedents_length > 0) {
-    memcpy( & buffer[size], & scanner->pending_dedents, pending_dedents_length);
-  }
-  size += pending_dedents_length;
+    size_t runback_count = scanner->runback.len;
+    if (runback_count > UINT8_MAX) {
+        runback_count = UINT8_MAX;
+    }
+    buffer[size++] = (char)runback_count;
 
-  size_t just_closed_length = sizeof(scanner->just_closed);
-  buffer[size++] = (char) just_closed_length;
-  if (just_closed_length > 0) {
-    memcpy( & buffer[size], & scanner->just_closed, just_closed_length);
-  }
-  size += just_closed_length;
+    if (runback_count > 0) {
+        memcpy(&buffer[size], scanner->runback.data, runback_count);
+    }
+    size += runback_count;
 
-  size_t iter = 1;
-  for (; iter != scanner->indents.len &&
-         size < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
-       ++iter) {
-    buffer[size++] = (char) scanner->indents.data[iter];
-  }
+    size_t indent_length_length = sizeof(scanner->indent_length);
+    buffer[size++] = (char)indent_length_length;
+    if (indent_length_length > 0) {
+        memcpy(&buffer[size], &scanner->indent_length, indent_length_length);
+    }
+    size += indent_length_length;
 
-  return size;
+    int iter = 1;
+    for (; iter != scanner->indents.len &&
+           size < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
+         ++iter) {
+        buffer[size++] = (char)scanner->indents.data[iter];
+    }
+
+    return size;
 }
 
 /**
@@ -480,40 +495,42 @@ unsigned tree_sitter_aesophia_external_scanner_serialize(void * payload,
 void tree_sitter_aesophia_external_scanner_deserialize(void * payload,
                                                        const char * buffer,
                                                        unsigned length) {
-  Scanner * scanner = (Scanner * ) payload;
-  VEC_CLEAR(scanner->indents);
-  VEC_PUSH(scanner->indents, 0);
-  scanner->pending_dedents = 0;
+  Scanner *scanner = (Scanner *)payload;
+    VEC_CLEAR(scanner->runback);
+    VEC_CLEAR(scanner->indents);
+    VEC_PUSH(scanner->indents, 0);
 
-  if (length == 0) {
-    return;
-  }
+    if (length == 0) {
+        return;
+    }
 
-  size_t size = 0;
+    size_t size = 0;
+    size_t runback_count = (unsigned char)buffer[size++];
+    VEC_GROW(scanner->runback, runback_count)
+    if (runback_count > 0) {
+        memcpy(scanner->runback.data, &buffer[size], runback_count);
+        scanner->runback.len = runback_count;
+        size += runback_count;
+    }
 
-  size_t pending_dedents_length = (unsigned char) buffer[size++];
-  if (pending_dedents_length > 0) {
-    memcpy( & scanner->pending_dedents, & buffer[size], pending_dedents_length);
-    size += pending_dedents_length;
-  }
+    size_t indent_length_length = (unsigned char)buffer[size++];
+    if (indent_length_length > 0) {
+        memcpy(&scanner->indent_length, &buffer[size], indent_length_length);
+        size += indent_length_length;
+    }
 
-  size_t just_closed_length = (unsigned char) buffer[size++];
-  if (just_closed_length > 0) {
-    memcpy( & scanner->just_closed, & buffer[size], just_closed_length);
-    size += just_closed_length;
-  }
-
-  for (; size < length; size++) {
-    VEC_PUSH(scanner->indents, (unsigned char) buffer[size]);
-  }
-  assert(size == length);
+    for (; size < length; size++) {
+        VEC_PUSH(scanner->indents, (unsigned char)buffer[size]);
+    }
+    assert(size == length);
 }
 
 /**
  * Destroy the state.
  */
-void tree_sitter_aesophia_external_scanner_destroy(void * payload) {
-  Scanner * scanner = (Scanner * ) payload;
-  VEC_FREE(scanner->indents);
-  free(scanner);
+void tree_sitter_elm_external_scanner_destroy(void *payload) {
+    Scanner *scanner = (Scanner *)payload;
+    VEC_FREE(scanner->indents);
+    VEC_FREE(scanner->runback);
+    free(scanner);
 }
