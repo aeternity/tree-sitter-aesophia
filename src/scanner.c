@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* #define DEBUG */
+#define DEBUG
 
 #define ever (;;)
 
@@ -43,6 +43,7 @@
 
 enum TokenType {
   BLOCK_OPEN,
+  BLOCK_INDENT,
   BLOCK_SEMI,
   BLOCK_CLOSE,
   BLOCK_COMMENT_CONTENT,
@@ -74,8 +75,9 @@ static void print_scanner(Scanner* scanner) {
 
 static void print_symbols(const bool *valid_symbols) {
   printf("VALID SYMBOLS:\n");
-  printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
   printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
+  printf("    BLOCK_INDENT: %d\n", valid_symbols[BLOCK_INDENT]);
+  printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
   printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
   printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
   printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
@@ -85,6 +87,9 @@ static void print_symbol(int t) {
   switch(t) {
   case BLOCK_OPEN:
     printf("BLOCK_OPEN");
+    break;
+  case BLOCK_INDENT:
+    printf("BLOCK_INDENT");
     break;
   case BLOCK_SEMI:
     printf("BLOCK_SEMI");
@@ -194,6 +199,14 @@ static bool scan(Scanner * scanner,
       goto ACCEPT;
     }
 
+    if (lexer->eof(lexer) &&
+      valid_symbols[BLOCK_CLOSE]) {
+      printf("EOF DEDENT\n");
+      scanner->pending_dedents--;
+      lexer->result_symbol = BLOCK_CLOSE;
+      goto ACCEPT;
+    }
+
     // Check if we have newlines and how much indentation
     bool has_line_end = false;
     bool can_call_mark_end = true;
@@ -209,6 +222,11 @@ static bool scan(Scanner * scanner,
         // No tabs
         goto NOT_ACCEPT;
       } else if (lexer->lookahead == '\n') {
+        if(valid_symbols[BLOCK_OPEN]) {
+          lexer->mark_end(lexer);
+          lexer->result_symbol = BLOCK_OPEN;
+          goto ACCEPT;
+        }
         // Calculate indent
         skip(lexer);
         has_line_end = true;
@@ -298,9 +316,9 @@ static bool scan(Scanner * scanner,
     if (has_line_end) {
       printf("NEWLINE; indent %d\n", indent);
       if (indent > VEC_BACK(scanner->indents) &&
-        valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) {
+        valid_symbols[BLOCK_INDENT] && !lexer->eof(lexer)) {
         VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-        lexer->result_symbol = BLOCK_OPEN;
+        lexer->result_symbol = BLOCK_INDENT;
         goto ACCEPT;
       } else if (indent == VEC_BACK(scanner->indents) &&
         valid_symbols[BLOCK_SEMI] && !lexer->eof(lexer)) {

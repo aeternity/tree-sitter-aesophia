@@ -29,12 +29,13 @@ module.exports = grammar({
     $.doc_comment,
     $.block_comment,
     $.line_comment,
-    // /[\s\uFEFF\u2060\u200B]|\\\r?\n/,
     /[\s\uFEFF\u2060\u200B]/,
+
   ],
 
   externals: $ => [
     $._block_open,
+    $._block_indent,
     $._block_semi,
     $._block_close,
     $._block_comment_content,
@@ -49,27 +50,9 @@ module.exports = grammar({
   ],
 
   precedences: $ => [
-    [ // statements
-      'STMT_EXPR',
-      'STMT_IF',
-      'STMT_LET',
-    ],
-    [ // types
-      'TYPE_ATOM',
-      'TYPE_APP',
-      'TYPE_DOMAIN',
-      'TYPE_TUPLE',
-      'TYPE_FUN',
-    ],
-    [ // patterns
-      'PAT_ATOM',
-      'PAT_LIST',
-      'PAT_OP',
-      'PAT_LET',
-      'PAT_APP',
-      'PAT_TYPED',
-    ],
     [ // expressions
+
+      'EXPR_LAMBDA',
       'EXPR_ATOM',
       'EXPR_PROJECTION',
       'EXPR_APP',
@@ -91,13 +74,33 @@ module.exports = grammar({
       'EXPR_IF',
       'EXPR_SWITCH',
       'EXPR_BLOCK',
-      'EXPR_LAMBDA'
+    ],
+    [ // statements
+      'STMT_EXPR',
+      'STMT_IF',
+      'STMT_LET',
+    ],
+    [ // types
+      'TYPE_ATOM',
+      'TYPE_APP',
+      'TYPE_DOMAIN',
+      'TYPE_TUPLE',
+      'TYPE_FUN',
+    ],
+    [ // patterns
+      'PAT_ATOM',
+      'PAT_LIST',
+      'PAT_OP',
+      'PAT_LET',
+      'PAT_APP',
+      'PAT_TYPED',
     ],
     // conflicts
     [ 'EXPR_ATOM', 'PAT_ATOM' ],
     [ 'EXPR_TYPED', 'TYPE_DOMAIN' ],
     [ 'PAT_TYPED', 'TYPE_DOMAIN' ],
     [ 'EXPR_IF', 'STMT_IF' ],
+    [ 'PAT_ARGS', 'EXPR_ATOM'],
   ],
 
   word: $ => $._lex_low_id,
@@ -273,21 +276,21 @@ module.exports = grammar({
     //**************************************************************************
 
     _expression_body: $ => prec('EXPR_BLOCK', choice(
-      $.expr_block,
+      // $.expr_block,
       $._expression,
     )),
 
     _expression: $ => choice(
       $.expr_lambda,
-      $.expr_typed,
-      $.expr_op,
-      $.expr_application,
-      $.expr_record_update,
-      $.expr_map_update,
-      $.expr_map_access,
-      $.expr_projection,
-      $.expr_switch,
-      $.expr_if,
+      // $.expr_typed,
+      // $.expr_op,
+      // $.expr_application,
+      // $.expr_record_update,
+      // $.expr_map_update,
+      // $.expr_map_access,
+      // $.expr_projection,
+      // $.expr_switch,
+      // $.expr_if,
       $._expr_atom
     ),
 
@@ -478,12 +481,13 @@ module.exports = grammar({
       $.expr_paren,
     ),
 
-    expr_variable: $ => $._lex_qual_low_id,
+    expr_variable: $ => prec('EXPR_ATOM', $._lex_qual_low_id),
 
-    expr_record: $ => seq(
+    expr_record: $ => prec('EXPR_ATOM', seq(
       '{',
-      sep1(field("field", $.expr_record_field), ','), '}'
-    ),
+      sep1(field("field", $.expr_record_field), ','),
+      '}'
+    )),
 
     expr_record_field: $ => seq(
       field("name", $.field_name), '=',
@@ -514,18 +518,18 @@ module.exports = grammar({
       ']'
     )),
 
-    expr_list_range: $ => seq(
+    expr_list_range: $ => prec('EXPR_ATOM', seq(
       '[',
       field("start", $._expression), '..',
       field("end", $._expression), ']'
-    ),
+    )),
 
-    expr_list_comprehension: $ => seq(
+    expr_list_comprehension: $ => prec('EXPR_ATOM', seq(
       '[',
       field("yield", $._expression), '|',
       sep1(field("filter", $._list_comprehension_filter), ','),
       ']'
-    ),
+    )),
 
     _list_comprehension_filter: $ => choice(
       $.list_comprehension_bind,
@@ -546,7 +550,8 @@ module.exports = grammar({
 
     list_comprehension_if: $ => seq(
       'if', '(',
-      field("cond", $._expression), ')'
+      field("cond", $._expression),
+      ')'
     ),
 
     expr_tuple: $ => prec('EXPR_ATOM', seq(
@@ -590,11 +595,11 @@ module.exports = grammar({
       field("args", $.pat_args),
     )),
 
-    pat_args: $ => seq(
+    pat_args: $ => prec('PAT_ARGS', seq(
       '(',
       sep(field("arg", $._pattern), ','),
       ')'
-    ),
+    )),
 
     pat_let: $ => prec.left('PAT_LET', seq(
       field("name", $.pat_variable), '=',
@@ -608,35 +613,35 @@ module.exports = grammar({
 
     pat_literal: $ => prec('PAT_ATOM', $._literal),
 
-    pat_variable: $ => $._variable_name,
+    pat_variable: $ => prec('PAT_ATOM', $._variable_name),
 
     pat_list: $ => prec('PAT_ATOM', seq(
       '[',
       sep(field("elem", $._pattern), ','), ']'
     )),
 
-    pat_tuple: $ => seq(
+    pat_tuple: $ => prec('PAT_ATOM', seq(
       '(',
       sep2(field("elem", $._pattern), ','),
       ')'
-    ),
+    )),
 
-    pat_record: $ => seq(
+    pat_record: $ => prec('PAT_ATOM', seq(
       '{',
       sep1(field("field", $.pat_record_field), ','),
       '}'
-    ),
+    )),
 
     pat_record_field: $ => seq(
       field("path", $.field_path), '=',
       field("pattern", $._pattern)
     ),
 
-    pat_map: $ => seq(
+    pat_map: $ => prec('PAT_ATOM', seq(
       '{',
       sep1(field("field", $.pat_map_field), ','),
       '}'
-    ),
+    )),
 
     pat_map_field: $ => seq(
       '[',
@@ -644,11 +649,11 @@ module.exports = grammar({
       field("pattern", $._pattern),
     ),
 
-    pat_parens: $ => seq(
+    pat_parens: $ => prec('PAT_ATOM', seq(
       '(',
       field("pattern", $._pattern),
       ')'
-    ),
+    )),
 
     //**************************************************************************
     // LITERAL
@@ -914,14 +919,6 @@ module.exports = grammar({
     seq("/*", $._block_comment_content, "*/"),
 
     line_comment: ($) => token(seq(/\/\//, repeat(/[^\n]/))),
-
-    _block_open: $ => 'begin',
-    _block_close: $ => 'end',
-    _block_semi: $ => ';'
-
-    // _block_open: $ => $._indent,
-    // _block_close: $ => $._dedent,
-    // _block_semi: $ => $._newline
   }
 });
 
@@ -929,6 +926,7 @@ module.exports = grammar({
 function block($, rule) {
   return seq(
     $._block_open,
+    $._block_indent,
     sep1(rule, $._block_semi),
     $._block_close
   );

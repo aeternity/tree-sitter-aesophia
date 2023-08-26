@@ -4,14 +4,6 @@
     "named": true,
     "subtypes": [
       {
-        "type": "expr_application",
-        "named": true
-      },
-      {
-        "type": "expr_if",
-        "named": true
-      },
-      {
         "type": "expr_lambda",
         "named": true
       },
@@ -36,23 +28,7 @@
         "named": true
       },
       {
-        "type": "expr_map_access",
-        "named": true
-      },
-      {
-        "type": "expr_map_update",
-        "named": true
-      },
-      {
-        "type": "expr_op",
-        "named": true
-      },
-      {
         "type": "expr_paren",
-        "named": true
-      },
-      {
-        "type": "expr_projection",
         "named": true
       },
       {
@@ -60,19 +36,7 @@
         "named": true
       },
       {
-        "type": "expr_record_update",
-        "named": true
-      },
-      {
-        "type": "expr_switch",
-        "named": true
-      },
-      {
         "type": "expr_tuple",
-        "named": true
-      },
-      {
-        "type": "expr_typed",
         "named": true
       },
       {
@@ -217,32 +181,6 @@
     "fields": {}
   },
   {
-    "type": "expr_application",
-    "named": true,
-    "fields": {
-      "args": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "expr_args",
-            "named": true
-          }
-        ]
-      },
-      "fun": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expr_args",
     "named": true,
     "fields": {
@@ -263,22 +201,6 @@
     }
   },
   {
-    "type": "expr_block",
-    "named": true,
-    "fields": {
-      "stmt": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_statement",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expr_cases",
     "named": true,
     "fields": {
@@ -288,50 +210,6 @@
         "types": [
           {
             "type": "switch_case",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "expr_if",
-    "named": true,
-    "fields": {
-      "cond": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "else": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "expr_block",
-            "named": true
-          }
-        ]
-      },
-      "then": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "expr_block",
             "named": true
           }
         ]
@@ -358,10 +236,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "expr_block",
             "named": true
           }
         ]
@@ -512,32 +386,6 @@
     }
   },
   {
-    "type": "expr_map_access",
-    "named": true,
-    "fields": {
-      "key": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "expr_map_key",
-            "named": true
-          }
-        ]
-      },
-      "map": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expr_map_key",
     "named": true,
     "fields": {
@@ -557,32 +405,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "expr_map_update",
-    "named": true,
-    "fields": {
-      "map": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "updates": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "map_updates",
             "named": true
           }
         ]
@@ -616,114 +438,6 @@
     }
   },
   {
-    "type": "expr_op",
-    "named": true,
-    "fields": {
-      "op": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "op_add",
-            "named": true
-          },
-          {
-            "type": "op_and",
-            "named": true
-          },
-          {
-            "type": "op_cat",
-            "named": true
-          },
-          {
-            "type": "op_cons",
-            "named": true
-          },
-          {
-            "type": "op_div",
-            "named": true
-          },
-          {
-            "type": "op_eq",
-            "named": true
-          },
-          {
-            "type": "op_ge",
-            "named": true
-          },
-          {
-            "type": "op_gt",
-            "named": true
-          },
-          {
-            "type": "op_le",
-            "named": true
-          },
-          {
-            "type": "op_lt",
-            "named": true
-          },
-          {
-            "type": "op_mod",
-            "named": true
-          },
-          {
-            "type": "op_mul",
-            "named": true
-          },
-          {
-            "type": "op_neq",
-            "named": true
-          },
-          {
-            "type": "op_not",
-            "named": true
-          },
-          {
-            "type": "op_or",
-            "named": true
-          },
-          {
-            "type": "op_pipe",
-            "named": true
-          },
-          {
-            "type": "op_pow",
-            "named": true
-          },
-          {
-            "type": "op_sub",
-            "named": true
-          }
-        ]
-      },
-      "op_l": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "op_r": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "expr_block",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expr_paren",
     "named": true,
     "fields": {
@@ -733,32 +447,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "expr_projection",
-    "named": true,
-    "fields": {
-      "expr": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "field": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "field_name",
             "named": true
           }
         ]
@@ -808,58 +496,6 @@
     }
   },
   {
-    "type": "expr_record_update",
-    "named": true,
-    "fields": {
-      "record": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "updates": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "record_field_updates",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "expr_switch",
-    "named": true,
-    "fields": {
-      "cases": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "expr_cases",
-            "named": true
-          }
-        ]
-      },
-      "expr": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expr_tuple",
     "named": true,
     "fields": {
@@ -869,32 +505,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "expr_typed",
-    "named": true,
-    "fields": {
-      "expr": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "type": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_type",
             "named": true
           }
         ]
@@ -973,10 +583,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "expr_block",
             "named": true
           }
         ]
@@ -2076,10 +1682,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "expr_block",
             "named": true
           }
         ]
