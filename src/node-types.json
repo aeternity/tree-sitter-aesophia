@@ -504,18 +504,6 @@
           "named": true
         },
         {
-          "type": "NL_CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_OPEN",
-          "named": true
-        },
-        {
-          "type": "NL_SEMI",
-          "named": true
-        },
-        {
           "type": "OPEN",
           "named": true
         },
@@ -547,18 +535,6 @@
       "types": [
         {
           "type": "CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_OPEN",
-          "named": true
-        },
-        {
-          "type": "NL_SEMI",
           "named": true
         },
         {
@@ -1315,18 +1291,6 @@
           "named": true
         },
         {
-          "type": "NL_CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_OPEN",
-          "named": true
-        },
-        {
-          "type": "NL_SEMI",
-          "named": true
-        },
-        {
           "type": "OPEN",
           "named": true
         },
@@ -1420,18 +1384,6 @@
       "types": [
         {
           "type": "CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_OPEN",
-          "named": true
-        },
-        {
-          "type": "NL_SEMI",
           "named": true
         },
         {
@@ -2122,18 +2074,6 @@
           "named": true
         },
         {
-          "type": "NL_CLOSE",
-          "named": true
-        },
-        {
-          "type": "NL_OPEN",
-          "named": true
-        },
-        {
-          "type": "NL_SEMI",
-          "named": true
-        },
-        {
           "type": "OPEN",
           "named": true
         },
@@ -2784,18 +2724,6 @@
   {
     "type": "LITERAL",
     "named": false
-  },
-  {
-    "type": "NL_CLOSE",
-    "named": true
-  },
-  {
-    "type": "NL_OPEN",
-    "named": true
-  },
-  {
-    "type": "NL_SEMI",
-    "named": true
   },
   {
     "type": "OPEN",

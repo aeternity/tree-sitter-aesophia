@@ -42,7 +42,7 @@ module.exports = grammar({
   ],
 
   externals: $ => [
-    $._newline,
+    // $._newline,
     $._block_open,
     $._block_semi,
     $._block_close,

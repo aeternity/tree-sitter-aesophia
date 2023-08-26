@@ -368,15 +368,6 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "_newline"
-                  },
-                  "named": true,
-                  "value": "NL_OPEN"
-                },
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
                     "name": "_block_open"
                   },
                   "named": true,
@@ -399,27 +390,13 @@
                         "type": "SEQ",
                         "members": [
                           {
-                            "type": "SEQ",
-                            "members": [
-                              {
-                                "type": "ALIAS",
-                                "content": {
-                                  "type": "SYMBOL",
-                                  "name": "_newline"
-                                },
-                                "named": true,
-                                "value": "NL_SEMI"
-                              },
-                              {
-                                "type": "ALIAS",
-                                "content": {
-                                  "type": "SYMBOL",
-                                  "name": "_block_semi"
-                                },
-                                "named": true,
-                                "value": "SEMI"
-                              }
-                            ]
+                            "type": "ALIAS",
+                            "content": {
+                              "type": "SYMBOL",
+                              "name": "_block_semi"
+                            },
+                            "named": true,
+                            "value": "SEMI"
                           },
                           {
                             "type": "FIELD",
@@ -431,23 +408,6 @@
                           }
                         ]
                       }
-                    }
-                  ]
-                },
-                {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "ALIAS",
-                      "content": {
-                        "type": "SYMBOL",
-                        "name": "_newline"
-                      },
-                      "named": true,
-                      "value": "NL_CLOSE"
-                    },
-                    {
-                      "type": "BLANK"
                     }
                   ]
                 },
@@ -549,15 +509,6 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "_newline"
-                  },
-                  "named": true,
-                  "value": "NL_OPEN"
-                },
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
                     "name": "_block_open"
                   },
                   "named": true,
@@ -589,27 +540,13 @@
                         "type": "SEQ",
                         "members": [
                           {
-                            "type": "SEQ",
-                            "members": [
-                              {
-                                "type": "ALIAS",
-                                "content": {
-                                  "type": "SYMBOL",
-                                  "name": "_newline"
-                                },
-                                "named": true,
-                                "value": "NL_SEMI"
-                              },
-                              {
-                                "type": "ALIAS",
-                                "content": {
-                                  "type": "SYMBOL",
-                                  "name": "_block_semi"
-                                },
-                                "named": true,
-                                "value": "SEMI"
-                              }
-                            ]
+                            "type": "ALIAS",
+                            "content": {
+                              "type": "SYMBOL",
+                              "name": "_block_semi"
+                            },
+                            "named": true,
+                            "value": "SEMI"
                           },
                           {
                             "type": "FIELD",
@@ -630,23 +567,6 @@
                           }
                         ]
                       }
-                    }
-                  ]
-                },
-                {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "ALIAS",
-                      "content": {
-                        "type": "SYMBOL",
-                        "name": "_newline"
-                      },
-                      "named": true,
-                      "value": "NL_CLOSE"
-                    },
-                    {
-                      "type": "BLANK"
                     }
                   ]
                 },
@@ -2461,15 +2381,6 @@
               "type": "ALIAS",
               "content": {
                 "type": "SYMBOL",
-                "name": "_newline"
-              },
-              "named": true,
-              "value": "NL_OPEN"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "SYMBOL",
                 "name": "_block_open"
               },
               "named": true,
@@ -2492,27 +2403,13 @@
                     "type": "SEQ",
                     "members": [
                       {
-                        "type": "SEQ",
-                        "members": [
-                          {
-                            "type": "ALIAS",
-                            "content": {
-                              "type": "SYMBOL",
-                              "name": "_newline"
-                            },
-                            "named": true,
-                            "value": "NL_SEMI"
-                          },
-                          {
-                            "type": "ALIAS",
-                            "content": {
-                              "type": "SYMBOL",
-                              "name": "_block_semi"
-                            },
-                            "named": true,
-                            "value": "SEMI"
-                          }
-                        ]
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_block_semi"
+                        },
+                        "named": true,
+                        "value": "SEMI"
                       },
                       {
                         "type": "FIELD",
@@ -2524,23 +2421,6 @@
                       }
                     ]
                   }
-                }
-              ]
-            },
-            {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "_newline"
-                  },
-                  "named": true,
-                  "value": "NL_CLOSE"
-                },
-                {
-                  "type": "BLANK"
                 }
               ]
             },
@@ -2634,15 +2514,6 @@
               "type": "ALIAS",
               "content": {
                 "type": "SYMBOL",
-                "name": "_newline"
-              },
-              "named": true,
-              "value": "NL_OPEN"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "SYMBOL",
                 "name": "_block_open"
               },
               "named": true,
@@ -2674,27 +2545,13 @@
                     "type": "SEQ",
                     "members": [
                       {
-                        "type": "SEQ",
-                        "members": [
-                          {
-                            "type": "ALIAS",
-                            "content": {
-                              "type": "SYMBOL",
-                              "name": "_newline"
-                            },
-                            "named": true,
-                            "value": "NL_SEMI"
-                          },
-                          {
-                            "type": "ALIAS",
-                            "content": {
-                              "type": "SYMBOL",
-                              "name": "_block_semi"
-                            },
-                            "named": true,
-                            "value": "SEMI"
-                          }
-                        ]
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_block_semi"
+                        },
+                        "named": true,
+                        "value": "SEMI"
                       },
                       {
                         "type": "SEQ",
@@ -2715,23 +2572,6 @@
                       }
                     ]
                   }
-                }
-              ]
-            },
-            {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "_newline"
-                  },
-                  "named": true,
-                  "value": "NL_CLOSE"
-                },
-                {
-                  "type": "BLANK"
                 }
               ]
             },
@@ -2829,15 +2669,6 @@
             "type": "ALIAS",
             "content": {
               "type": "SYMBOL",
-              "name": "_newline"
-            },
-            "named": true,
-            "value": "NL_OPEN"
-          },
-          {
-            "type": "ALIAS",
-            "content": {
-              "type": "SYMBOL",
               "name": "_block_open"
             },
             "named": true,
@@ -2860,27 +2691,13 @@
                   "type": "SEQ",
                   "members": [
                     {
-                      "type": "SEQ",
-                      "members": [
-                        {
-                          "type": "ALIAS",
-                          "content": {
-                            "type": "SYMBOL",
-                            "name": "_newline"
-                          },
-                          "named": true,
-                          "value": "NL_SEMI"
-                        },
-                        {
-                          "type": "ALIAS",
-                          "content": {
-                            "type": "SYMBOL",
-                            "name": "_block_semi"
-                          },
-                          "named": true,
-                          "value": "SEMI"
-                        }
-                      ]
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_block_semi"
+                      },
+                      "named": true,
+                      "value": "SEMI"
                     },
                     {
                       "type": "FIELD",
@@ -2892,23 +2709,6 @@
                     }
                   ]
                 }
-              }
-            ]
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "ALIAS",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "_newline"
-                },
-                "named": true,
-                "value": "NL_CLOSE"
-              },
-              {
-                "type": "BLANK"
               }
             ]
           },
@@ -5433,10 +5233,6 @@
     ]
   ],
   "externals": [
-    {
-      "type": "SYMBOL",
-      "name": "_newline"
-    },
     {
       "type": "SYMBOL",
       "name": "_block_open"
