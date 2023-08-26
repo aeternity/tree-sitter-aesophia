@@ -553,7 +553,7 @@
     "named": true,
     "fields": {
       "cond": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -564,7 +564,7 @@
       },
       "else": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "_expression",
@@ -577,7 +577,7 @@
         ]
       },
       "then": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -2795,6 +2795,10 @@
   },
   {
     "type": "if",
+    "named": false
+  },
+  {
+    "type": "iff",
     "named": false
   },
   {

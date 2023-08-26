@@ -47,6 +47,7 @@ enum TokenType {
   BLOCK_CLOSE,
   INNOCENT_NEWLINE,
   BLOCK_COMMENT_CONTENT,
+  END_OF_FILE,
   ERROR_STATE
 };
 
@@ -60,6 +61,7 @@ vec;
 typedef struct {
   vec indents;
   size_t pending_dedents;
+  bool just_closed;
 }
 Scanner;
 
@@ -83,6 +85,7 @@ static void print_symbols(const bool *valid_symbols) {
     printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
     printf("    INNOCENT NL: %d\n", valid_symbols[INNOCENT_NEWLINE]);
     printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
+    printf("    EOF: %d\n", valid_symbols[END_OF_FILE]);
     printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
   }
 }
@@ -103,6 +106,9 @@ static void print_symbol(int t) {
     break;
   case BLOCK_COMMENT_CONTENT:
     printf("BLOCK_COMMENT_CONTENT");
+    break;
+  case END_OF_FILE:
+    printf("EOF");
     break;
   case ERROR_STATE:
     printf("ERROR_STAT");
@@ -132,10 +138,12 @@ static bool scan_block_comment(TSLexer * lexer) {
 
   // Check if we are indeed opening a new comment block
   if (lexer->lookahead != '/') {
+    printf("DID NOT OPEN /\n");
     goto NOT_ACCEPT;
   }
   advance(lexer);
   if (lexer->lookahead != '*') {
+    printf("DID NOT OPEN *\n");
     goto NOT_ACCEPT;
   }
   advance(lexer);
@@ -191,6 +199,7 @@ static bool scan(Scanner * scanner,
     printf("\n");
 
     if (valid_symbols[ERROR_STATE]) {
+      printf("FAIL DUE TO ERROR STATE\n");
       goto NOT_ACCEPT;
     }
 
@@ -202,6 +211,17 @@ static bool scan(Scanner * scanner,
       lexer->result_symbol = BLOCK_CLOSE;
       goto ACCEPT;
     }
+
+    // We have just closed a block, so we can continue on the previous one
+    if (scanner->just_closed &&
+      valid_symbols[BLOCK_SEMI]) {
+      printf("RESUMING BLOCK AT %d\n", lexer->get_column(lexer));
+      scanner->just_closed = false;
+      lexer->result_symbol = BLOCK_SEMI;
+      goto ACCEPT;
+    }
+
+    scanner->just_closed = false;
 
     // Check if we have newlines and how much indentation
     bool has_line_end = false;
@@ -216,6 +236,7 @@ static bool scan(Scanner * scanner,
         skip(lexer);
       } else if (lexer->lookahead == '\t') {
         // No tabs
+        printf("FOUND TAB\n");
         goto NOT_ACCEPT;
       } else if (lexer->lookahead == '\n') {
         // Calculate indent
@@ -248,6 +269,7 @@ static bool scan(Scanner * scanner,
           advance(lexer);
           advance_to_line_end(lexer);
         } else {
+          printf("NOT A LINE COMMENT\n");
           goto NOT_ACCEPT;
         }
       } else if (valid_symbols[BLOCK_COMMENT_CONTENT] &&
@@ -258,6 +280,7 @@ static bool scan(Scanner * scanner,
           lexer->result_symbol = BLOCK_COMMENT_CONTENT;
           goto ACCEPT;
         } else {
+          printf("NOT A BLOCK COMMENT\n");
           goto NOT_ACCEPT;
         }
       } else if (lexer->eof(lexer)) {
@@ -275,7 +298,8 @@ static bool scan(Scanner * scanner,
 
     if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
         if (!can_call_mark_end) {
-            goto NOT_ACCEPT;
+          printf("CAN'T CALL MARK END\n");
+          goto NOT_ACCEPT;
         }
         lexer->mark_end(lexer);
         while(true) {
@@ -303,25 +327,32 @@ static bool scan(Scanner * scanner,
         goto ACCEPT;
     }
 
-    if (has_line_end || lexer->eof(lexer)) {
-      printf("AFTER NEWLINE; indent %d\n", indent);
+    printf("SCANNED: NL=%d, EOF=%d, indent=%d\n", has_line_end, lexer->eof(lexer), indent);
 
-      if (has_line_end && valid_symbols[INNOCENT_NEWLINE]) {
-        // We are in a list or something
-        lexer->mark_end(lexer);
-        lexer->result_symbol = INNOCENT_NEWLINE;
-        goto ACCEPT;
-      }
+    if(lexer->eof(lexer) &&
+       valid_symbols[END_OF_FILE]) {
+      lexer->result_symbol = END_OF_FILE;
+      goto ACCEPT;
+    }
+    if (has_line_end && valid_symbols[INNOCENT_NEWLINE]) {
+      // We are in a list or something
+      lexer->mark_end(lexer);
+      lexer->result_symbol = INNOCENT_NEWLINE;
+      goto ACCEPT;
+    }
+
+    if (has_line_end || lexer->eof(lexer)) {
 
       if (indent > VEC_BACK(scanner->indents) &&
         valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)
           ) {
-        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+        VEC_PUSH(scanner->indents, indent);
         lexer->mark_end(lexer),
         lexer->result_symbol = BLOCK_OPEN;
         goto ACCEPT;
       } else if (indent == VEC_BACK(scanner->indents) &&
         valid_symbols[BLOCK_SEMI] && !lexer->eof(lexer)) {
+
         /* // Don't insert BLOCK_SEMI when there is a line */
         /* // comment incoming */
 
@@ -340,6 +371,7 @@ static bool scan(Scanner * scanner,
         /*   } */
         /* } */
 
+        lexer->mark_end(lexer),
         lexer->result_symbol = BLOCK_SEMI;
         goto ACCEPT;
       } else if (indent < VEC_BACK(scanner->indents) &&
@@ -354,17 +386,21 @@ static bool scan(Scanner * scanner,
         }
         if (indent == VEC_BACK(scanner->indents)) {
           printf("FOUND MATCHING\n");
+          lexer->mark_end(lexer),
           lexer->result_symbol = BLOCK_CLOSE;
+          scanner->just_closed = true;
           scanner->pending_dedents--;
           goto ACCEPT;
         } else {
+          printf("COULD NOT MATCH\n");
           goto NOT_ACCEPT;
         }
       }
     }
+    printf("NO NEWLINES NOR EOFS FOUND\n");
 
  NOT_ACCEPT:
-    printf("NOT\n\n");
+    printf("NOT ACCEPT\n\n");
     return false;
  ACCEPT:
     printf("ACCEPT AT %d: ", lexer->get_column(lexer));
@@ -418,7 +454,14 @@ unsigned tree_sitter_aesophia_external_scanner_serialize(void * payload,
   }
   size += pending_dedents_length;
 
-  int iter = 1;
+  size_t just_closed_length = sizeof(scanner->just_closed);
+  buffer[size++] = (char) just_closed_length;
+  if (just_closed_length > 0) {
+    memcpy( & buffer[size], & scanner->just_closed, just_closed_length);
+  }
+  size += just_closed_length;
+
+  size_t iter = 1;
   for (; iter != scanner->indents.len &&
          size < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
        ++iter) {
@@ -452,6 +495,12 @@ void tree_sitter_aesophia_external_scanner_deserialize(void * payload,
   if (pending_dedents_length > 0) {
     memcpy( & scanner->pending_dedents, & buffer[size], pending_dedents_length);
     size += pending_dedents_length;
+  }
+
+  size_t just_closed_length = (unsigned char) buffer[size++];
+  if (just_closed_length > 0) {
+    memcpy( & scanner->just_closed, & buffer[size], just_closed_length);
+    size += just_closed_length;
   }
 
   for (; size < length; size++) {

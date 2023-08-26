@@ -49,6 +49,7 @@ module.exports = grammar({
     $._block_close,
     $._innocent_newline,
     $._block_comment_content,
+    $._eof,
     $._error_state,
   ],
 
@@ -108,6 +109,7 @@ module.exports = grammar({
       'OP_PIPE',
 
       'EXPR_IF',
+
       'EXPR_SWITCH',
       'EXPR_LAMBDA',
     ],
@@ -151,7 +153,7 @@ module.exports = grammar({
   word: $ => $._lex_low_id,
 
   rules: {
-    source: $ => seq($._dispath, optional($._innocent_newline)),
+    source: $ => seq($._dispath, repeat('\n')),
 
     _dispath: $ => choice(
       dispath('PATTERN', $._pattern),
@@ -322,7 +324,6 @@ module.exports = grammar({
     )),
 
     _expression: $ => choice(
-
       $.expr_lambda,
       $.expr_typed,
       $.expr_op,
@@ -454,14 +455,22 @@ module.exports = grammar({
       'if',
       parens(field("cond", $._expression)),
       field("then", $._expression_body),
-      seq('else', field("else", $._expression_body))
+      optional($._innocent_newline),
+      choice($._expr_elif, $._expr_else),
     )),
 
     _expr_elif: $ => prec('EXPR_IF', seq(
       'elif',
       parens(field("cond", $._expression)),
-      field("then", $._expression_body)
+      field("then", $._expression_body),
+      optional($._innocent_newline),
+      choice($._expr_elif, $._expr_else),
     )),
+
+    _expr_else: $ => seq(
+      'else',
+      field("else", $._expression_body)
+    ),
 
     expr_switch: $ => prec('EXPR_SWITCH', seq(
       'switch',
@@ -721,7 +730,7 @@ module.exports = grammar({
     // )),
 
     stmt_if: $ => prec.right('STMT_IF', seq(
-      'if',
+      'iff',
       parens(field("cond", $._expression)),
       field("then", $._expression_body),
     )),
@@ -925,7 +934,7 @@ module.exports = grammar({
 
     _c: $ => seq(
       optional($._innocent_newline),
-      $._c,
+      ',',
       optional($._innocent_newline)
     )
   }
