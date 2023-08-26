@@ -37,8 +37,8 @@ module.exports = grammar({
     $.block_comment,
     $.line_comment,
     // $._innocent_newline,
-    /[\t \r\uFEFF\u2060\u200B]/,
-    // /[\s\uFEFF\u2060\u200B]/,
+    // /[\t \r\uFEFF\u2060\u200B]/,
+    /[\s\uFEFF\u2060\u200B]/,
 
   ],
 
@@ -324,6 +324,11 @@ module.exports = grammar({
     )),
 
     _expression: $ => choice(
+      $._expression_non_if,
+      $.expr_if,
+    ),
+
+    _expression_non_if: $ => choice(
       $.expr_lambda,
       $.expr_typed,
       $.expr_op,
@@ -333,7 +338,6 @@ module.exports = grammar({
       $.expr_map_access,
       $.expr_projection,
       $.expr_switch,
-      $.expr_if,
       $.expr_variable,
       $._expr_atom
     ),
@@ -451,26 +455,24 @@ module.exports = grammar({
       field("field", $.field_name)
     )),
 
-    expr_if: $ => prec.right('EXPR_IF', seq(
+    expr_if: $ => prec('EXPR_IF', seq(
       'if',
       parens(field("cond", $._expression)),
-      field("then", $._expression_body),
-      optional($._innocent_newline),
-      choice($._expr_elif, $._expr_else),
+      field("then", $._expression),
+      repeat($._expr_elif),
+      $._expr_else
     )),
 
     _expr_elif: $ => prec('EXPR_IF', seq(
       'elif',
       parens(field("cond", $._expression)),
-      field("then", $._expression_body),
-      optional($._innocent_newline),
-      choice($._expr_elif, $._expr_else),
+      field("then", $._expression),
     )),
 
-    _expr_else: $ => seq(
+    _expr_else: $ => prec('EXPR_IF', seq(
       'else',
-      field("else", $._expression_body)
-    ),
+      field("else", $._expression)
+    )),
 
     expr_switch: $ => prec('EXPR_SWITCH', seq(
       'switch',
@@ -711,6 +713,7 @@ module.exports = grammar({
       // $.stmt_letfun,
       $.stmt_if,
       $.stmt_elif,
+      $.stmt_else,
       $.stmt_expr,
     ),
 
@@ -730,7 +733,7 @@ module.exports = grammar({
     // )),
 
     stmt_if: $ => prec.right('STMT_IF', seq(
-      'iff',
+      'if',
       parens(field("cond", $._expression)),
       field("then", $._expression_body),
     )),
@@ -746,7 +749,7 @@ module.exports = grammar({
       field("else", $._expression_body),
     )),
 
-    stmt_expr: $ => prec('STMT_EXPR', $._expression),
+    stmt_expr: $ => prec('STMT_EXPR', $._expression_non_if),
 
     //**************************************************************************
     // TYPE

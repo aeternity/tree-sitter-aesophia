@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DEBUG
+/* #define DEBUG */
 
 #define ever (;;)
 
@@ -82,7 +82,15 @@ static void print_scanner(Scanner* scanner) {
   for(size_t i = 0; i < scanner->indents.len; ++i) {
     printf(" %d", scanner->indents.data[i]);
   }
-  printf("\nDEDENTS: %ld\n", scanner->pending_dedents);
+  printf("\nRUNBACK:");
+  for(size_t i = 0; i < scanner->runback.len; ++i) {
+    if(scanner->runback.data[i]) {
+      printf("C");
+    } else {
+      printf("S");
+    }
+  }
+  printf("\nINDENT: %d\n", scanner->indent_length);
 }
 
 static void print_symbols(const bool *valid_symbols) {
@@ -218,20 +226,21 @@ static bool scan(Scanner * scanner,
         valid_symbols[BLOCK_SEMI]) {
         VEC_POP(scanner->runback);
         lexer->result_symbol = BLOCK_SEMI;
-        return true;
+        printf("RUNBACK SEMI\n");
+        goto ACCEPT;
     }
     if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
         valid_symbols[BLOCK_CLOSE]) {
         VEC_POP(scanner->runback);
         lexer->result_symbol = BLOCK_CLOSE;
-        return true;
+        printf("RUNBACK CLOSE");
+        goto ACCEPT;
     }
     VEC_CLEAR(scanner->runback);
 
     // Check if we have newlines and how much indentation
     bool has_line_end = false;
     bool can_call_mark_end = true;
-    uint32_t indent = 0;
     lexer->mark_end(lexer);
 
     // Skip to the first line with something meaningful
@@ -251,7 +260,7 @@ static bool scan(Scanner * scanner,
           if (lexer->lookahead == ' ') {
             skip(lexer);
           } else {
-            indent = lexer->get_column(lexer);
+            scanner->indent_length = lexer->get_column(lexer);
             break;
           }
         }
@@ -307,11 +316,12 @@ static bool scan(Scanner * scanner,
       }
     }
 
-    if (valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) {
-        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-        lexer->result_symbol = BLOCK_OPEN;
-        return true;
-    }
+    /* if (valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) { */
+    /*     VEC_PUSH(scanner->indents, lexer->get_column(lexer)); */
+    /*     lexer->result_symbol = BLOCK_OPEN; */
+    /*     printf("SPONTAN OPEN\n"); */
+    /*     goto ACCEPT; */
+    /* } */
 
     if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
         if (!can_call_mark_end) {
@@ -344,7 +354,7 @@ static bool scan(Scanner * scanner,
         goto ACCEPT;
     }
 
-    printf("SCANNED: NL=%d, EOF=%d, indent=%d\n", has_line_end, lexer->eof(lexer), indent);
+    printf("SCANNED: NL=%d, EOF=%d, indent=%d\n", has_line_end, lexer->eof(lexer), scanner->indent_length);
 
     if(lexer->eof(lexer) &&
        valid_symbols[END_OF_FILE]) {
@@ -360,6 +370,12 @@ static bool scan(Scanner * scanner,
     }
 
     if (has_line_end) {
+      if (scanner->indent_length > VEC_BACK(scanner->indents) &&
+          valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) {
+        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+        lexer->result_symbol = BLOCK_OPEN;
+        goto ACCEPT;
+      }
 
       while (scanner->indent_length <= VEC_BACK(scanner->indents)) {
         if (scanner->indent_length == VEC_BACK(scanner->indents)) {
@@ -396,17 +412,17 @@ static bool scan(Scanner * scanner,
           valid_symbols[BLOCK_SEMI]) {
         VEC_POP(scanner->runback);
         lexer->result_symbol = BLOCK_SEMI;
-        return true;
+        goto ACCEPT;
       }
       if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
           valid_symbols[BLOCK_CLOSE]) {
-            VEC_POP(scanner->runback);
-            lexer->result_symbol = BLOCK_CLOSE;
-            return true;
+        VEC_POP(scanner->runback);
+        lexer->result_symbol = BLOCK_CLOSE;
+        goto ACCEPT;
       }
       if (lexer->eof(lexer) && valid_symbols[BLOCK_CLOSE]) {
         lexer->result_symbol = BLOCK_CLOSE;
-        return true;
+        goto ACCEPT;
       }
     }
 
@@ -528,7 +544,7 @@ void tree_sitter_aesophia_external_scanner_deserialize(void * payload,
 /**
  * Destroy the state.
  */
-void tree_sitter_elm_external_scanner_destroy(void *payload) {
+void tree_sitter_aesophia_external_scanner_destroy(void *payload) {
     Scanner *scanner = (Scanner *)payload;
     VEC_FREE(scanner->indents);
     VEC_FREE(scanner->runback);

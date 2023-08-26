@@ -1063,6 +1063,19 @@
       "members": [
         {
           "type": "SYMBOL",
+          "name": "_expression_non_if"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "expr_if"
+        }
+      ]
+    },
+    "_expression_non_if": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
           "name": "expr_lambda"
         },
         {
@@ -1096,10 +1109,6 @@
         {
           "type": "SYMBOL",
           "name": "expr_switch"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "expr_if"
         },
         {
           "type": "SYMBOL",
@@ -2245,7 +2254,7 @@
       }
     },
     "expr_if": {
-      "type": "PREC_RIGHT",
+      "type": "PREC",
       "value": "EXPR_IF",
       "content": {
         "type": "SEQ",
@@ -2280,33 +2289,19 @@
             "name": "then",
             "content": {
               "type": "SYMBOL",
-              "name": "_expression_body"
+              "name": "_expression"
             }
           },
           {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_innocent_newline"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
+            "type": "REPEAT",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_expr_elif"
+            }
           },
           {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_expr_elif"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_expr_else"
-              }
-            ]
+            "type": "SYMBOL",
+            "name": "_expr_else"
           }
         ]
       }
@@ -2347,53 +2342,32 @@
             "name": "then",
             "content": {
               "type": "SYMBOL",
-              "name": "_expression_body"
+              "name": "_expression"
             }
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_innocent_newline"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_expr_elif"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_expr_else"
-              }
-            ]
           }
         ]
       }
     },
     "_expr_else": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "else"
-        },
-        {
-          "type": "FIELD",
-          "name": "else",
-          "content": {
-            "type": "SYMBOL",
-            "name": "_expression_body"
+      "type": "PREC",
+      "value": "EXPR_IF",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "else"
+          },
+          {
+            "type": "FIELD",
+            "name": "else",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_expression"
+            }
           }
-        }
-      ]
+        ]
+      }
     },
     "expr_switch": {
       "type": "PREC",
@@ -4130,6 +4104,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "stmt_else"
+        },
+        {
+          "type": "SYMBOL",
           "name": "stmt_expr"
         }
       ]
@@ -4175,7 +4153,7 @@
         "members": [
           {
             "type": "STRING",
-            "value": "iff"
+            "value": "if"
           },
           {
             "type": "SEQ",
@@ -4277,7 +4255,7 @@
       "value": "STMT_EXPR",
       "content": {
         "type": "SYMBOL",
-        "name": "_expression"
+        "name": "_expression_non_if"
       }
     },
     "_type": {
@@ -5098,7 +5076,7 @@
     },
     {
       "type": "PATTERN",
-      "value": "[\\t \\r\\uFEFF\\u2060\\u200B]"
+      "value": "[\\s\\uFEFF\\u2060\\u200B]"
     }
   ],
   "conflicts": [
