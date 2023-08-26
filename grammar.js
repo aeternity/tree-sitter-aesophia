@@ -46,6 +46,7 @@ module.exports = grammar({
     $._block_open,
     $._block_semi,
     $._block_close,
+    $._innocent_newline,
     $._block_comment_content,
     $._error_state,
   ],
