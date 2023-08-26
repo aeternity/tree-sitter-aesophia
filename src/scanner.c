@@ -81,6 +81,7 @@ static void print_symbols(const bool *valid_symbols) {
     printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
     printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
     printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
+    printf("    INNOCENT NL: %d\n", valid_symbols[INNOCENT_NEWLINE]);
     printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
     printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
   }
@@ -96,6 +97,9 @@ static void print_symbol(int t) {
     break;
   case BLOCK_CLOSE:
     printf("BLOCK_CLOSE");
+    break;
+  case INNOCENT_NEWLINE:
+    printf("INNOCENT NL");
     break;
   case BLOCK_COMMENT_CONTENT:
     printf("BLOCK_COMMENT_CONTENT");
@@ -210,9 +214,6 @@ static bool scan(Scanner * scanner,
       if (lexer->lookahead == ' ' || lexer->lookahead == '\r') {
         // Skip all whitespaces
         skip(lexer);
-      } else if (lexer->lookahead == ',') {
-        // We are in a list or something
-        goto NOT_ACCEPT;
       } else if (lexer->lookahead == '\t') {
         // No tabs
         goto NOT_ACCEPT;
@@ -260,7 +261,7 @@ static bool scan(Scanner * scanner,
           goto NOT_ACCEPT;
         }
       } else if (lexer->eof(lexer)) {
-        has_line_end = true;
+        /* has_line_end = true; */
         indent = 0;
 
         if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
@@ -304,7 +305,17 @@ static bool scan(Scanner * scanner,
     }
 
     if (has_line_end) {
-      printf("NEWLINE; indent %d\n", indent);
+      printf("AFTER NEWLINE; indent %d\n", indent);
+
+      if (valid_symbols[INNOCENT_NEWLINE]) {
+        if(lexer->lookahead == ',' || lexer->eof(lexer)) {
+          // We are in a list or something
+          lexer->mark_end(lexer),
+          lexer->result_symbol = INNOCENT_NEWLINE;
+          goto ACCEPT;
+        }
+      }
+
       if (indent > VEC_BACK(scanner->indents) &&
         valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)
           ) {

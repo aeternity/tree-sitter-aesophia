@@ -36,6 +36,7 @@ module.exports = grammar({
     $.doc_comment,
     $.block_comment,
     $.line_comment,
+    $._innocent_newline,
     /[\t \r\uFEFF\u2060\u200B]/,
     // /[\s\uFEFF\u2060\u200B]/,
 
@@ -566,7 +567,7 @@ module.exports = grammar({
     ),
 
     expr_tuple: $ => prec('EXPR_ATOM', parens($._expr_tuple)),
-    _expr_tuple: $ => sep2(field("elem", $._expression), ','),
+    _expr_tuple: $ => sep2(field("elem", $._expression), seq(',')),
 
     expr_paren: $ => prec('EXPR_ATOM', parens(
       field("expr", $._expression)

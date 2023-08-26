@@ -4998,6 +4998,10 @@
       "name": "line_comment"
     },
     {
+      "type": "SYMBOL",
+      "name": "_innocent_newline"
+    },
+    {
       "type": "PATTERN",
       "value": "[\\t \\r\\uFEFF\\u2060\\u200B]"
     }
@@ -5244,6 +5248,10 @@
     {
       "type": "SYMBOL",
       "name": "_block_close"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_innocent_newline"
     },
     {
       "type": "SYMBOL",
