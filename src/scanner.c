@@ -42,8 +42,8 @@
 
 
 enum TokenType {
+  NEWLINE,
   BLOCK_OPEN,
-  BLOCK_INDENT,
   BLOCK_SEMI,
   BLOCK_CLOSE,
   BLOCK_COMMENT_CONTENT,
@@ -75,8 +75,8 @@ static void print_scanner(Scanner* scanner) {
 
 static void print_symbols(const bool *valid_symbols) {
   printf("VALID SYMBOLS:\n");
+  printf("    NEWLINE: %d\n", valid_symbols[NEWLINE]);
   printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
-  printf("    BLOCK_INDENT: %d\n", valid_symbols[BLOCK_INDENT]);
   printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
   printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
   printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
@@ -85,11 +85,11 @@ static void print_symbols(const bool *valid_symbols) {
 
 static void print_symbol(int t) {
   switch(t) {
+  case NEWLINE:
+    printf("NEWLINE");
+    break;
   case BLOCK_OPEN:
     printf("BLOCK_OPEN");
-    break;
-  case BLOCK_INDENT:
-    printf("BLOCK_INDENT");
     break;
   case BLOCK_SEMI:
     printf("BLOCK_SEMI");
@@ -208,36 +208,28 @@ static bool scan(Scanner * scanner,
     }
 
     // Check if we have newlines and how much indentation
-    bool has_line_end = false;
+    bool has_line_end = true;
     bool can_call_mark_end = true;
-    uint32_t indent = 0;
     lexer->mark_end(lexer);
 
     // Skip to the first line with something meaningful
     while(true) {
-      if (lexer->lookahead == ' ' || lexer->lookahead == '\r') {
+      if (lexer->lookahead == ' ') {
         // Skip all whitespaces
         skip(lexer);
-      } else if (lexer->lookahead == '\t') {
+      } else if (lexer->lookahead == '\t' || lexer->lookahead == '\r') {
         // No tabs
         goto NOT_ACCEPT;
       } else if (lexer->lookahead == '\n') {
-        if(valid_symbols[BLOCK_OPEN]) {
+        if(valid_symbols[NEWLINE] && can_call_mark_end) {
+          advance(lexer);
           lexer->mark_end(lexer);
-          lexer->result_symbol = BLOCK_OPEN;
+          lexer->result_symbol = NEWLINE;
           goto ACCEPT;
         }
-        // Calculate indent
+
         skip(lexer);
-        has_line_end = true;
-        while(true) {
-          if (lexer->lookahead == ' ') {
-            skip(lexer);
-          } else {
-            indent = lexer->get_column(lexer);
-            break;
-          }
-        }
+        continue;
       } else if (!valid_symbols[BLOCK_COMMENT_CONTENT] &&
         lexer->lookahead == '/') {
         // Scan past line comments. As far as the special token
@@ -271,7 +263,6 @@ static bool scan(Scanner * scanner,
         }
       } else if (lexer->eof(lexer)) {
         has_line_end = true;
-        indent = 0;
 
         if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
           lexer->result_symbol = BLOCK_COMMENT_CONTENT;
@@ -313,15 +304,20 @@ static bool scan(Scanner * scanner,
         goto ACCEPT;
     }
 
+    uint32_t indent = lexer->get_column(lexer);
+
     if (has_line_end) {
       printf("NEWLINE; indent %d\n", indent);
       if (indent > VEC_BACK(scanner->indents) &&
-        valid_symbols[BLOCK_INDENT] && !lexer->eof(lexer)) {
-        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-        lexer->result_symbol = BLOCK_INDENT;
+        valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)
+          ) {
+        VEC_PUSH(scanner->indents, indent);
+        lexer->mark_end(lexer),
+        lexer->result_symbol = BLOCK_OPEN;
         goto ACCEPT;
       } else if (indent == VEC_BACK(scanner->indents) &&
-        valid_symbols[BLOCK_SEMI] && !lexer->eof(lexer)) {
+        valid_symbols[BLOCK_SEMI] && !lexer->eof(lexer)
+                 ) {
         /* // Don't insert BLOCK_SEMI when there is a line */
         /* // comment incoming */
 
@@ -339,11 +335,13 @@ static bool scan(Scanner * scanner,
         /*     goto NOT_ACCEPT; */
         /*   } */
         /* } */
-
+        lexer->mark_end(lexer),
         lexer->result_symbol = BLOCK_SEMI;
         goto ACCEPT;
-      } else if (indent < VEC_BACK(scanner->indents)) {
-        printf("LOWER INDENT: %d < %d\n", indent, VEC_BACK(scanner->indents));
+      } else if (indent < VEC_BACK(scanner->indents) &&
+                 valid_symbols[BLOCK_CLOSE]
+                 ) {
+        printf("LOWER OPEN: %d < %d\n", indent, VEC_BACK(scanner->indents));
         while (indent < VEC_BACK(scanner->indents)) {
           scanner->pending_dedents++;
           VEC_POP(scanner->indents);
