@@ -314,20 +314,6 @@
     ]
   },
   {
-    "type": "_switch_branch",
-    "named": true,
-    "subtypes": [
-      {
-        "type": "guarded_branches",
-        "named": true
-      },
-      {
-        "type": "unguarded_branch",
-        "named": true
-      }
-    ]
-  },
-  {
     "type": "_top_decl",
     "named": true,
     "subtypes": [
@@ -535,7 +521,7 @@
     },
     "children": {
       "multiple": true,
-      "required": false,
+      "required": true,
       "types": [
         {
           "type": "CLOSE",
@@ -543,6 +529,10 @@
         },
         {
           "type": "OPEN",
+          "named": true
+        },
+        {
+          "type": "OPEN_INLINE",
           "named": true
         },
         {
@@ -1344,6 +1334,10 @@
           {
             "type": "_expression",
             "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
           }
         ]
       },
@@ -1376,7 +1370,7 @@
     },
     "children": {
       "multiple": true,
-      "required": false,
+      "required": true,
       "types": [
         {
           "type": "CLOSE",
@@ -1384,6 +1378,10 @@
         },
         {
           "type": "OPEN",
+          "named": true
+        },
+        {
+          "type": "OPEN_INLINE",
           "named": true
         },
         {
@@ -2328,7 +2326,11 @@
         "required": true,
         "types": [
           {
-            "type": "_switch_branch",
+            "type": "guarded_branches",
+            "named": true
+          },
+          {
+            "type": "unguarded_branch",
             "named": true
           }
         ]
@@ -2585,6 +2587,10 @@
           {
             "type": "_expression",
             "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
           }
         ]
       }
@@ -2811,6 +2817,10 @@
   },
   {
     "type": "OPEN",
+    "named": true
+  },
+  {
+    "type": "OPEN_INLINE",
     "named": true
   },
   {

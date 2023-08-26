@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* #define DEBUG */
+#define DEBUG
 
 #define ever (;;)
 
@@ -52,6 +52,7 @@
     } while (0)
 
 enum TokenType {
+  BLOCK_OPEN_INLINE,
   BLOCK_OPEN,
   BLOCK_SEMI,
   BLOCK_CLOSE,
@@ -98,8 +99,9 @@ static void print_symbols(const bool *valid_symbols) {
     printf("ERROR STATE\n");
   } else {
     printf("VALID SYMBOLS:\n");
-    printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
+    printf("    BLOCK_OPEN_INLINE: %d\n", valid_symbols[BLOCK_OPEN_INLINE]);
     printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
+    printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
     printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
     printf("    INNOCENT NL: %d\n", valid_symbols[INNOCENT_NEWLINE]);
     printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
@@ -110,6 +112,9 @@ static void print_symbols(const bool *valid_symbols) {
 
 static void print_symbol(int t) {
   switch(t) {
+  case BLOCK_OPEN_INLINE:
+    printf("BLOCK_OPEN_INLINE");
+    break;
   case BLOCK_OPEN:
     printf("BLOCK_OPEN");
     break;
@@ -240,6 +245,7 @@ static bool scan(Scanner * scanner,
 
     // Check if we have newlines and how much indentation
     bool has_line_end = false;
+    bool has_space = false;
     bool can_call_mark_end = true;
     lexer->mark_end(lexer);
 
@@ -247,6 +253,7 @@ static bool scan(Scanner * scanner,
     while(true) {
       if (lexer->lookahead == ' ' || lexer->lookahead == '\r') {
         // Skip all whitespaces
+        has_space = true;
         skip(lexer);
       } else if (lexer->lookahead == '\t') {
         // No tabs
@@ -256,8 +263,10 @@ static bool scan(Scanner * scanner,
         // Calculate indent
         skip(lexer);
         has_line_end = true;
+        has_space = false;
         while(true) {
           if (lexer->lookahead == ' ') {
+            has_space = true;
             skip(lexer);
           } else {
             scanner->indent_length = lexer->get_column(lexer);
@@ -316,12 +325,18 @@ static bool scan(Scanner * scanner,
       }
     }
 
-    /* if (valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) { */
-    /*     VEC_PUSH(scanner->indents, lexer->get_column(lexer)); */
-    /*     lexer->result_symbol = BLOCK_OPEN; */
-    /*     printf("SPONTAN OPEN\n"); */
-    /*     goto ACCEPT; */
-    /* } */
+    printf("SCANNED: NL=%d, WS=%d, EOF=%d, indent=%d\n", has_line_end, has_space, lexer->eof(lexer), scanner->indent_length);
+
+    if (valid_symbols[BLOCK_OPEN_INLINE] &&
+        !lexer->eof(lexer) &&
+        !has_line_end &&
+        has_space
+        ) {
+      VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+      lexer->result_symbol = BLOCK_OPEN_INLINE;
+      lexer->mark_end(lexer);
+      goto ACCEPT;
+    }
 
     if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
         if (!can_call_mark_end) {
@@ -353,8 +368,6 @@ static bool scan(Scanner * scanner,
         lexer->result_symbol = BLOCK_COMMENT_CONTENT;
         goto ACCEPT;
     }
-
-    printf("SCANNED: NL=%d, EOF=%d, indent=%d\n", has_line_end, lexer->eof(lexer), scanner->indent_length);
 
     if(lexer->eof(lexer) &&
        valid_symbols[END_OF_FILE]) {

@@ -1,6 +1,6 @@
 const {
   parens, brackets, braces,
-  block, block_or, maybe_block,
+  block, block_or, maybe_block, weak_block,
   dispath,
   sep, sep1, sep2,
   qual, qual1,
@@ -43,13 +43,11 @@ module.exports = grammar({
   ],
 
   externals: $ => [
-    // $._newline,
+    $._block_open_inline,
     $._block_open,
     $._block_semi,
     $._block_close,
-    $._innocent_newline,
     $._block_comment_content,
-    $._eof,
     $._error_state,
   ],
 
@@ -58,7 +56,6 @@ module.exports = grammar({
     $._type_definition,
     $._scoped_declaration,
     $._expression,
-    $._switch_branch,
     $._list_comprehension_filter,
     $._pattern,
     $._literal,
@@ -109,7 +106,6 @@ module.exports = grammar({
       'OP_PIPE',
 
       'EXPR_IF',
-
       'EXPR_SWITCH',
       'EXPR_LAMBDA',
     ],
@@ -480,7 +476,7 @@ module.exports = grammar({
       field("cases", $.expr_cases)
     )),
 
-    expr_cases: $ => maybe_block($, field("case", $.switch_case)),
+    expr_cases: $ => weak_block($, field("case", $.switch_case)),
 
     switch_case: $ => seq(
       field("pattern", $._pattern),
@@ -494,14 +490,16 @@ module.exports = grammar({
 
     unguarded_branch: $ => prec('EXPR_GUARD', seq(
       '=>',
-      field("body", $._expression)
+      field("body", $._expression_body)
     )),
 
-    guarded_branches: $ => maybe_block($, seq('|', field("branch", $.guarded_branch))),
+    guarded_branches: $ => weak_block($, seq(
+      '|', field("branch", $.guarded_branch)
+    )),
 
     guarded_branch: $ => prec('EXPR_GUARD', seq(
       sep1(field("guards", $._expression), $._c), '=>',
-      field("body", $._expression)
+      field("body", $._expression_body)
     )),
 
     expr_block: $ => prec('EXPR_BLOCK', block(
@@ -936,9 +934,9 @@ module.exports = grammar({
     line_comment: ($) => token(seq(/\/\//, repeat(/[^\n]/))),
 
     _c: $ => seq(
-      optional($._innocent_newline),
+      // optional($._innocent_newline),
       ',',
-      optional($._innocent_newline)
+      // optional($._innocent_newline)
     )
   }
 });
