@@ -151,7 +151,9 @@ module.exports = grammar({
   word: $ => $._lex_low_id,
 
   rules: {
-    source: $ => choice(
+    source: $ => seq($._dispath, optional($._innocent_newline)),
+
+    _dispath: $ => choice(
       dispath('PATTERN', $._pattern),
       dispath('TYPE', $._type),
       dispath('LITERAL', $._literal),
@@ -922,9 +924,9 @@ module.exports = grammar({
     line_comment: ($) => token(seq(/\/\//, repeat(/[^\n]/))),
 
     _c: $ => seq(
-      $._innocent_newline,
+      optional($._innocent_newline),
       ',',
-      $._innocent_newline
+      optional($._innocent_newline)
     )
   }
 });

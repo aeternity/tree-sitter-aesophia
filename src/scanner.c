@@ -261,7 +261,6 @@ static bool scan(Scanner * scanner,
           goto NOT_ACCEPT;
         }
       } else if (lexer->eof(lexer)) {
-        /* has_line_end = true; */
         indent = 0;
 
         if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
@@ -304,10 +303,10 @@ static bool scan(Scanner * scanner,
         goto ACCEPT;
     }
 
-    if (has_line_end) {
+    if (has_line_end || lexer->eof(lexer)) {
       printf("AFTER NEWLINE; indent %d\n", indent);
 
-      if (valid_symbols[INNOCENT_NEWLINE]) {
+      if (has_line_end && valid_symbols[INNOCENT_NEWLINE]) {
         // We are in a list or something
         lexer->mark_end(lexer);
         lexer->result_symbol = INNOCENT_NEWLINE;
