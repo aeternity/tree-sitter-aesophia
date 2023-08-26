@@ -1,3 +1,16 @@
+const OP_ASSOC = {
+  'OP_PIPE': 'left',
+  'OP_DISJ': 'right',
+  'OP_CONJ': 'right',
+  'OP_CMP': 'left',
+  'OP_LIST': 'right',
+  'OP_ADD': 'left',
+  'OP_NEG': 'unary',
+  'OP_MUL': 'left',
+  'OP_POW': 'left',
+  'OP_NOT': 'unary',
+};
+
 module.exports = grammar({
   name: 'aesophia',
 
@@ -16,7 +29,8 @@ module.exports = grammar({
     $.doc_comment,
     $.block_comment,
     $.line_comment,
-    /[\s\uFEFF\u2060\u200B]|\\\r?\n/,
+    // /[\s\uFEFF\u2060\u200B]|\\\r?\n/,
+    /[\s\uFEFF\u2060\u200B]/,
   ],
 
   externals: $ => [
@@ -37,6 +51,7 @@ module.exports = grammar({
   precedences: $ => [
     [ // statements
       'STMT_EXPR',
+      'STMT_IF',
       'STMT_LET',
     ],
     [ // types
@@ -82,6 +97,7 @@ module.exports = grammar({
     [ 'EXPR_ATOM', 'PAT_ATOM' ],
     [ 'EXPR_TYPED', 'TYPE_DOMAIN' ],
     [ 'PAT_TYPED', 'TYPE_DOMAIN' ],
+    [ 'EXPR_IF', 'STMT_IF' ],
   ],
 
   word: $ => $._lex_low_id,
@@ -181,7 +197,7 @@ module.exports = grammar({
       field("args", $.pat_args),
       field("ret_type", optional(seq(':', $._type))),
       '=',
-      field("body", $._expression)
+      field("body", $._expression_body)
     ),
 
     function_head: $ => choice(
@@ -256,6 +272,11 @@ module.exports = grammar({
     // EXPRESSION
     //**************************************************************************
 
+    _expression_body: $ => prec('EXPR_BLOCK', choice(
+      $.expr_block,
+      $._expression,
+    )),
+
     _expression: $ => choice(
       $.expr_lambda,
       $.expr_typed,
@@ -267,45 +288,49 @@ module.exports = grammar({
       $.expr_projection,
       $.expr_switch,
       $.expr_if,
-      $.expr_block,
       $._expr_atom
     ),
 
     expr_lambda: $ => prec.right('EXPR_LAMBDA', seq(
       field("args", $.pat_args),
       '=>',
-      field("body", $._expression)
+      field("body", $._expression_body)
     )),
 
     expr_op: $ => choice(
       ...[
-        ['|>', 'OP_PIPE', 'left'],
-        ['||', 'OP_DISJ', 'right'],
-        ['&&', 'OP_CONJ', 'right'],
-        ['<',  'OP_CMP', 'left'],
-        ['>',  'OP_CMP', 'left'],
-        ['=<', 'OP_CMP', 'left'],
-        ['>=', 'OP_CMP', 'left'],
-        ['==', 'OP_CMP', 'left'],
-        ['!=', 'OP_CMP', 'left'],
-        ['::', 'OP_LIST', 'right'],
-        ['++', 'OP_LIST', 'right'],
-        ['+',  'OP_ADD', 'left'],
-        ['-',  'OP_ADD', 'left'],
-        ['-',  'OP_NEG', 'unary'],
-        ['*',  'OP_MUL', 'left'],
-        ['^',  'OP_POW', 'left'],
-        ['!',  'OP_NOT', 'unary'],
-      ].map(([operator, precedence, assoc]) =>
-        (assoc === 'left' ? prec.left : assoc === 'right' ? prec.right : prec)(
+        [$.op_pipe, 'OP_PIPE'],
+        [$.op_or,   'OP_DISJ'],
+        [$.op_and,  'OP_CONJ'],
+        [$.op_lt,   'OP_CMP'],
+        [$.op_gt,   'OP_CMP'],
+        [$.op_le,   'OP_CMP'],
+        [$.op_ge,   'OP_CMP'],
+        [$.op_eq,   'OP_CMP'],
+        [$.op_neq,  'OP_CMP'],
+        [$.op_cons, 'OP_LIST'],
+        [$.op_cat,  'OP_LIST'],
+        [$.op_add,  'OP_ADD'],
+        [$.op_sub,  'OP_ADD'],
+        [$.op_sub,  'OP_NEG'],
+        [$.op_mul,  'OP_MUL'],
+        [$.op_div,  'OP_MUL'],
+        [$.op_mod,  'OP_MUL'],
+        [$.op_pow,  'OP_POW'],
+        [$.op_not,  'OP_NOT'],
+      ].map(([operator, precedence]) =>
+        (OP_ASSOC[precedence] === 'left' ? prec.left :
+         OP_ASSOC[precedence] === 'right' ? prec.right :
+         prec
+        )(
           precedence,
-          assoc === 'unary' ? seq(
+          OP_ASSOC[precedence] === 'unary' ? seq(
             field("op", operator),
             field("op_r", $._expression),
           ) : seq(
             field("op_l", $._expression),
             field("op", operator),
-            field("op_r", $._expression)
+            field("op_r", $._expression_body)
           )
         )
       )
@@ -396,9 +421,9 @@ module.exports = grammar({
     expr_if: $ => prec.right('EXPR_IF', seq(
       'if', '(',
       field("cond", $._expression), ')',
-      field("then", $._expression),
+      field("then", $._expression_body),
       repeat($._expr_elif),
-      seq('else', field("else", $._expression))
+      seq('else', field("else", $._expression_body))
       // `else` is optional in statements
       // optional(seq('else', field("else", $._expression)))
     )),
@@ -406,7 +431,7 @@ module.exports = grammar({
     _expr_elif: $ => prec('EXPR_IF', seq(
       'elif', '(',
       field("cond", $._expression), ')',
-      field("then", $._expression)
+      field("then", $._expression_body)
     )),
 
     expr_switch: $ => prec('EXPR_SWITCH', seq(
@@ -683,6 +708,7 @@ module.exports = grammar({
 
     _statement: $ => choice(
       $.stmt_let,
+      $.stmt_if,
       $.stmt_expr,
     ),
 
@@ -693,6 +719,22 @@ module.exports = grammar({
       optional(seq(':', field("type", $._type))), '=',
       field("value", $._expression)
     )),
+
+
+    stmt_if: $ => prec.right('STMT_IF', seq(
+      'if', '(',
+      field("cond", $._expression), ')',
+      field("then", $._expression_body),
+      repeat($._stmt_elif),
+      // `else` is optional in statements
+    )),
+
+    _stmt_elif: $ => prec('STMT_IF', seq(
+      'elif', '(',
+      field("cond", $._expression), ')',
+      field("then", $._expression_body)
+    )),
+
 
     stmt_expr: $ => prec('STMT_EXPR', $._expression),
 
@@ -761,6 +803,50 @@ module.exports = grammar({
     type_variable_poly: $ => $._lex_prim_id,
 
     type_variable: $ => $._lex_qual_low_id,
+
+    //**************************************************************************
+    // OPERATORS
+    //**************************************************************************
+
+    _operator: $ => choice(
+      $.op_pipe,
+      $.op_or,
+      $.op_and,
+      $.op_lt,
+      $.op_gt,
+      $.op_le,
+      $.op_ge,
+      $.op_eq,
+      $.op_neq,
+      $.op_cons,
+      $.op_cat,
+      $.op_add,
+      $.op_sub,
+      $.op_mul,
+      $.op_div,
+      $.op_mod,
+      $.op_pow,
+      $.op_not,
+    ),
+
+    op_pipe: $ => '|>',
+    op_or: $ => '||',
+    op_and: $ => '&&',
+    op_lt: $ => '<',
+    op_gt: $ => '>',
+    op_le: $ => '=<',
+    op_ge: $ => '>=',
+    op_eq: $ => '==',
+    op_neq: $ => '!=',
+    op_cons: $ => '::',
+    op_cat: $ => '++',
+    op_add: $ => '+',
+    op_sub: $ => '-',
+    op_mul: $ => '*',
+    op_div: $ => '/',
+    op_mod: $ => 'mod',
+    op_pow: $ => '^',
+    op_not: $ => '!',
 
     //**************************************************************************
     // NAMES
@@ -848,11 +934,15 @@ function block($, rule) {
   );
 }
 
-function maybe_block($, rule) {
+function block_or($, elem, single) {
   return choice(
-    block($, rule),
-    rule
+    block($, elem),
+    single
   );
+}
+
+function maybe_block($, rule) {
+  return block_or($, rule, rule);
 }
 
 function sep(rule, delimiter) {

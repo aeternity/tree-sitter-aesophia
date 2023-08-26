@@ -8,10 +8,6 @@
         "named": true
       },
       {
-        "type": "expr_block",
-        "named": true
-      },
-      {
         "type": "expr_if",
         "named": true
       },
@@ -137,6 +133,10 @@
     "subtypes": [
       {
         "type": "stmt_expr",
+        "named": true
+      },
+      {
+        "type": "stmt_if",
         "named": true
       },
       {
@@ -315,6 +315,10 @@
           {
             "type": "_expression",
             "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
           }
         ]
       },
@@ -324,6 +328,10 @@
         "types": [
           {
             "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "expr_block",
             "named": true
           }
         ]
@@ -350,6 +358,10 @@
         "types": [
           {
             "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "expr_block",
             "named": true
           }
         ]
@@ -612,68 +624,76 @@
         "required": true,
         "types": [
           {
-            "type": "!",
-            "named": false
+            "type": "op_add",
+            "named": true
           },
           {
-            "type": "!=",
-            "named": false
+            "type": "op_and",
+            "named": true
           },
           {
-            "type": "&&",
-            "named": false
+            "type": "op_cat",
+            "named": true
           },
           {
-            "type": "*",
-            "named": false
+            "type": "op_cons",
+            "named": true
           },
           {
-            "type": "+",
-            "named": false
+            "type": "op_div",
+            "named": true
           },
           {
-            "type": "++",
-            "named": false
+            "type": "op_eq",
+            "named": true
           },
           {
-            "type": "-",
-            "named": false
+            "type": "op_ge",
+            "named": true
           },
           {
-            "type": "::",
-            "named": false
+            "type": "op_gt",
+            "named": true
           },
           {
-            "type": "<",
-            "named": false
+            "type": "op_le",
+            "named": true
           },
           {
-            "type": "=<",
-            "named": false
+            "type": "op_lt",
+            "named": true
           },
           {
-            "type": "==",
-            "named": false
+            "type": "op_mod",
+            "named": true
           },
           {
-            "type": ">",
-            "named": false
+            "type": "op_mul",
+            "named": true
           },
           {
-            "type": ">=",
-            "named": false
+            "type": "op_neq",
+            "named": true
           },
           {
-            "type": "^",
-            "named": false
+            "type": "op_not",
+            "named": true
           },
           {
-            "type": "|>",
-            "named": false
+            "type": "op_or",
+            "named": true
           },
           {
-            "type": "||",
-            "named": false
+            "type": "op_pipe",
+            "named": true
+          },
+          {
+            "type": "op_pow",
+            "named": true
+          },
+          {
+            "type": "op_sub",
+            "named": true
           }
         ]
       },
@@ -693,6 +713,10 @@
         "types": [
           {
             "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "expr_block",
             "named": true
           }
         ]
@@ -949,6 +973,10 @@
         "types": [
           {
             "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "expr_block",
             "named": true
           }
         ]
@@ -1353,6 +1381,96 @@
   },
   {
     "type": "op",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_add",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_and",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_cat",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_cons",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_div",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_eq",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_ge",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_gt",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_le",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_lt",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_mod",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_mul",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_neq",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_not",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_or",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_pipe",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_pow",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "op_sub",
     "named": true,
     "fields": {}
   },
@@ -1936,6 +2054,36 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "stmt_if",
+    "named": true,
+    "fields": {
+      "cond": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "then": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "expr_block",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
