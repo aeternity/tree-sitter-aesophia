@@ -532,10 +532,6 @@
           "named": true
         },
         {
-          "type": "OPEN_INLINE",
-          "named": true
-        },
-        {
           "type": "SEMI",
           "named": true
         }
@@ -1378,10 +1374,6 @@
         },
         {
           "type": "OPEN",
-          "named": true
-        },
-        {
-          "type": "OPEN_INLINE",
           "named": true
         },
         {
@@ -2817,10 +2809,6 @@
   },
   {
     "type": "OPEN",
-    "named": true
-  },
-  {
-    "type": "OPEN_INLINE",
     "named": true
   },
   {

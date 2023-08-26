@@ -90,7 +90,6 @@ module.exports = grammar({
       'EXPR_PROJECTION',
       'EXPR_APP',
       'EXPR_UPDATE_ACCESS',
-      'EXPR_GUARD',
       'EXPR_TYPED',
       'EXPR_BLOCK',
 
@@ -107,6 +106,7 @@ module.exports = grammar({
 
       'EXPR_IF',
       'EXPR_SWITCH',
+      'EXPR_GUARD',
       'EXPR_LAMBDA',
     ],
     [ // statements
@@ -488,14 +488,16 @@ module.exports = grammar({
       $.guarded_branches,
     )),
 
-    unguarded_branch: $ => prec('EXPR_GUARD', seq(
+    unguarded_branch: $ => prec('EXPR_SWITCH', seq(
+      $._block_open_inline,
       '=>',
-      field("body", $._expression_body)
+      field("body", $._expression_body),
+      $._block_close
     )),
 
-    guarded_branches: $ => weak_block($, seq(
+    guarded_branches: $ => prec('EXPR_GUARD', weak_block($, seq(
       '|', field("branch", $.guarded_branch)
-    )),
+    ))),
 
     guarded_branch: $ => prec('EXPR_GUARD', seq(
       sep1(field("guards", $._expression), $._c), '=>',

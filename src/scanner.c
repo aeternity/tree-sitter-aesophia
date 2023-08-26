@@ -56,9 +56,7 @@ enum TokenType {
   BLOCK_OPEN,
   BLOCK_SEMI,
   BLOCK_CLOSE,
-  INNOCENT_NEWLINE,
   BLOCK_COMMENT_CONTENT,
-  END_OF_FILE,
   ERROR_STATE
 };
 
@@ -103,9 +101,7 @@ static void print_symbols(const bool *valid_symbols) {
     printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
     printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
     printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
-    printf("    INNOCENT NL: %d\n", valid_symbols[INNOCENT_NEWLINE]);
     printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
-    printf("    EOF: %d\n", valid_symbols[END_OF_FILE]);
     printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
   }
 }
@@ -124,14 +120,8 @@ static void print_symbol(int t) {
   case BLOCK_CLOSE:
     printf("BLOCK_CLOSE");
     break;
-  case INNOCENT_NEWLINE:
-    printf("INNOCENT NL");
-    break;
   case BLOCK_COMMENT_CONTENT:
     printf("BLOCK_COMMENT_CONTENT");
-    break;
-  case END_OF_FILE:
-    printf("EOF");
     break;
   case ERROR_STATE:
     printf("ERROR_STAT");
@@ -326,18 +316,6 @@ static bool scan(Scanner * scanner,
     }
 
     printf("SCANNED: NL=%d, WS=%d, EOF=%d, indent=%d\n", has_line_end, has_space, lexer->eof(lexer), scanner->indent_length);
-
-    if (valid_symbols[BLOCK_OPEN_INLINE] &&
-        !lexer->eof(lexer) &&
-        !has_line_end &&
-        has_space
-        ) {
-      VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-      lexer->result_symbol = BLOCK_OPEN_INLINE;
-      lexer->mark_end(lexer);
-      goto ACCEPT;
-    }
-
     if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
         if (!can_call_mark_end) {
           printf("CAN'T CALL MARK END\n");
@@ -369,16 +347,14 @@ static bool scan(Scanner * scanner,
         goto ACCEPT;
     }
 
-    if(lexer->eof(lexer) &&
-       valid_symbols[END_OF_FILE]) {
-      lexer->result_symbol = END_OF_FILE;
-      goto ACCEPT;
-    }
-
-    if (has_line_end && valid_symbols[INNOCENT_NEWLINE]) {
-      // We are in a list or something
+    if (valid_symbols[BLOCK_OPEN_INLINE] &&
+        !lexer->eof(lexer) &&
+        !has_line_end &&
+        has_space
+        ) {
+      VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+      lexer->result_symbol = BLOCK_OPEN_INLINE;
       lexer->mark_end(lexer);
-      lexer->result_symbol = INNOCENT_NEWLINE;
       goto ACCEPT;
     }
 
