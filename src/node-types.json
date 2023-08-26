@@ -906,10 +906,6 @@
           {
             "type": "_expression",
             "named": true
-          },
-          {
-            "type": "expr_block",
-            "named": true
           }
         ]
       }

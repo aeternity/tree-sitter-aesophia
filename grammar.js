@@ -377,7 +377,7 @@ module.exports = grammar({
           ) : seq(
             field("op_l", $._expression),
             field("op", operator),
-            field("op_r", $._expression_body)
+            field("op_r", $._expression)
           )
         )
       )
