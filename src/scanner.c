@@ -308,12 +308,10 @@ static bool scan(Scanner * scanner,
       printf("AFTER NEWLINE; indent %d\n", indent);
 
       if (valid_symbols[INNOCENT_NEWLINE]) {
-        if(lexer->lookahead == ',' || lexer->eof(lexer)) {
-          // We are in a list or something
-          lexer->mark_end(lexer),
-          lexer->result_symbol = INNOCENT_NEWLINE;
-          goto ACCEPT;
-        }
+        // We are in a list or something
+        lexer->mark_end(lexer);
+        lexer->result_symbol = INNOCENT_NEWLINE;
+        goto ACCEPT;
       }
 
       if (indent > VEC_BACK(scanner->indents) &&
