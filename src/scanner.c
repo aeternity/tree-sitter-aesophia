@@ -358,6 +358,16 @@ static bool scan(Scanner * scanner,
       goto ACCEPT;
     }
 
+    if (valid_symbols[BLOCK_OPEN] &&
+        !lexer->eof(lexer) &&
+        has_line_end
+        ) {
+      VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+      lexer->result_symbol = BLOCK_OPEN;
+      lexer->mark_end(lexer);
+      goto ACCEPT;
+    }
+
     if (has_line_end) {
       if (scanner->indent_length > VEC_BACK(scanner->indents) &&
           valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) {
@@ -481,7 +491,7 @@ unsigned tree_sitter_aesophia_external_scanner_serialize(void * payload,
     }
     size += indent_length_length;
 
-    int iter = 1;
+    size_t iter = 1;
     for (; iter != scanner->indents.len &&
            size < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
          ++iter) {

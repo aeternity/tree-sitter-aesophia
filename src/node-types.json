@@ -8,10 +8,6 @@
         "named": true
       },
       {
-        "type": "expr_if",
-        "named": true
-      },
-      {
         "type": "expr_lambda",
         "named": true
       },
@@ -536,42 +532,6 @@
           "named": true
         }
       ]
-    }
-  },
-  {
-    "type": "expr_if",
-    "named": true,
-    "fields": {
-      "cond": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "else": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "then": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      }
     }
   },
   {
@@ -1262,7 +1222,7 @@
     },
     "children": {
       "multiple": true,
-      "required": false,
+      "required": true,
       "types": [
         {
           "type": "CLOSE",
@@ -1884,6 +1844,52 @@
     "fields": {}
   },
   {
+    "type": "pragma_compiler_vsn",
+    "named": true,
+    "fields": {
+      "op": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "op_eq",
+            "named": true
+          },
+          {
+            "type": "op_ge",
+            "named": true
+          },
+          {
+            "type": "op_gt",
+            "named": true
+          },
+          {
+            "type": "op_le",
+            "named": true
+          },
+          {
+            "type": "op_lt",
+            "named": true
+          },
+          {
+            "type": "op_neq",
+            "named": true
+          }
+        ]
+      },
+      "version": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "version",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "qual_scope_name",
     "named": true,
     "fields": {}
@@ -2021,8 +2027,8 @@
         "required": false,
         "types": [
           {
-            "type": "interface",
-            "named": false
+            "type": "is_interface",
+            "named": true
           }
         ]
       },
@@ -2084,33 +2090,60 @@
   {
     "type": "source",
     "named": true,
-    "fields": {},
+    "fields": {
+      "parsed": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "CLOSE",
+            "named": true
+          },
+          {
+            "type": "OPEN",
+            "named": true
+          },
+          {
+            "type": "SEMI",
+            "named": true
+          },
+          {
+            "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "_literal",
+            "named": true
+          },
+          {
+            "type": "_pattern",
+            "named": true
+          },
+          {
+            "type": "_scoped_declaration",
+            "named": true
+          },
+          {
+            "type": "_statement",
+            "named": true
+          },
+          {
+            "type": "_type",
+            "named": true
+          },
+          {
+            "type": "scope_declaration",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
-          "type": "_expression",
-          "named": true
-        },
-        {
-          "type": "_literal",
-          "named": true
-        },
-        {
-          "type": "_pattern",
-          "named": true
-        },
-        {
-          "type": "_statement",
-          "named": true
-        },
-        {
           "type": "_top_decl",
-          "named": true
-        },
-        {
-          "type": "_type",
           "named": true
         }
       ]
@@ -2175,75 +2208,7 @@
       "required": true,
       "types": [
         {
-          "type": "expr_application",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_list_comprehension",
-          "named": true
-        },
-        {
-          "type": "expr_list_literal",
-          "named": true
-        },
-        {
-          "type": "expr_list_range",
-          "named": true
-        },
-        {
-          "type": "expr_literal",
-          "named": true
-        },
-        {
-          "type": "expr_map",
-          "named": true
-        },
-        {
-          "type": "expr_map_access",
-          "named": true
-        },
-        {
-          "type": "expr_map_update",
-          "named": true
-        },
-        {
-          "type": "expr_op",
-          "named": true
-        },
-        {
-          "type": "expr_paren",
-          "named": true
-        },
-        {
-          "type": "expr_projection",
-          "named": true
-        },
-        {
-          "type": "expr_record",
-          "named": true
-        },
-        {
-          "type": "expr_record_update",
-          "named": true
-        },
-        {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
-          "type": "expr_tuple",
-          "named": true
-        },
-        {
-          "type": "expr_typed",
-          "named": true
-        },
-        {
-          "type": "expr_variable",
+          "type": "_expression",
           "named": true
         }
       ]
@@ -2329,6 +2294,22 @@
         "types": [
           {
             "type": "_pattern",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "top_pragma",
+    "named": true,
+    "fields": {
+      "pragma": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "pragma_compiler_vsn",
             "named": true
           }
         ]
@@ -2724,6 +2705,22 @@
     }
   },
   {
+    "type": "version",
+    "named": true,
+    "fields": {
+      "subver": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "subver",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "\n",
     "named": false
   },
@@ -2788,7 +2785,7 @@
     "named": false
   },
   {
-    "type": "@!",
+    "type": "@ts.parse(",
     "named": false
   },
   {
@@ -2796,32 +2793,12 @@
     "named": true
   },
   {
-    "type": "EXPRESSION",
-    "named": false
-  },
-  {
-    "type": "LITERAL",
-    "named": false
-  },
-  {
     "type": "OPEN",
     "named": true
   },
   {
-    "type": "PATTERN",
-    "named": false
-  },
-  {
     "type": "SEMI",
     "named": true
-  },
-  {
-    "type": "STATEMENT",
-    "named": false
-  },
-  {
-    "type": "TYPE",
-    "named": false
   },
   {
     "type": "[",
@@ -2832,7 +2809,15 @@
     "named": false
   },
   {
+    "type": "_scoped_declaration",
+    "named": false
+  },
+  {
     "type": "as",
+    "named": false
+  },
+  {
+    "type": "compiler",
     "named": false
   },
   {
@@ -2853,6 +2838,10 @@
   },
   {
     "type": "entrypoint",
+    "named": false
+  },
+  {
+    "type": "expression",
     "named": false
   },
   {
@@ -2880,8 +2869,8 @@
     "named": false
   },
   {
-    "type": "interface",
-    "named": false
+    "type": "is_interface",
+    "named": true
   },
   {
     "type": "let",
@@ -2890,6 +2879,10 @@
   {
     "type": "line_comment",
     "named": true
+  },
+  {
+    "type": "literal",
+    "named": false
   },
   {
     "type": "main",
@@ -2964,6 +2957,10 @@
     "named": true
   },
   {
+    "type": "pattern",
+    "named": false
+  },
+  {
     "type": "payable",
     "named": false
   },
@@ -2976,16 +2973,28 @@
     "named": false
   },
   {
+    "type": "scope_declaration",
+    "named": false
+  },
+  {
     "type": "stateful",
     "named": false
   },
   {
-    "type": "switch",
+    "type": "statement",
     "named": false
   },
   {
-    "type": "top_pragma",
+    "type": "statements",
+    "named": false
+  },
+  {
+    "type": "subver",
     "named": true
+  },
+  {
+    "type": "switch",
+    "named": false
   },
   {
     "type": "true",

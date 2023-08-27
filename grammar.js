@@ -1,6 +1,6 @@
 const {
   parens, brackets, braces,
-  block, block_or, maybe_block, weak_block,
+  block, block_or, maybe_block, weak_block, inline_block,
   dispath,
   sep, sep1, sep2,
   qual, qual1,
@@ -23,13 +23,16 @@ module.exports = grammar({
   name: 'aesophia',
 
   conflicts: $ => [
-    // Both match (pat, pat), but they never coexist because pat_args requires something definite
-    // before.
+    // ((x, y)) --- function args or tuple pattern?
     [$.pat_args, $.pat_tuple],
+    // () --- function 0-args or unit literal?
     [$.pat_args, $.lit_unit],
-    [$._pattern, $.expr_variable],
-
-    [$.expr_variable, $.lit_constructor],
+    // (x : t) --- typed variable expression or typed pattern?
+    [$.expr_variable, $._pattern],
+    // Literals are untellable
+    [$.expr_literal, $.pat_literal],
+    // Almost literal
+    [$.expr_list_literal, $.pat_list],
   ],
 
   extras: $ => [
@@ -65,6 +68,7 @@ module.exports = grammar({
   ],
 
   inline: $ => [
+    $._expression_body,
     $._expr_map,
     $._expr_tuple,
     $._expr_record,
@@ -89,7 +93,7 @@ module.exports = grammar({
       'EXPR_QUAL',
       'EXPR_PROJECTION',
       'EXPR_APP',
-      'EXPR_UPDATE_ACCESS',
+      'EXPR_UPDATE_OR_ACCESS',
       'EXPR_TYPED',
       'EXPR_BLOCK',
 
@@ -140,27 +144,34 @@ module.exports = grammar({
       'LEX_ADDRESS', 'LEX_LOW_ID',
       // 'LEX_LOW_ID', 'LEX_ADDRESS',
     ],
+
     // conflicts
-    [ 'EXPR_ATOM', 'PAT_ATOM' ],
+
+    // switch(x) p | x : type => ...
+    //               ^Should be parsed as (x : type) => ...
     [ 'EXPR_TYPED', 'TYPE_DOMAIN' ],
-    [ 'PAT_TYPED', 'TYPE_DOMAIN' ],
   ],
 
   word: $ => $._lex_low_id,
 
   rules: {
-    source: $ => seq($._dispath, repeat('\n')),
-
-    _dispath: $ => choice(
-      dispath('PATTERN', $._pattern),
-      dispath('TYPE', $._type),
-      dispath('LITERAL', $._literal),
-      dispath('EXPRESSION', $._expression),
-      dispath('STATEMENT', $._statement),
+    source: $ => choice(
+      seq($._dispath, repeat('\n')),
       $._top_level
     ),
 
-    _top_level: $ => repeat1($._top_decl),
+    _dispath: $ => choice(
+      dispath('pattern', $._pattern),
+      dispath('type', $._type),
+      dispath('literal', $._literal),
+      dispath('expression', $._expression),
+      dispath('statement', $._statement),
+      dispath('statements', maybe_block($, $._statement)),
+      dispath('scope_declaration', $.scope_declaration),
+      dispath('_scoped_declaration', $._scoped_declaration),
+    ),
+
+    _top_level: $ => repeat1(seq($._top_decl, $._block_semi)),
 
     _top_decl: $ => choice(
       $.top_pragma,
@@ -169,7 +180,27 @@ module.exports = grammar({
       $.scope_declaration
     ),
 
-    top_pragma: $ => 'TODO',
+    top_pragma: $ => seq(
+      '@',
+      field("pragma", $._top_pragma),
+    ),
+
+    _top_pragma: $ => choice(
+      $.pragma_compiler_vsn
+    ),
+
+    pragma_compiler_vsn: $ => seq(
+      'compiler',
+      field("op", choice(
+        $.op_lt, $.op_le, $.op_gt, $.op_ge, $.op_eq, $.op_neq,
+      )),
+      field("version", $.version),
+    ),
+
+    version: $ => sep1(
+      field("subver", alias($._lex_int_dec, $.subver)),
+      '.'
+    ),
 
     using: $ => seq(
       'using',
@@ -208,7 +239,7 @@ module.exports = grammar({
     scope_declaration: $ => seq(
       field("modifiers", repeat($.scope_modifier)),
       field("header", $.scope_header),
-      field("interface", optional('interface')),
+      field("interface", alias(optional('interface'), $.is_interface)),
       field("name", $.scope_name),
       '=',
       maybe_block($, field("decl", $._scoped_declaration))
@@ -230,7 +261,7 @@ module.exports = grammar({
     function_declaration: $ => seq(
       field("modifiers", repeat(field("modifier", $._function_modifier))),
       field("head", $.function_head),
-      maybe_block($, field("clause",
+      weak_block($, field("clause",
                            choice(
                              $.function_signature,
                              $.function_clause
@@ -314,17 +345,17 @@ module.exports = grammar({
     // EXPRESSION
     //**************************************************************************
 
-    _expression_body: $ => prec('EXPR_BLOCK', choice(
+    _expression_body: $ => choice(
       $.expr_block,
       $._expression,
-    )),
-
-    _expression: $ => choice(
-      $._expression_non_if,
-      $.expr_if,
     ),
 
-    _expression_non_if: $ => choice(
+    // _expression: $ => choice(
+    //   $._expression_non_if,
+    //   $.expr_if,
+    // ),
+
+    _expression: $ => choice(
       $.expr_lambda,
       $.expr_typed,
       $.expr_op,
@@ -332,9 +363,9 @@ module.exports = grammar({
       $.expr_record_update,
       $.expr_map_update,
       $.expr_map_access,
+      $.expr_variable,
       $.expr_projection,
       $.expr_switch,
-      $.expr_variable,
       $._expr_atom
     ),
 
@@ -405,7 +436,7 @@ module.exports = grammar({
       field("value", $._expression)
     ),
 
-    expr_record_update: $ => prec.left('EXPR_UPDATE_ACCESS', seq(
+    expr_record_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
       field("record", $._expression),
       field("updates", $.record_field_updates),
     )),
@@ -423,7 +454,7 @@ module.exports = grammar({
       sep1(field("field", $.field_name), '.'),
     )),
 
-    expr_map_update: $ => prec.left('EXPR_UPDATE_ACCESS', seq(
+    expr_map_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
       field("map", $._expression),
       field("updates", $.map_updates),
     )),
@@ -436,7 +467,7 @@ module.exports = grammar({
       field("new_value", $._expression)
     ),
 
-    expr_map_access: $ => prec.left('EXPR_UPDATE_ACCESS', seq(
+    expr_map_access: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
       field("map", $._expression),
       field("key", $.expr_map_key)
     )),
@@ -749,7 +780,28 @@ module.exports = grammar({
       field("else", $._expression_body),
     )),
 
-    stmt_expr: $ => prec('STMT_EXPR', $._expression_non_if),
+    // In statements, all ifs should have their branches indented the same way.  Otherwise, a single
+    // space can have vast effects on the AST structure. Consider examples:
+    //
+    // f() =
+    //   if(x)
+    //      if(x)    1
+    //      elif(x)  2
+    //   elif(x)     3
+    //   else        4
+    //
+    // f() =
+    //   if(x)
+    //      if(x)    1
+    //       elif(x) 2
+    //   elif(x)     3
+    //   else        4
+    //
+    // In the first one compiles to a 3-way if statement (2-way if statement (1; 2); 3; 4), while
+    // the second is a 1-way if statement with a 4-way if *expression* (1;2;3;4).  This however
+    // should be checked by the linter and we allow parsing both. Uncomment the following to ban
+    // this behavior: stmt_expr: $ => prec('STMT_EXPR', $._expression_non_if),
+    stmt_expr: $ => prec('STMT_EXPR', $._expression),
 
     //**************************************************************************
     // TYPE
