@@ -1,21 +1,13 @@
-// const block = ($, rule) => seq(
-//   $._newline,
-//   $._block_open,
-//   sep1(rule, seq($._newline, $._block_semi)),
-//   $._newline,
-//   $._block_close
-// );
-
 const block = ($, rule) => seq(
-  alias($._block_open, $.OPEN),
-  sep1(rule, alias($._block_semi, $.SEMI)),
-  alias($._block_close, $.CLOSE)
+  $.block_open,
+  sep1(rule, $.block_semi),
+  $.block_close,
 );
 
 const inline_block = ($, rule) => seq(
-  alias($._block_open_inline, $.OPEN),
-  sep1(rule, alias($._block_semi, $.SEMI)),
-  alias($._block_close, $.CLOSE)
+  $.block_open_inline,
+  sep1(rule, $.block_semi),
+  $.block_close,
 );
 
 const weak_block = ($, rule) => choice(

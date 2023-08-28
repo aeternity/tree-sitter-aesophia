@@ -8,6 +8,10 @@
         "named": true
       },
       {
+        "type": "expr_hole",
+        "named": true
+      },
+      {
         "type": "expr_lambda",
         "named": true
       },
@@ -41,10 +45,6 @@
       },
       {
         "type": "expr_op",
-        "named": true
-      },
-      {
-        "type": "expr_paren",
         "named": true
       },
       {
@@ -133,14 +133,6 @@
       },
       {
         "type": "lit_string",
-        "named": true
-      },
-      {
-        "type": "lit_unit",
-        "named": true
-      },
-      {
-        "type": "lit_wildcard",
         "named": true
       }
     ]
@@ -248,10 +240,6 @@
         "named": true
       },
       {
-        "type": "pat_parens",
-        "named": true
-      },
-      {
         "type": "pat_record",
         "named": true
       },
@@ -265,6 +253,10 @@
       },
       {
         "type": "pat_variable",
+        "named": true
+      },
+      {
+        "type": "pat_wildcard",
         "named": true
       }
     ]
@@ -380,7 +372,27 @@
     ]
   },
   {
+    "type": "block_close",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "block_comment",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "block_open",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "block_open_inline",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "block_semi",
     "named": true,
     "fields": {}
   },
@@ -486,15 +498,15 @@
       "required": true,
       "types": [
         {
-          "type": "CLOSE",
+          "type": "block_close",
           "named": true
         },
         {
-          "type": "OPEN",
+          "type": "block_open",
           "named": true
         },
         {
-          "type": "SEMI",
+          "type": "block_semi",
           "named": true
         }
       ]
@@ -520,19 +532,28 @@
       "required": true,
       "types": [
         {
-          "type": "CLOSE",
+          "type": "block_close",
           "named": true
         },
         {
-          "type": "OPEN",
+          "type": "block_open",
           "named": true
         },
         {
-          "type": "SEMI",
+          "type": "block_open_inline",
+          "named": true
+        },
+        {
+          "type": "block_semi",
           "named": true
         }
       ]
     }
+  },
+  {
+    "type": "expr_hole",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "expr_lambda",
@@ -872,22 +893,6 @@
     }
   },
   {
-    "type": "expr_paren",
-    "named": true,
-    "fields": {
-      "expr": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expr_projection",
     "named": true,
     "fields": {
@@ -1013,7 +1018,7 @@
     "fields": {
       "elem": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "_expression",
@@ -1225,15 +1230,19 @@
       "required": true,
       "types": [
         {
-          "type": "CLOSE",
+          "type": "block_close",
           "named": true
         },
         {
-          "type": "OPEN",
+          "type": "block_open",
           "named": true
         },
         {
-          "type": "SEMI",
+          "type": "block_open_inline",
+          "named": true
+        },
+        {
+          "type": "block_semi",
           "named": true
         }
       ]
@@ -1325,15 +1334,19 @@
       "required": true,
       "types": [
         {
-          "type": "CLOSE",
+          "type": "block_close",
           "named": true
         },
         {
-          "type": "OPEN",
+          "type": "block_open",
           "named": true
         },
         {
-          "type": "SEMI",
+          "type": "block_open_inline",
+          "named": true
+        },
+        {
+          "type": "block_semi",
           "named": true
         }
       ]
@@ -1481,16 +1494,6 @@
   },
   {
     "type": "lit_string",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "lit_unit",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "lit_wildcard",
     "named": true,
     "fields": {}
   },
@@ -1739,22 +1742,6 @@
     }
   },
   {
-    "type": "pat_parens",
-    "named": true,
-    "fields": {
-      "pattern": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "pat_record",
     "named": true,
     "fields": {
@@ -1802,7 +1789,7 @@
     "fields": {
       "elem": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "_pattern",
@@ -1840,6 +1827,11 @@
   },
   {
     "type": "pat_variable",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "pat_wildcard",
     "named": true,
     "fields": {}
   },
@@ -2058,15 +2050,15 @@
       "required": false,
       "types": [
         {
-          "type": "CLOSE",
+          "type": "block_close",
           "named": true
         },
         {
-          "type": "OPEN",
+          "type": "block_open",
           "named": true
         },
         {
-          "type": "SEMI",
+          "type": "block_semi",
           "named": true
         }
       ]
@@ -2096,18 +2088,6 @@
         "required": false,
         "types": [
           {
-            "type": "CLOSE",
-            "named": true
-          },
-          {
-            "type": "OPEN",
-            "named": true
-          },
-          {
-            "type": "SEMI",
-            "named": true
-          },
-          {
             "type": "_expression",
             "named": true
           },
@@ -2129,6 +2109,18 @@
           },
           {
             "type": "_type",
+            "named": true
+          },
+          {
+            "type": "block_close",
+            "named": true
+          },
+          {
+            "type": "block_open",
+            "named": true
+          },
+          {
+            "type": "block_semi",
             "named": true
           },
           {
@@ -2787,18 +2779,6 @@
   {
     "type": "@ts.parse(",
     "named": false
-  },
-  {
-    "type": "CLOSE",
-    "named": true
-  },
-  {
-    "type": "OPEN",
-    "named": true
-  },
-  {
-    "type": "SEMI",
-    "named": true
   },
   {
     "type": "[",

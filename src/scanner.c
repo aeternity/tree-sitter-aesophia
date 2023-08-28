@@ -8,6 +8,9 @@
 
 #define ever (;;)
 
+#define ACCEPT(SYMBOL) {lexer->result_symbol = SYMBOL; goto _ACCEPT; }
+#define NOT_ACCEPT goto _NOT_ACCEPT
+
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #define VEC_RESIZE(vec, _cap)                                                  \
@@ -152,12 +155,12 @@ static bool scan_block_comment(TSLexer * lexer) {
   // Check if we are indeed opening a new comment block
   if (lexer->lookahead != '/') {
     printf("DID NOT OPEN /\n");
-    goto NOT_ACCEPT;
+    NOT_ACCEPT;
   }
   advance(lexer);
   if (lexer->lookahead != '*') {
     printf("DID NOT OPEN *\n");
-    goto NOT_ACCEPT;
+    NOT_ACCEPT;
   }
   advance(lexer);
 
@@ -166,7 +169,7 @@ static bool scan_block_comment(TSLexer * lexer) {
 
     // Unclosed block comment
     if (lexer->eof(lexer)) {
-      goto ACCEPT;
+      ACCEPT(BLOCK_COMMENT_CONTENT);
     }
 
     switch (lexer->lookahead) {
@@ -179,7 +182,7 @@ static bool scan_block_comment(TSLexer * lexer) {
       advance(lexer);
       if (lexer->lookahead == '/') {
         advance(lexer);
-        goto ACCEPT;
+        ACCEPT(BLOCK_COMMENT_CONTENT);
       }
       break;
     default:
@@ -187,9 +190,9 @@ static bool scan_block_comment(TSLexer * lexer) {
     }
   }
 
-  NOT_ACCEPT:
+  _NOT_ACCEPT:
     return false;
-  ACCEPT:
+  _ACCEPT:
     return true;
 }
 
@@ -206,30 +209,29 @@ static bool scan(Scanner * scanner,
                  TSLexer * lexer,
                  const bool * valid_symbols) {
 
-    printf("INIT SCAN, column %d\n", lexer->get_column(lexer));
+  printf("\n**************************\n");
+  printf("INIT SCAN, column %d, staring at '%c' (%d) (eof=%d) (range start=%d)\n", lexer->get_column(lexer), lexer->lookahead, lexer->lookahead, lexer->eof(lexer), lexer->is_at_included_range_start(lexer));
     print_scanner(scanner);
     print_symbols(valid_symbols);
     printf("\n");
 
     if (valid_symbols[ERROR_STATE]) {
       printf("FAIL DUE TO ERROR STATE\n");
-      goto NOT_ACCEPT;
+      NOT_ACCEPT;
     }
 
     // First handle eventual runback tokens, we saved on a previous scan op
     if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 &&
         valid_symbols[BLOCK_SEMI]) {
         VEC_POP(scanner->runback);
-        lexer->result_symbol = BLOCK_SEMI;
         printf("RUNBACK SEMI\n");
-        goto ACCEPT;
+        ACCEPT(BLOCK_SEMI);
     }
     if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
         valid_symbols[BLOCK_CLOSE]) {
         VEC_POP(scanner->runback);
-        lexer->result_symbol = BLOCK_CLOSE;
         printf("RUNBACK CLOSE");
-        goto ACCEPT;
+        ACCEPT(BLOCK_CLOSE);
     }
     VEC_CLEAR(scanner->runback);
 
@@ -248,7 +250,7 @@ static bool scan(Scanner * scanner,
       } else if (lexer->lookahead == '\t') {
         // No tabs
         printf("FOUND TAB\n");
-        goto NOT_ACCEPT;
+        NOT_ACCEPT;
       } else if (lexer->lookahead == '\n') {
         // Calculate indent
         skip(lexer);
@@ -283,31 +285,27 @@ static bool scan(Scanner * scanner,
           advance_to_line_end(lexer);
         } else {
           printf("NOT A LINE COMMENT\n");
-          goto NOT_ACCEPT;
+          NOT_ACCEPT;
         }
       } else if (valid_symbols[BLOCK_COMMENT_CONTENT] &&
                  lexer->lookahead == '*') {
         // Block comment end candidate
         advance(lexer);
         if(lexer->lookahead == '/') {
-          lexer->result_symbol = BLOCK_COMMENT_CONTENT;
-          goto ACCEPT;
+          ACCEPT(BLOCK_COMMENT_CONTENT);
         } else {
           printf("NOT A BLOCK COMMENT\n");
-          goto NOT_ACCEPT;
+          NOT_ACCEPT;
         }
       } else if (lexer->eof(lexer)) {
         if (valid_symbols[BLOCK_CLOSE]) {
-          lexer->result_symbol = BLOCK_CLOSE;
-          goto ACCEPT;
+          ACCEPT(BLOCK_CLOSE);
         }
         if (valid_symbols[BLOCK_SEMI]) {
-          lexer->result_symbol = BLOCK_SEMI;
-          goto ACCEPT;
+          ACCEPT(BLOCK_SEMI);
         }
         if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
-          lexer->result_symbol = BLOCK_COMMENT_CONTENT;
-          goto ACCEPT;
+          ACCEPT(BLOCK_COMMENT_CONTENT);
         }
         break;
       } else {
@@ -319,7 +317,7 @@ static bool scan(Scanner * scanner,
     if (valid_symbols[BLOCK_COMMENT_CONTENT]) {
         if (!can_call_mark_end) {
           printf("CAN'T CALL MARK END\n");
-          goto NOT_ACCEPT;
+          NOT_ACCEPT;
         }
         lexer->mark_end(lexer);
         while(true) {
@@ -343,37 +341,27 @@ static bool scan(Scanner * scanner,
             }
         }
 
-        lexer->result_symbol = BLOCK_COMMENT_CONTENT;
-        goto ACCEPT;
+        ACCEPT(BLOCK_COMMENT_CONTENT);
     }
 
-    if (valid_symbols[BLOCK_OPEN_INLINE] &&
-        !lexer->eof(lexer) &&
-        !has_line_end &&
-        has_space
-        ) {
-      VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-      lexer->result_symbol = BLOCK_OPEN_INLINE;
-      lexer->mark_end(lexer);
-      goto ACCEPT;
-    }
-
-    if (valid_symbols[BLOCK_OPEN] &&
-        !lexer->eof(lexer) &&
-        has_line_end
-        ) {
-      VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-      lexer->result_symbol = BLOCK_OPEN;
-      lexer->mark_end(lexer);
-      goto ACCEPT;
-    }
+    /* if (valid_symbols[BLOCK_OPEN_INLINE] && */
+    /*     !lexer->eof(lexer) && */
+    /*     !has_line_end && */
+    /*     lexer->is_at_included_range_start(lexer) && */
+    /*     has_space */
+    /*     ) { */
+    /*   VEC_PUSH(scanner->indents, lexer->get_column(lexer)); */
+    /*   lexer->result_symbol = BLOCK_OPEN_INLINE; */
+    /*   lexer->mark_end(lexer); */
+    /*   ACCEPT; */
+    /* } */
 
     if (has_line_end) {
       if (scanner->indent_length > VEC_BACK(scanner->indents) &&
           valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer)) {
         VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-        lexer->result_symbol = BLOCK_OPEN;
-        goto ACCEPT;
+        lexer->mark_end(lexer);
+        ACCEPT(BLOCK_OPEN);
       }
 
       while (scanner->indent_length <= VEC_BACK(scanner->indents)) {
@@ -410,29 +398,26 @@ static bool scan(Scanner * scanner,
       if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 &&
           valid_symbols[BLOCK_SEMI]) {
         VEC_POP(scanner->runback);
-        lexer->result_symbol = BLOCK_SEMI;
-        goto ACCEPT;
+        ACCEPT(BLOCK_SEMI);
       }
       if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
           valid_symbols[BLOCK_CLOSE]) {
         VEC_POP(scanner->runback);
-        lexer->result_symbol = BLOCK_CLOSE;
-        goto ACCEPT;
+        ACCEPT(BLOCK_CLOSE);
       }
       if (lexer->eof(lexer) && valid_symbols[BLOCK_CLOSE]) {
-        lexer->result_symbol = BLOCK_CLOSE;
-        goto ACCEPT;
+        ACCEPT(BLOCK_CLOSE);
       }
     }
 
- NOT_ACCEPT:
+ _NOT_ACCEPT:
     printf("NOT ACCEPT\n\n");
     return false;
- ACCEPT:
+ _ACCEPT:
     printf("ACCEPT AT %d: ", lexer->get_column(lexer));
-        print_symbol(lexer->result_symbol);
-        printf("\n\n");
-        return true;
+    print_symbol(lexer->result_symbol);
+    printf("\n\n");
+    return true;
 }
 
     // --------------------------------------------------------------------------------------------------------

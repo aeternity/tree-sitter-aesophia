@@ -28,9 +28,7 @@ module.exports = grammar({
 
   conflicts: $ => [
     // ((x, y)) --- function args or tuple pattern?
-    // [$.pat_args, $.pat_tuple],
-    // () --- function 0-args or unit literal?
-    [$.pat_args, $.lit_unit],
+    [$.pat_args, $.pat_tuple],
     // (x : t) --- typed variable expression or typed pattern?
     [$.expr_variable, $._pattern],
     // Literals are untellable
@@ -44,7 +42,6 @@ module.exports = grammar({
     $.block_comment,
     $.line_comment,
     /[\s\uFEFF\u2060\u200B]/,
-
   ],
 
   externals: $ => [
@@ -86,6 +83,7 @@ module.exports = grammar({
   precedences: $ => [
     [ // expressions
       'EXPR_ATOM',
+      'EXPR_TUPLE',
       'EXPR_QUAL',
       'EXPR_PROJECTION',
       'EXPR_APP',
@@ -109,11 +107,13 @@ module.exports = grammar({
       'EXPR_GUARD',
       'EXPR_LAMBDA',
     ],
+
     [ // statements
       'STMT_EXPR',
       'STMT_IF',
       'STMT_LET',
     ],
+
     [ // types
       'TYPE_ATOM',
       'TYPE_QUAL',
@@ -122,8 +122,10 @@ module.exports = grammar({
       'TYPE_TUPLE',
       'TYPE_FUN',
     ],
+
     [ // patterns
       'PAT_ATOM',
+      'PAT_TUPLE',
       'PAT_LIST',
       'PAT_ARGS',
       'PAT_OP',
@@ -132,13 +134,10 @@ module.exports = grammar({
       'PAT_LET',
       'PAT_TYPED',
     ],
+
     [ // Literals
       'LIT_ATOM',
       'LIT_QUAL',
-    ],
-    [ // lexemes
-      'LEX_ADDRESS', 'LEX_LOW_ID',
-      // 'LEX_LOW_ID', 'LEX_ADDRESS',
     ],
 
     // conflicts
@@ -146,6 +145,9 @@ module.exports = grammar({
     // switch(x) p | x : type => ...
     //               ^Should be parsed as (x : type) => ...
     [ 'EXPR_TYPED', 'TYPE_DOMAIN' ],
+
+    // Parse a lambda before claiming a tuple
+    ['PAT_TUPLE', 'PAT_ARGS', 'EXPR_TUPLE'],
   ],
 
   word: $ => $._lex_low_id,
@@ -352,13 +354,9 @@ module.exports = grammar({
       $._expression,
     ),
 
-    // _expression: $ => choice(
-    //   $._expression_non_if,
-    //   $.expr_if,
-    // ),
-
     _expression: $ => choice(
       $.expr_lambda,
+      $.expr_variable,
       $.expr_typed,
       $.expr_op,
       $.expr_application,
@@ -368,6 +366,7 @@ module.exports = grammar({
       $.expr_variable,
       $.expr_projection,
       $.expr_switch,
+      $.expr_tuple,
       $._expr_atom
     ),
 
@@ -554,8 +553,6 @@ module.exports = grammar({
       $.expr_record,
       $.expr_map,
       $._expr_list,
-      $.expr_tuple,
-      $.expr_paren,
       $.expr_hole,
     )),
 
@@ -626,12 +623,8 @@ module.exports = grammar({
       'if', parens(field("cond", $._expression)),
     ),
 
-    expr_tuple: $ => prec('EXPR_ATOM', parens_comma2(
+    expr_tuple: $ => prec('EXPR_TUPLE', parens_comma(
       field("elem", $._expression)
-    )),
-
-    expr_paren: $ => prec('EXPR_ATOM', parens(
-      field("expr", $._expression)
     )),
 
     expr_hole: $ => prec('EXPR_ATOM', $._lex_hole),
@@ -649,16 +642,19 @@ module.exports = grammar({
     // _pattern_binder: $ => prec('PAT_BINDER', choice(
       $.pat_application,
       $.pat_operator,
+      $.pat_tuple,
       $._pat_atom
     ),
+
+    pat_tuple: $ => prec('PAT_TUPLE', parens_comma(
+      field("elem", $._pattern)
+    )),
 
     _pat_atom: $ => prec('PAT_ATOM', choice(
       alias($._variable_name, $.pat_variable),
       $.pat_literal,
       $.pat_list,
-      $.pat_tuple,
       $.pat_record,
-      $.pat_parens,
       $.pat_wildcard,
     )),
 
@@ -694,10 +690,6 @@ module.exports = grammar({
       field("elem", $._pattern)
     )),
 
-    pat_tuple: $ => prec('PAT_ATOM', parens_comma2(
-      field("elem", $._pattern)
-    )),
-
     pat_record: $ => prec('PAT_ATOM', braces_comma1(
       field("field", $.pat_record_field)
     )),
@@ -717,8 +709,6 @@ module.exports = grammar({
       field("pattern", $._pattern),
     ),
 
-    pat_parens: $ => prec('PAT_ATOM', parens(field("pattern", $._pattern))),
-
     pat_wildcard: $ => prec('PAT_ATOM', $._lex_wildcard),
 
     //**************************************************************************
@@ -733,7 +723,6 @@ module.exports = grammar({
       $.lit_integer,
       $.lit_bool,
       $.lit_empty_map_or_record,
-      $.lit_unit,
       $.lit_string,
       $.lit_char,
     ),
@@ -754,8 +743,6 @@ module.exports = grammar({
     lit_bool: $ => choice('true', 'false'),
 
     lit_empty_map_or_record: $ => braces(),
-
-    lit_unit: $ => prec('LIT_ATOM', parens()),
 
     lit_string: $ => $._lex_string,
 
@@ -987,17 +974,28 @@ module.exports = grammar({
     // LEXEMES
     //**************************************************************************
 
+    block_open: $ => $._block_open,
+    block_open_inline: $ => $._block_open_inline,
+    block_semi: $ => $._block_semi,
+    block_close: $ => $._block_close,
+
     _lex_int_dec: $ => token(/0|[1-9](_?[0-9]+)*/),
     _lex_int_hex: $ => token(/0x([0-9a-fA-F](_?[0-9a-fA-F]+)*)/),
 
+    // This has to be above _lex_low_id in order to take priority. Somehow precedences don't work
+    // here...
+    _lex_address: $ => token(seq(
+      choice('ak', 'ok', 'oq', 'ct'),
+      /_[0-9a-zA-Z]+/,
+    )),
+
     _lex_low_id: $ => token(/([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
-    _lex_up_id: $ => token(prec('LEX_LOW_ID', /[A-Z][a-zA-Z0-9_]*/)),
+    _lex_up_id: $ => token(/[A-Z][a-zA-Z0-9_]*/),
 
     _lex_prim_id: $ => token(/'*([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
 
     _lex_bytes: $ => token(/#[0-9a-fA-F]{2}(_?[0-9a-fA-F]{2})*/),
 
-    _lex_address: $ => token(prec('LEX_ADDRESS', /((ak)|(ok)|(oq)|(ct))_[0-9a-zA-Z]+/)),
     _lex_wildcard: $ => token('_'),
 
     _lex_hole: $ => token('???'),

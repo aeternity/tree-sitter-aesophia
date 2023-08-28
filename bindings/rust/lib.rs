@@ -16,7 +16,6 @@
 //! [tree-sitter]: https://tree-sitter.github.io/
 
 extern crate tree_sitter;
-use std::sync::TryLockResult;
 
 use tree_sitter::*;
 
@@ -45,6 +44,7 @@ pub const NODE_TYPES: &str = include_str!("../../src/node-types.json");
 // pub const LOCALS_QUERY: &'static str = include_str!("../../queries/locals.scm");
 // pub const TAGS_QUERY: &'static str = include_str!("../../queries/tags.scm");
 
+
 #[derive(Clone, Debug)]
 pub enum ParseError {
     InvalidToken(String),
@@ -58,17 +58,25 @@ pub enum ParseError {
 }
 
 type ParseErrors = Vec<ParseError>;
+type SubtypeMap = std::collections::HashMap<String, String>;
+
+#[derive(Clone, Debug)]
+pub struct ParseEnv<'a> {
+    src: &'a [u16],
+    subtypes: SubtypeMap,
+    errs: ParseErrors,
+}
 
 type ParseResult<T> = Option<T>;
 type ParseResultN<T> = ParseResult<ast::Node<T>>;
 
-fn node_content(node: &Node, src: &[u16], errs: &mut ParseErrors) -> ParseResult<String> {
-    let as_utf = node.utf16_text(src);
+fn node_content(node: &Node, env: &mut ParseEnv) -> ParseResult<String> {
+    let as_utf = node.utf16_text(env.src);
     match String::from_utf16(as_utf) {
         Ok(content) => Some(content),
         Err(_) => {
             let range = node.byte_range();
-            errs.push(ParseError::InvalidUtf16(range.start..range.end));
+            env.errs.push(ParseError::InvalidUtf16(range.start..range.end));
             None
         }
     }
@@ -206,19 +214,18 @@ fn parse_bin_op(token: &str) -> ParseResult<ast::BinOp> {
 
 fn parse_literal(
     tc: &mut TreeCursor,
-    src: &[u16],
-    errs: &mut ParseErrors,
+    env: &mut ParseEnv
 ) -> ParseResultN<ast::Literal> {
     use ast::Literal;
     let node = &tc.node();
-    let content = node_content(node, src, errs)?;
+    let content = node_content(node, env)?;
     let lit = match node.kind() {
         // "lit_constructor" => Literal::Constructor { val: content },
         "lit_bytes" => {
             let lit = parse_bytes(&content);
 
             if lit.is_none() {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
             }
 
             Literal::Bytes { val: lit? }
@@ -227,7 +234,7 @@ fn parse_literal(
             let op = parse_bin_op(&content);
 
             if op.is_none() {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
             }
 
             Literal::LambdaBinOp { val: op? }
@@ -236,7 +243,7 @@ fn parse_literal(
             let lit = parse_int(&content);
 
             if lit.is_none() {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
             }
 
             Literal::Int { val: lit? }
@@ -247,7 +254,7 @@ fn parse_literal(
             } else if content == "false" {
                 Literal::Bool { val: false }
             } else {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
                 None?
             }
         }
@@ -256,7 +263,7 @@ fn parse_literal(
             let lit = parse_str(&content);
 
             if lit.is_none() {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
             }
 
             Literal::String { val: lit? }
@@ -265,7 +272,7 @@ fn parse_literal(
             let lit = parse_char(&content);
 
             if lit.is_none() {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
                 None?
             } else {
                 Literal::Char {
@@ -275,7 +282,7 @@ fn parse_literal(
         }
         "lit_wildcard" => Literal::Wildcard,
         _ => {
-            errs.push(ParseError::InvalidToken(content));
+            env.errs.push(ParseError::InvalidToken(content));
             None?
         }
     };
@@ -300,66 +307,32 @@ fn mk_node_many<T: Clone>(node: &tree_sitter::Node, values: Vec<ast::Node<T>>) -
     }
 }
 
-fn parse_child_by_idx<'a, T: Clone, P>(
-    tc: &mut tree_sitter::TreeCursor<'a>,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
-    parse: P,
-    idx: usize,
-) -> ParseResultN<T>
-where
-    P: Fn(&mut tree_sitter::TreeCursor<'a>, &'a [u16], &mut ParseErrors) -> ParseResultN<T>,
-{
-    let child = tc.node().child(idx)?;
-    let node = parse(&mut child.walk(), src, errs);
-    node
-}
-
-fn parse_child_by_name<'a, T: Clone, F: Fn(&tree_sitter::TreeCursor) -> bool>(
-    tc: &mut tree_sitter::TreeCursor,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
-    parse: fn(
-        &mut tree_sitter::TreeCursor,
-        src: &'a [u16],
-        errs: &mut ParseErrors,
-    ) -> ParseResultN<T>,
-    name: &str,
-) -> ParseResultN<T> {
-    let child = tc.node().child_by_field_name(name)?;
-    tc.reset(child);
-    let node = parse(tc, src, errs);
-    let moved = tc.goto_parent();
-    node
-}
-
 fn parse_children<'a, T: Clone, F, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
+    env: &mut ParseEnv,
     parse: P,
-    filter: F,
+    mut filter: F,
 ) -> ParseResult<Vec<ast::Node<T>>>
 where
-    F: Fn(&tree_sitter::TreeCursor) -> bool,
-    P: Fn(&mut tree_sitter::TreeCursor<'a>, &'a [u16], &mut ParseErrors) -> ParseResultN<T>,
+    F: FnMut(&tree_sitter::TreeCursor) -> bool,
+    P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
 {
     let mut children = Vec::with_capacity(tc.node().child_count());
     tc.goto_first_child();
     while {
         let node = tc.node();
         if node.is_missing() {
-            errs.push(ParseError::MissingNode(node.kind().to_string()));
+            env.errs.push(ParseError::MissingNode(node.kind().to_string()));
         }
         if node.is_error() {
-            match node_content(&node, src, errs) {
-                Some(content) => errs.push(ParseError::NodeError(content)),
+            match node_content(&node, env) {
+                Some(content) => env.errs.push(ParseError::NodeError(content)),
                 None => (),
             };
-            parse_error(tc, src, errs);
+            parse_error(tc, env);
         }
         if filter(tc) {
-            children.push(parse(tc, src, errs));
+            children.push(parse(tc, env));
         }
         tc.goto_next_sibling()
     } {}
@@ -368,48 +341,96 @@ where
     nodes
 }
 
+fn parse_child<'a, T: Clone, F, P>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+    parse: P,
+    filter: F,
+) -> ParseResultN<T>
+where
+    P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
+    F: FnMut(&tree_sitter::TreeCursor) -> bool
+{
+    let nodes = parse_children(tc, env, &parse, filter);
+
+    let node_vec = nodes?;
+
+    if !node_vec.is_empty() {
+        let node = node_vec[0].clone();
+        Some(node)
+    } else {
+        None
+    }
+}
+
+fn parse_child_by_idx<'a, T: Clone, P>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+    parse: P,
+    idx: usize,
+) -> ParseResultN<T>
+where
+    P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
+{
+    let mut i = 0;
+    parse_child(tc, env, &parse, |_| {
+        i += 1;
+        idx == i - 1
+    })
+}
+
+fn parse_child_by_field<T: Clone, P>(
+    tc: &mut tree_sitter::TreeCursor,
+    env: &mut ParseEnv,
+    parse: P,
+    name: &str,
+) -> ParseResultN<T>
+where P: Fn(&mut tree_sitter::TreeCursor, &mut ParseEnv) -> ParseResultN<T>,
+{
+    parse_child(tc, env, &parse, |c| {
+        c.field_name() == Some(name)
+    })
+}
+
 fn parse_children_by_field<'a, T, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
+    env: &mut ParseEnv,
     parse: P,
     name: &str,
 ) -> ParseResult<Vec<ast::Node<T>>>
 where
     T: Clone,
-    P: Fn(&mut tree_sitter::TreeCursor<'a>, &'a [u16], &mut ParseErrors) -> ParseResultN<T>,
+    P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
 {
-    parse_children(tc, src, errs, parse, |c| c.field_name() == Some(name))
+    parse_children(tc, env, parse, |c| c.field_name() == Some(name))
 }
 
 fn parse_children_by_kind<'a, T, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
+    env: &mut ParseEnv,
     parse: P,
     name: &str,
 ) -> ParseResult<Vec<ast::Node<T>>>
 where
     T: Clone,
-    P: Fn(&mut tree_sitter::TreeCursor<'a>, &'a [u16], &mut ParseErrors) -> ParseResultN<T>,
+    P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
 {
-    parse_children(tc, src, errs, parse, |c| c.node().kind() == name)
+    parse_children(tc, env, parse, |c| c.node().kind() == name)
 }
 
 fn parse_expr<'a>(
     tc: &mut tree_sitter::TreeCursor<'a>,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
+    env: &mut ParseEnv,
 ) -> ParseResultN<ast::Expr> {
     use ast::Expr;
     let node = &tc.node();
     let expr = match node.kind() {
         "expr_variable" => {
-            let content = node_content(node, src, errs)?;
+            let content = node_content(node, env)?;
             let qual = parse_qual(&content);
 
             if qual.is_none() {
-                errs.push(ParseError::InvalidToken(content));
+                env.errs.push(ParseError::InvalidToken(content));
             }
 
             let (path, name) = qual?;
@@ -421,18 +442,18 @@ fn parse_expr<'a>(
             }
         }
         "expr_literal" => {
-            let lit = parse_child_by_idx(tc, src, errs, parse_literal, 0);
+            let lit = parse_child_by_idx(tc, env, parse_literal, 0);
 
             Expr::Literal { val: lit? }
         }
         "expr_tuple" => {
-            let elems = parse_children_by_field(tc, src, errs, parse_expr, "elem");
+            let elems = parse_children_by_field(tc, env, parse_expr, "elem");
             Expr::Tuple {
                 elems: mk_node_many(node, elems?),
             }
         }
         "expr_list_literal" => {
-            let elems = parse_children_by_field(tc, src, errs, parse_expr, "elem");
+            let elems = parse_children_by_field(tc, env, parse_expr, "elem");
             Expr::List {
                 elems: mk_node_many(node, elems?),
             }
@@ -477,8 +498,8 @@ fn parse_expr<'a>(
             unimplemented!()
         }
         _ => {
-            let content = node_content(node, src, errs)?;
-            errs.push(ParseError::InvalidToken(content));
+            let content = node_content(node, env)?;
+            env.errs.push(ParseError::InvalidToken(content));
             None?
         }
     };
@@ -487,15 +508,15 @@ fn parse_expr<'a>(
 
 /// Checks if the node is an error (or missing) node and if so, runs a fallback parser to collect
 /// errors. Returns true if The node was ineed an error, false otherwise.
-fn parse_error<'a>(tc: &mut TreeCursor<'a>, src: &'a [u16], errs: &mut ParseErrors) -> bool {
+fn parse_error<'a>(tc: &mut TreeCursor<'a>, env: &mut ParseEnv) -> bool {
     let node = &tc.node();
     if node.is_missing() {
-        errs.push(ParseError::MissingNode(node.kind().to_string()));
+        env.errs.push(ParseError::MissingNode(node.kind().to_string()));
         return true;
     }
 
     if node.is_error() {
-        parse_children(tc, src, errs, parse_any, |_| true);
+        parse_children(tc, env, parse_any, |_| true);
         return true;
     }
 
@@ -504,39 +525,24 @@ fn parse_error<'a>(tc: &mut TreeCursor<'a>, src: &'a [u16], errs: &mut ParseErro
 
 fn parse_any<'a>(
     tc: &mut TreeCursor<'a>,
-    src: &'a [u16],
-    errs: &mut ParseErrors,
+    env: &mut ParseEnv,
 ) -> ParseResultN<bool> {
     let node = &tc.node();
     let kind = node.kind();
 
-    if vec![
-        "expr_variable",
-        "expr_literal",
-        "expr_tuple",
-        "expr_list_literal",
-        "expr_lambda",
-        "expr_typed",
-        "expr_op",
-        "expr_application",
-        "expr_record",
-        "expr_record_update",
-        "expr_map",
-        "expr_map_update",
-        "expr_map_access",
-        "expr_projection",
-        "expr_switch",
-        "expr_if",
-        "expr_block",
-    ].contains(&kind) {
-        parse_expr(tc, src, errs);
-    }
+    let sub_err = match env.subtypes.get(kind)?.as_str() {
+        "_expression" => parse_expr(tc, env).is_none(),
+        "_literal" => parse_expr(tc, env).is_none(),
+        _ => false
+    };
 
     None
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
     use crate::ast::Literal;
 
@@ -554,8 +560,38 @@ mod tests {
         parser
             .set_language(super::language())
             .expect("Error loading aesophia language");
+
+
+        let nodes_json_src =  std::fs::read_to_string("src/node-types.json").expect("Unable to read file");
+        let nodes_json: serde_json::Value = serde_json::from_str(&nodes_json_src).unwrap();
+        let mut subtypes: HashMap<String, String> = HashMap::new();
+        match nodes_json {
+            serde_json::Value::Array(arr) =>
+                for v in arr {
+                    match (&v["subtypes"], &v["type"]) {
+                        (serde_json::Value::Array(subts),
+                         serde_json::Value::String(t)
+                         )=> {
+                            for subt in subts {
+                                match &subt["type"] {
+                                    serde_json::Value::String(s) => {
+                                        subtypes.insert(s.clone(), t.clone());
+                                    },
+                                    _ => panic!("wtf sub type")
+                                }
+                            }
+                        },
+                        _ => ()
+                    };
+                },
+            _ => panic!("wtf json")
+        }
+
+        println!("SUBTYPES: {:?}\n\n", subtypes);
+
+
         // let src = "contract C = function f(x, y) = 123";
-        let src = "@ts.parse(expression)\n[1, 2, 1) ";
+        let src = "@ts.parse(expression)\n[1, 2, [3, ), 4] ";
         let ast = parser.parse(src, None).unwrap();
         let root = ast.root_node();
         println!("ROOT SEXP: {}", root.to_sexp());
@@ -564,11 +600,17 @@ mod tests {
         let mut errs = vec![];
         let src_data: Vec<u16> = src.encode_utf16().collect();
 
+        let mut env = ParseEnv {
+            src: &src_data,
+            errs: errs,
+            subtypes: subtypes
+        };
+
         let node =
-            parse_children_by_field(&mut ast.walk(), &src_data, &mut errs, parse_expr, "parsed");
+            parse_child_by_field(&mut ast.walk(), &mut env, parse_expr, "parsed");
 
         println!();
-        println!("\n\nERRORS: {:?}", errs);
+        println!("\n\nERRORS: {:?}", env.errs);
         println!("\n\nOUTPUT: {:?}", node);
         println!();
 
