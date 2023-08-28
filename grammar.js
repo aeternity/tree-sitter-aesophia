@@ -1,5 +1,9 @@
 const {
   parens, brackets, braces,
+  wrap_comma, wrap_comma1, wrap_comma2,
+  parens_comma, parens_comma1, parens_comma2,
+  braces_comma, braces_comma1, braces_comma2,
+  brackets_comma, brackets_comma1, brackets_comma2,
   block, block_or, maybe_block, weak_block, inline_block,
   dispath,
   sep, sep1, sep2,
@@ -24,7 +28,7 @@ module.exports = grammar({
 
   conflicts: $ => [
     // ((x, y)) --- function args or tuple pattern?
-    [$.pat_args, $.pat_tuple],
+    // [$.pat_args, $.pat_tuple],
     // () --- function 0-args or unit literal?
     [$.pat_args, $.lit_unit],
     // (x : t) --- typed variable expression or typed pattern?
@@ -39,8 +43,6 @@ module.exports = grammar({
     $.doc_comment,
     $.block_comment,
     $.line_comment,
-    // $._innocent_newline,
-    // /[\t \r\uFEFF\u2060\u200B]/,
     /[\s\uFEFF\u2060\u200B]/,
 
   ],
@@ -69,14 +71,8 @@ module.exports = grammar({
 
   inline: $ => [
     $._expression_body,
-    $._expr_map,
-    $._expr_tuple,
-    $._expr_record,
     $._expr_atom,
 
-    $._pat_record,
-    $._pat_tuple,
-    $._pat_map,
     $._pattern_binhder,
     $._pat_atom,
 
@@ -227,7 +223,9 @@ module.exports = grammar({
       field("names", $.using_name_list)
     ),
 
-    using_name_list: $ => brackets(sep1(field("name", $.name), $._c)),
+    using_name_list: $ => brackets_comma1(
+      field("name", $.name)
+    ),
 
     include: $ => seq(
       'include',
@@ -302,7 +300,9 @@ module.exports = grammar({
       $.variant_declaration
     ),
 
-    type_param_decls: $ => parens(sep(field("name", $.type_variable_poly_name), $._c)),
+    type_param_decls: $ => parens_comma(
+      field("name", $.type_variable_poly_name)
+    ),
 
     type_alias: $ => seq(
       'type',
@@ -320,7 +320,9 @@ module.exports = grammar({
       field("fields", $.record_fields),
     ),
 
-    record_fields: $ => braces(field("field", $.field_declaration), $._c),
+    record_fields: $ => braces_comma(
+      field("field", $.field_declaration)
+    ),
 
     field_declaration: $ => seq(
       field("name", $.field_name),
@@ -424,7 +426,9 @@ module.exports = grammar({
       field("args", $.expr_args),
     )),
 
-    expr_args: $ => parens(sep(field("arg", $._expr_argument), $._c)),
+    expr_args: $ => parens_comma(
+      field("arg", $._expr_argument)
+    ),
 
     _expr_argument: $ => choice(
       $._expression,
@@ -441,7 +445,9 @@ module.exports = grammar({
       field("updates", $.record_field_updates),
     )),
 
-    record_field_updates: $ => braces(field("update", $.record_field_update), $._c),
+    record_field_updates: $ => braces_comma1(
+      field("update", $.record_field_update)
+    ),
 
     record_field_update: $ => seq(
       field("path", $.field_path),
@@ -459,7 +465,9 @@ module.exports = grammar({
       field("updates", $.map_updates),
     )),
 
-    map_updates: $ => braces(field("update", $.map_update), $._c),
+    map_updates: $ => braces_comma1(
+      field("update", $.map_update)
+    ),
 
     map_update: $ => seq(
       field("key", $.expr_map_key), '=',
@@ -531,7 +539,7 @@ module.exports = grammar({
     ))),
 
     guarded_branch: $ => prec('EXPR_GUARD', seq(
-      sep1(field("guards", $._expression), $._c), '=>',
+      sep1(field("guards", $._expression), ','), '=>',
       field("body", $._expression_body)
     )),
 
@@ -548,20 +556,23 @@ module.exports = grammar({
       $._expr_list,
       $.expr_tuple,
       $.expr_paren,
+      $.expr_hole,
     )),
 
     expr_literal: $ => prec('EXPR_ATOM', $._literal),
 
-    expr_record: $ => prec('EXPR_ATOM', braces($._expr_record)),
-    _expr_record: $ => sep1(field("field", $.expr_record_field), $._c),
+    expr_record: $ => prec('EXPR_ATOM', braces_comma1(
+      field("field", $.expr_record_field)
+    )),
 
     expr_record_field: $ => seq(
       field("name", $.field_name), '=',
       field("value", $._expression)
     ),
 
-    expr_map: $ => prec('EXPR_ATOM', braces($._expr_map)),
-    _expr_map: $ => sep1(field("field", $.map_field), $._c),
+    expr_map: $ => prec('EXPR_ATOM', braces_comma1(
+      field("field", $.map_field)
+    )),
 
     map_field: $ => seq(
       field("key", $.expr_map_key), '=',
@@ -575,18 +586,23 @@ module.exports = grammar({
       $.expr_list_comprehension
     ),
 
-    expr_list_literal: $ => prec('EXPR_ATOM',
-       brackets(sep(field("elem", $._expression), $._c))
-    ),
+    expr_list_literal: $ => prec('EXPR_ATOM', brackets_comma(
+      field("elem", $._expression)
+    )),
 
     expr_list_range: $ => prec('EXPR_ATOM', brackets(
       field("start", $._expression), '..',
       field("end", $._expression),
     )),
 
-    expr_list_comprehension: $ => prec('EXPR_ATOM', brackets(
-      field("yield", $._expression), '|',
-      sep1(field("filter", $._list_comprehension_filter), $._c),
+    expr_list_comprehension: $ => prec('EXPR_ATOM', seq(
+      '[',
+      field("yield", $._expression),
+      wrap_comma1(
+        '|',
+        field("filter", $._list_comprehension_filter),
+        ']'
+      ),
     )),
 
     _list_comprehension_filter: $ => choice(
@@ -610,12 +626,15 @@ module.exports = grammar({
       'if', parens(field("cond", $._expression)),
     ),
 
-    expr_tuple: $ => prec('EXPR_ATOM', parens($._expr_tuple)),
-    _expr_tuple: $ => sep2(field("elem", $._expression), $._c),
+    expr_tuple: $ => prec('EXPR_ATOM', parens_comma2(
+      field("elem", $._expression)
+    )),
 
     expr_paren: $ => prec('EXPR_ATOM', parens(
       field("expr", $._expression)
     )),
+
+    expr_hole: $ => prec('EXPR_ATOM', $._lex_hole),
 
     //**************************************************************************
     // PATTERN
@@ -640,6 +659,7 @@ module.exports = grammar({
       $.pat_tuple,
       $.pat_record,
       $.pat_parens,
+      $.pat_wildcard,
     )),
 
     pat_typed: $ => prec.left('PAT_TYPED', seq(
@@ -652,7 +672,9 @@ module.exports = grammar({
       field("args", $.pat_args),
     )),
 
-    pat_args: $ => prec('PAT_ARGS', parens(sep(field("arg", $._pattern), $._c))),
+    pat_args: $ => prec('PAT_ARGS', parens_comma(
+      field("arg", $._pattern)
+    )),
 
     pat_let: $ => prec.left('PAT_LET', seq(
       field("name", alias($._variable_name, $.pat_variable)), '=',
@@ -668,21 +690,26 @@ module.exports = grammar({
 
     _pat_variable: $ => prec('PAT_ATOM', alias($._variable_name, $.pat_variable)),
 
-    pat_list: $ => prec('PAT_ATOM', brackets(sep(field("elem", $._pattern), $._c))),
+    pat_list: $ => prec('PAT_ATOM', brackets_comma(
+      field("elem", $._pattern)
+    )),
 
-    pat_tuple: $ => prec('PAT_ATOM', parens($._pat_tuple)),
-    _pat_tuple: $ => sep2(field("elem", $._pattern), $._c),
+    pat_tuple: $ => prec('PAT_ATOM', parens_comma2(
+      field("elem", $._pattern)
+    )),
 
-    pat_record: $ => prec('PAT_ATOM', braces($._pat_record)),
-    _pat_record: $ => sep1(field("field", $.pat_record_field), $._c),
+    pat_record: $ => prec('PAT_ATOM', braces_comma1(
+      field("field", $.pat_record_field)
+    )),
 
     pat_record_field: $ => seq(
       field("path", $.field_path), '=',
       field("pattern", $._pattern)
     ),
 
-    pat_map: $ => prec('PAT_ATOM', braces($._pat_map)),
-    _pat_map: $ => sep1(field("field", $.pat_map_field), $._c),
+    pat_map: $ => prec('PAT_ATOM', braces_comma1(
+      field("field", $.pat_map_field)
+    )),
 
     pat_map_field: $ => seq(
       brackets(field("key", $._expression)),
@@ -691,6 +718,8 @@ module.exports = grammar({
     ),
 
     pat_parens: $ => prec('PAT_ATOM', parens(field("pattern", $._pattern))),
+
+    pat_wildcard: $ => prec('PAT_ATOM', $._lex_wildcard),
 
     //**************************************************************************
     // LITERAL
@@ -707,7 +736,6 @@ module.exports = grammar({
       $.lit_unit,
       $.lit_string,
       $.lit_char,
-      $.lit_wildcard
     ),
 
     lit_constructor: $ => prec.left('LIT_QUAL', $._qual_constructor_name),
@@ -732,8 +760,6 @@ module.exports = grammar({
     lit_string: $ => $._lex_string,
 
     lit_char: $ => $._lex_char,
-
-    lit_wildcard: $ => $._lex_wildcard,
 
     //**************************************************************************
     // STATEMENT
@@ -825,14 +851,12 @@ module.exports = grammar({
       $.type_domain_many
     )),
 
-    type_domain_zero: $ => seq('(', ')'),
+    type_domain_zero: $ => parens(),
 
     type_domain_one: $ => prec('TYPE_DOMAIN', field("param", $._type)),
 
-    type_domain_many: $ => seq(
-      '(',
-      sep2(field("param", $._type), $._c),
-      ')'
+    type_domain_many: $ => parens_comma2(
+      field("param", $._type)
     ),
 
     type_tuple: $ => prec.left('TYPE_TUPLE', sep2(field("elem", $._type_in_tuple), '*')),
@@ -847,7 +871,9 @@ module.exports = grammar({
       field("params", $.type_params),
     )),
 
-    type_params: $ => parens(sep(field("param", $._type), $._c)),
+    type_params: $ => parens_comma(
+      field("param", $._type)
+    ),
 
     _type_atom: $ => prec('TYPE_ATOM', choice(
       $.type_variable_poly,
@@ -964,16 +990,17 @@ module.exports = grammar({
     _lex_int_dec: $ => token(/0|[1-9](_?[0-9]+)*/),
     _lex_int_hex: $ => token(/0x([0-9a-fA-F](_?[0-9a-fA-F]+)*)/),
 
-    _lex_low_id: $ => token(/[a-z_][a-zA-Z0-9_]*/),
-    _lex_up_id: $ => token(/[A-Z][a-zA-Z0-9_]*/),
+    _lex_low_id: $ => token(/([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
+    _lex_up_id: $ => token(prec('LEX_LOW_ID', /[A-Z][a-zA-Z0-9_]*/)),
 
-    _lex_prim_id: $ => token(/'*[a-z_][a-zA-Z0-9_]*/),
+    _lex_prim_id: $ => token(/'*([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
 
     _lex_bytes: $ => token(/#[0-9a-fA-F]{2}(_?[0-9a-fA-F]{2})*/),
 
     _lex_address: $ => token(prec('LEX_ADDRESS', /((ak)|(ok)|(oq)|(ct))_[0-9a-zA-Z]+/)),
-
     _lex_wildcard: $ => token('_'),
+
+    _lex_hole: $ => token('???'),
 
     _lex_string: $ => token(/"([^"\\]|(\\.))*"/),
 
@@ -986,11 +1013,5 @@ module.exports = grammar({
     seq("/*", $._block_comment_content, "*/"),
 
     line_comment: ($) => token(seq(/\/\//, repeat(/[^\n]/))),
-
-    _c: $ => seq(
-      // optional($._innocent_newline),
-      ',',
-      // optional($._innocent_newline)
-    )
   }
 });

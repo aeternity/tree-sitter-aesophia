@@ -36,8 +36,8 @@ const sep2 = (rule, delimiter) => seq(
 );
 
 const sep1 = (rule, delimiter) => seq(
+  repeat(seq(rule, delimiter)),
   rule,
-  repeat(seq(delimiter, rule))
 );
 
 const sep = (rule, delimiter) => optional(sep1(rule, delimiter));
@@ -45,14 +45,12 @@ const sep = (rule, delimiter) => optional(sep1(rule, delimiter));
 const lex_dispath_begin = '@ts.parse(';
 const lex_dispath_end = ')';
 
-function dispath(trigger, rule) {
-  return seq(
-    lex_dispath_begin,
-    trigger,
-    lex_dispath_end,
-    field("parsed", rule),
-  );
-}
+const dispath = (trigger, rule) => seq(
+  lex_dispath_begin,
+  trigger,
+  lex_dispath_end,
+  field("parsed", rule),
+);
 
 const parens = (...rule) => seq(
   '(',
@@ -72,6 +70,98 @@ const brackets = (...rule) => seq(
   ']'
 );
 
+const wrap_comma = (open, rule, close) => seq(
+  open,
+  repeat(seq(rule, ',')),
+  optional(rule),
+  close,
+);
+
+const wrap_comma1 = (open, rule, close) => seq(
+  open,
+  rule,
+  repeat(seq(',', rule)),
+  optional(','),
+  close,
+);
+
+const wrap_comma2 = (open, rule, close) => seq(
+  open,
+  rule,
+  repeat1(seq(',', rule)),
+  optional(','),
+  close,
+);
+
+const parens_comma = (rule) => seq(
+  '(',
+  repeat(seq(rule, ',')),
+  optional(rule),
+  ')'
+);
+
+const parens_comma1 = (rule) => seq(
+  '(',
+  rule,
+  repeat(seq(',', rule)),
+  optional(','),
+  ')'
+);
+
+const parens_comma2 = (rule) => seq(
+  '(',
+  rule,
+  repeat1(seq(',', rule)),
+  optional(','),
+  ')'
+);
+
+const braces_comma = (rule) => seq(
+  '{',
+  repeat(seq(rule, ',')),
+  optional(rule),
+  '}'
+);
+
+const braces_comma1 = (rule) => seq(
+  '{',
+  rule,
+  repeat(seq(',', rule)),
+  optional(','),
+  '}'
+);
+
+const braces_comma2 = (rule) => seq(
+  '{',
+  rule,
+  repeat1(seq(',', rule)),
+  optional(','),
+  '}'
+);
+
+const brackets_comma = (rule) => seq(
+  '[',
+  repeat(seq(rule, ',')),
+  optional(rule),
+  ']'
+);
+
+const brackets_comma1 = (rule) => seq(
+  '[',
+  rule,
+  repeat(seq(',', rule)),
+  optional(','),
+  ']'
+);
+
+const brackets_comma2 = (rule) => seq(
+  '[',
+  rule,
+  repeat1(seq(',', rule)),
+  optional(','),
+  ']'
+);
+
 const qual = (q, n) => seq(
   repeat(seq(q, token.immediate('.'))),
   n
@@ -86,6 +176,18 @@ module.exports = {
   parens,
   braces,
   brackets,
+  wrap_comma,
+  wrap_comma1,
+  wrap_comma2,
+  parens_comma,
+  parens_comma1,
+  parens_comma2,
+  braces_comma,
+  braces_comma1,
+  braces_comma2,
+  brackets_comma,
+  brackets_comma1,
+  brackets_comma2,
   block,
   block_or,
   maybe_block,

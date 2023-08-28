@@ -1561,7 +1561,7 @@
     "named": true,
     "fields": {
       "update": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -1971,7 +1971,7 @@
     "named": true,
     "fields": {
       "update": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -1987,8 +1987,8 @@
     "named": true,
     "fields": {
       "field": {
-        "multiple": false,
-        "required": true,
+        "multiple": true,
+        "required": false,
         "types": [
           {
             "type": "field_declaration",
