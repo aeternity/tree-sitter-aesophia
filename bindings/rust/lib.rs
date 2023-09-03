@@ -354,7 +354,7 @@ fn parse_children<'a, T: Clone, F, P>(
     mut filter: F,
 ) -> ParseResult<Vec<T>>
 where
-    F: FnMut(&tree_sitter::TreeCursor) -> bool,
+    F: FnMut(&tree_sitter::TreeCursor<'a>) -> bool,
     P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResult<T>,
 {
     let mut children = Vec::with_capacity(tc.node().child_count());
@@ -365,7 +365,7 @@ where
     }
 
     while child_found {
-        if env.has_errors && !parse_error(tc, env) && filter(tc) {
+        if (!env.has_errors || !parse_error(tc, env)) && filter(tc) {
             children.push(parse(tc, env));
         }
         child_found = tc.goto_next_sibling();
@@ -433,26 +433,26 @@ where
     }
 }
 
-fn parse_opt_child_by_field<T: Clone, P>(
-    tc: &mut tree_sitter::TreeCursor,
+fn parse_opt_child_by_field<'a, T: Clone, P>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
     parse: &P,
     name: &str,
 ) -> Option<ParseResult<T>>
-where P: Fn(&mut tree_sitter::TreeCursor, &mut ParseEnv) -> ParseResult<T>,
+where P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResult<T>,
 {
     parse_child(tc, env, &parse, |c| {
         c.field_name() == Some(name)
     })
 }
 
-fn parse_child_by_field<T: Clone, P>(
-    tc: &mut tree_sitter::TreeCursor,
+fn parse_child_by_field<'a, T: Clone, P>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
     parse: &P,
     name: &str,
 ) -> ParseResult<T>
-where P: Fn(&mut tree_sitter::TreeCursor, &mut ParseEnv) -> ParseResult<T>,
+where P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResult<T>,
 {
     match parse_opt_child_by_field(tc, env, &parse, name) {
         None => {
@@ -504,12 +504,192 @@ where P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>
     }, name)
 }
 
+fn parse_module<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::Module> {
+    let node = &tc.node();
+    let pragmas = parse_children_by_kind(tc, env, &parse_pragma, "top_pragma");
+    let includes = parse_children_by_kind(tc, env, &parse_include, "include");
+    let usings = parse_children_by_kind(tc, env, &parse_using, "using");
+    let scopes = parse_children_by_kind(tc, env, &parse_scope_decl, "scope_declaration");
+    Some(mk_node(node, ast::Module {
+        pragmas: pragmas?,
+        includes: includes?,
+        usings: usings?,
+        scopes: scopes?,
+    }))
+}
+
+fn parse_using<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::Using> {
+    use ast::Module;
+    let node = &tc.node();
+
+}
+
+fn parse_pragma<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::Pragma> {
+    use ast::Pragma;
+    let node = &tc.node();
+    let op = parse_child_by_field(tc, env, &parse_binop, "op");
+    let vsn = parse_fields_in_field(tc, env, &parse_name, "version", "subver");
+    Some(mk_node(node, ast::Pragma::CompilerVsn {
+        op: op?,
+        vsn: vsn?
+    }))
+}
+
+fn parse_include<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::Include> {
+    let node = &tc.node();
+    let path = parse_child_by_field(tc, env, &|tc, env| parse_str(&node_content(&tc.node(), env)?), "path");
+    Some(mk_node(node, ast::Include{
+        path: path?,
+    }))
+}
+
+fn parse_scope_decl<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::ScopeDecl> {
+    use ast::ScopeDecl;
+    let node = &tc.node();
+
+    let modifiers_m = parse_children_by_field(tc, env, &parse_name, "modifier");
+    let header_m = parse_child_by_field(tc, env, &parse_name, "header");
+    let is_interface = node.child_by_field_name("interface").is_some();
+    let name_m = parse_child_by_field(tc, env, &parse_name, "name");
+    let decls = parse_children_by_field(tc, env, &parse_scoped_decl, "decl");
+
+    let name = name_m?;
+    let header = header_m?;
+    let modifiers = modifiers_m?;
+
+    let Modifiers {
+        is_payable,
+        is_stateful,
+        is_private,
+        is_main,
+    } = parse_modifiers(env, &modifiers);
+
+    let sdecl = match header.node.as_str() {
+        "contract" if !is_interface => {
+            if is_private || is_stateful {
+                env.err(ParseError::InvalidModifier);
+                None?
+            }
+
+
+
+        }
+        "contract" if is_interface => {
+            if is_payable || is_private || is_stateful || is_main {
+                env.err(ParseError::InvalidModifier);
+                None?
+            }
+
+        }
+        "namespace" => {
+            if is_payable || is_private || is_stateful || is_main || is_interface {
+                env.err(ParseError::InvalidModifier);
+                None?
+            }
+
+
+        }
+        h => {
+            env.err(ParseError::InvalidToken(h.to_string()));
+            None?
+        }
+    };
+    Some(mk_node(node, sdecl))
+}
+
+struct Modifiers {
+    is_payable: bool,
+    is_stateful: bool,
+    is_private: bool,
+    is_main: bool,
+}
+
+fn parse_modifiers(
+    env: &mut ParseEnv,
+    modifiers: &Vec<ast::Node<String>>
+) -> Modifiers {
+    let mut is_payable = false;
+    let mut is_stateful = false;
+    let mut is_private = false;
+    let mut is_main = false;
+
+    for m in modifiers {
+        match m.node.as_str() {
+            "payable" => is_payable = true,
+            "stateful" => is_stateful = true,
+            "private" => is_private = true,
+            "main" => is_private = true,
+            _ => env.err(ParseError::InvalidToken(m.node.to_string()))
+        }
+    }
+
+    Modifiers {
+        is_payable,
+        is_stateful,
+        is_private,
+        is_main,
+    }
+}
+
+fn parse_scoped_decl<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::ScopedDecl> {
+    use ast::ScopedDecl;
+    let node = &tc.node();
+}
+
+fn parse_fun_clause<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::FunClause> {
+    use ast::Module;
+    let node = &tc.node();
+}
+
+fn parse_type_def<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::TypeDef> {
+    use ast::TypeDef;
+    let node = &tc.node();
+}
+
+fn parse_field_decl<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::FieldDecl> {
+    let node = &tc.node();
+}
+
+fn parse_constructor_decl<'a>(
+    tc: &mut tree_sitter::TreeCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::Constructor> {
+    let node = &tc.node();
+}
+
+
 fn parse_expr<'a>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Expr> {
     use ast::Expr;
-    env.check_error(tc)?;
     let node = &tc.node();
     let expr = match node.kind() {
         "expr_variable" => {
@@ -529,7 +709,7 @@ fn parse_expr<'a>(
             }
         }
         "expr_literal" => {
-            let lit = parse_child_by_idx(tc, env, &parse_literal, 0);
+            let lit = parse_child_by_field(tc, env, &parse_literal, "literal");
             Expr::Literal { val: lit? }
         }
         "expr_tuple" => {
@@ -814,13 +994,13 @@ fn parse_record_field_update<'a>(
 ) -> ParseResultN<ast::RecordFieldUpdate> {
     let node = &tc.node();
     let new_value = parse_child_by_field(tc, env, &parse_expr, "new_value");
-                let old_value = parse_opt_child_by_field(tc, env, &parse_name, "old_value");
-                let path = parse_fields_in_field(tc, env, &parse_name, "path", "field");
-                Some(mk_node(node, ast::RecordFieldUpdate{
-                    new_value: new_value?,
-                    old_value: old_value?,
-                    path: path?,
-                }))
+    let old_value = parse_opt_child_by_field(tc, env, &parse_name, "old_value");
+    let path = parse_fields_in_field(tc, env, &parse_name, "path", "field");
+    Some(mk_node(node, ast::RecordFieldUpdate{
+        new_value: new_value?,
+        old_value: old_value?,
+        path: path?,
+    }))
 }
 
 fn parse_map_field_assign<'a>(
@@ -945,7 +1125,7 @@ fn parse_pattern<'a>(
             }
         },
         "pat_literal" => {
-            let lit = parse_child_by_idx(tc, env, &parse_literal, 0);
+            let lit = parse_child_by_field(tc, env, &parse_literal, "literal");
             Pattern::Lit {
                 value: lit?
             }
@@ -1148,6 +1328,8 @@ fn parse_any<'a>(
         Some(sub) => {
             match sub.as_str() {
                 "_expression" => parse_expr(tc, env).is_some(),
+                "_pattern" => parse_pattern(tc, env).is_some(),
+                "_type" => parse_type(tc, env).is_some(),
                 "_literal" => parse_literal(tc, env).is_some(),
                 _ => {
                     parse_children(tc, env, &parse_any, |_| true);
@@ -1211,7 +1393,7 @@ mod tests {
             _ => panic!("wtf json")
         }
 
-        let src = "@ts.parse(expression)\n(1, XD) => 123)";
+        let src = "@ts.parse(expression)\n(x, y : int) => 123 +  456 * 999";
         let ast = parser.parse(src, None).unwrap();
         let root = ast.root_node();
 
@@ -1227,14 +1409,17 @@ mod tests {
 
         let mut tc = ast.walk();
 
-        let node = parse_any(&mut tc, &mut env);
+        // let node = parse_any(&mut tc, &mut env);
+        let node = parse_child_by_field(&mut tc, &mut env, &parse_expr, "parsed");
 
+        println!("ERRORS:");
         for e in env.errs {
             println!("ERROR: {:?}", e);
         }
 
+        println!("\nOUTPUT:");
         if let Some(out) = node {
-            println!("OUTPUT {:?}", out);
+            println!("SUCCESS {:?}", out);
         } else {
             println!("FAILED PARSE");
         }

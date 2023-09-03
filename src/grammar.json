@@ -3089,7 +3089,7 @@
                   "members": [
                     {
                       "type": "FIELD",
-                      "name": "guards",
+                      "name": "guard",
                       "content": {
                         "type": "SYMBOL",
                         "name": "_expression"
@@ -3104,7 +3104,7 @@
               },
               {
                 "type": "FIELD",
-                "name": "guards",
+                "name": "guard",
                 "content": {
                   "type": "SYMBOL",
                   "name": "_expression"
@@ -3218,8 +3218,12 @@
       "type": "PREC",
       "value": "EXPR_ATOM",
       "content": {
-        "type": "SYMBOL",
-        "name": "_literal"
+        "type": "FIELD",
+        "name": "literal",
+        "content": {
+          "type": "SYMBOL",
+          "name": "_literal"
+        }
       }
     },
     "expr_record": {
@@ -4044,8 +4048,12 @@
       "type": "PREC",
       "value": "PAT_ATOM",
       "content": {
-        "type": "SYMBOL",
-        "name": "_literal"
+        "type": "FIELD",
+        "name": "literal",
+        "content": {
+          "type": "SYMBOL",
+          "name": "_literal"
+        }
       }
     },
     "_pat_variable": {

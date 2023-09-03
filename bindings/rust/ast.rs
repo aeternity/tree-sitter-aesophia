@@ -31,34 +31,24 @@ pub type NodeBox<T> = Node<Box<T>>;
 
 pub type NodeOpt<T> = Option<Node<T>>;
 pub type NodeOptBox<T> = Option<NodeBox<T>>;
+pub type VecNode<T> = Vec<Node<T>>;
 
-#[derive(Clone, Debug)]
-pub struct NodeMany<T: Clone> {
-    pub nodes: Vec<Node<T>>,
-    pub ann: Ann,
-}
+pub type NodeMany<T: Clone> = Node<Vec<Node<T>>>;
 
 #[derive(Clone, Debug)]
 pub struct Module {
-    pub pragmas: NodeMany<Pragma>,
-    pub includes: NodeMany<Include>,
-    pub usings: NodeMany<Using>,
-    pub decls: NodeMany<ScopeDecl>,
+    pub pragmas: VecNode<Pragma>,
+    pub includes: VecNode<Include>,
+    pub usings: VecNode<Using>,
+    pub scopes: VecNode<ScopeDecl>,
 }
 
 #[derive(Clone, Debug)]
 pub enum UsingRange {
     Include(NodeMany<Name>),
     Exclude(NodeMany<Name>),
-}
-
-impl UsingRange {
-    pub fn include_all(annot: Ann) -> UsingRange {
-        UsingRange::Exclude(NodeMany {
-            nodes: vec![],
-            ann: annot,
-        })
-    }
+    Rename(Node<Name>),
+    All
 }
 
 #[derive(Clone, Debug)]
@@ -67,11 +57,14 @@ pub struct Using {
     pub range: NodeOne<UsingRange>,
 }
 
-pub type Vsn = String;
+pub type SubVer = String;
 
 #[derive(Clone, Debug)]
 pub enum Pragma {
-    CompilerVsn(Range<Vsn>),
+    CompilerVsn{
+        op: NodeOne<BinOp>,
+        vsn: NodeMany<SubVer>,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -122,15 +115,9 @@ pub struct FunDef {
 
 #[derive(Clone, Debug)]
 pub struct FunClause {
-    pub args: NodeMany<Arg>,
+    pub args: NodeMany<Pattern>,
     pub rettype: NodeOpt<Type>,
     pub body: NodeOne<Expr>,
-}
-
-#[derive(Clone, Debug)]
-pub struct Arg {
-    pub name: NodeOne<Name>,
-    pub typedecl: NodeOpt<Type>,
 }
 
 #[derive(Clone, Debug)]
@@ -232,11 +219,11 @@ pub enum Expr {
         cases: NodeMany<Case>,
     },
     If {
-        conds: NodeMany<ExprCond>,
+        conds: VecNode<ExprCond>,
         neg: NodeBox<Expr>,
     },
     Block {
-        stmts: NodeMany<Statement>,
+        stmts: VecNode<Statement>,
         value: NodeBox<Expr>,
     },
     Hole
@@ -302,8 +289,8 @@ pub enum ListCompFilter {
 
 #[derive(Clone, Debug)]
 pub struct Case {
-    pattern: NodeOne<Pattern>,
-    branches: NodeMany<CaseBranch>
+    pub pattern: NodeOne<Pattern>,
+    pub branches: NodeMany<CaseBranch>
 }
 
 #[derive(Clone, Debug)]

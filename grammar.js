@@ -237,7 +237,7 @@ module.exports = grammar({
     include_path: $ => $._lex_string,
 
     scope_declaration: $ => seq(
-      field("modifiers", repeat($.scope_modifier)),
+      field("modifier", repeat($.scope_modifier)),
       field("header", $.scope_header),
       field("interface", alias(optional('interface'), $.is_interface)),
       field("name", $.scope_name),
@@ -557,7 +557,7 @@ module.exports = grammar({
       $.expr_hole,
     )),
 
-    expr_literal: $ => prec('EXPR_ATOM', $._literal),
+    expr_literal: $ => prec('EXPR_ATOM', field("literal", $._literal)),
 
     expr_record: $ => prec('EXPR_ATOM', braces_comma1(
       field("field", $.expr_record_field)
@@ -683,7 +683,7 @@ module.exports = grammar({
       field("op_r", $._pattern)
     )),
 
-    pat_literal: $ => prec('PAT_ATOM', $._literal),
+    pat_literal: $ => prec('PAT_ATOM', field("literal", $._literal)),
 
     _pat_variable: $ => prec('PAT_ATOM', alias($._variable_name, $.pat_variable)),
 
