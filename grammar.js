@@ -356,6 +356,7 @@ module.exports = grammar({
 
     _expression: $ => choice(
       $.expr_lambda,
+      $.expr_if,
       $.expr_variable,
       $.expr_typed,
       $.expr_op,
@@ -538,7 +539,7 @@ module.exports = grammar({
     ))),
 
     guarded_branch: $ => prec('EXPR_GUARD', seq(
-      sep1(field("guards", $._expression), ','), '=>',
+      sep1(field("guard", $._expression), ','), '=>',
       field("body", $._expression_body)
     )),
 
@@ -568,10 +569,10 @@ module.exports = grammar({
     ),
 
     expr_map: $ => prec('EXPR_ATOM', braces_comma1(
-      field("field", $.map_field)
+      field("assign", $.map_assign)
     )),
 
-    map_field: $ => seq(
+    map_assign: $ => seq(
       field("key", $.expr_map_key), '=',
       optional(seq('@', field("old_value", $._variable_name))),
       field("new_value", $._expression)
@@ -814,7 +815,7 @@ module.exports = grammar({
     // the second is a 1-way if statement with a 4-way if *expression* (1;2;3;4).  This however
     // should be checked by the linter and we allow parsing both. Uncomment the following to ban
     // this behavior: stmt_expr: $ => prec('STMT_EXPR', $._expression_non_if),
-    stmt_expr: $ => prec('STMT_EXPR', $._expression),
+    stmt_expr: $ => prec('STMT_EXPR', field("expr", $._expression)),
 
     //**************************************************************************
     // TYPE

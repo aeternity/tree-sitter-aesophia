@@ -12,6 +12,10 @@
         "named": true
       },
       {
+        "type": "expr_if",
+        "named": true
+      },
+      {
         "type": "expr_lambda",
         "named": true
       },
@@ -556,6 +560,42 @@
     "fields": {}
   },
   {
+    "type": "expr_if",
+    "named": true,
+    "fields": {
+      "cond": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "else": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "then": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "expr_lambda",
     "named": true,
     "fields": {
@@ -672,12 +712,12 @@
     "type": "expr_map",
     "named": true,
     "fields": {
-      "field": {
+      "assign": {
         "multiple": true,
         "required": true,
         "types": [
           {
-            "type": "map_field",
+            "type": "map_assign",
             "named": true
           }
         ]
@@ -1498,7 +1538,7 @@
     "fields": {}
   },
   {
-    "type": "map_field",
+    "type": "map_assign",
     "named": true,
     "fields": {
       "key": {
@@ -2194,16 +2234,17 @@
   {
     "type": "stmt_expr",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "_expression",
-          "named": true
-        }
-      ]
+    "fields": {
+      "expr": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

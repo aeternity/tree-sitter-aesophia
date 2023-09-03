@@ -1378,6 +1378,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "expr_if"
+        },
+        {
+          "type": "SYMBOL",
           "name": "expr_variable"
         },
         {
@@ -3312,10 +3316,10 @@
           },
           {
             "type": "FIELD",
-            "name": "field",
+            "name": "assign",
             "content": {
               "type": "SYMBOL",
-              "name": "map_field"
+              "name": "map_assign"
             }
           },
           {
@@ -3329,10 +3333,10 @@
                 },
                 {
                   "type": "FIELD",
-                  "name": "field",
+                  "name": "assign",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "map_field"
+                    "name": "map_assign"
                   }
                 }
               ]
@@ -3357,7 +3361,7 @@
         ]
       }
     },
-    "map_field": {
+    "map_assign": {
       "type": "SEQ",
       "members": [
         {
@@ -4603,8 +4607,12 @@
       "type": "PREC",
       "value": "STMT_EXPR",
       "content": {
-        "type": "SYMBOL",
-        "name": "_expression"
+        "type": "FIELD",
+        "name": "expr",
+        "content": {
+          "type": "SYMBOL",
+          "name": "_expression"
+        }
       }
     },
     "_type": {

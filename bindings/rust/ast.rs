@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::hash::Hash;
 use std::ops::Range;
 
 pub type Name = String;
@@ -39,16 +37,6 @@ pub struct NodeMany<T: Clone> {
     pub nodes: Vec<Node<T>>,
     pub ann: Ann,
 }
-
-#[derive(Clone, Debug)]
-pub struct NodeIndex<Idx, T: Clone>
-where
-    Idx: Hash,
-{
-    pub nodes: HashMap<Idx, Node<T>>,
-    pub ann: Ann,
-}
-
 
 #[derive(Clone, Debug)]
 pub struct Module {
@@ -192,16 +180,15 @@ pub enum Expr {
     BinOp {
         op_l: NodeBox<Expr>,
         op_r: NodeBox<Expr>,
-        op: BinOp,
+        op: NodeOne<BinOp>,
     },
     UnOp {
-        expr: NodeBox<Expr>,
-        op: UnOp,
+        op_l: NodeBox<Expr>,
+        op: NodeOne<UnOp>,
     },
     App {
         fun: NodeBox<Expr>,
-        args: NodeMany<Expr>,
-        named_args: NodeIndex<Name, Expr>,
+        args: NodeMany<ExprArg>,
     },
     Tuple {
         elems: NodeMany<Expr>,
@@ -252,6 +239,18 @@ pub enum Expr {
         stmts: NodeMany<Statement>,
         value: NodeBox<Expr>,
     },
+    Hole
+}
+
+#[derive(Clone, Debug)]
+pub enum ExprArg {
+    Arg{
+        val: NodeOne<Expr>
+    },
+    NamedArg {
+        name: Node<Name>,
+        val: NodeOne<Expr>,
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -262,8 +261,8 @@ pub struct ExprCond {
 
 #[derive(Clone, Debug)]
 pub struct RecordFieldUpdate {
-    pub field: NodeOne<Name>,
-    pub old_value: NodeOne<Name>,
+    pub path: NodeMany<Name>,
+    pub old_value: NodeOpt<Name>,
     pub new_value: NodeOne<Expr>,
 }
 
@@ -275,16 +274,15 @@ pub struct RecordFieldAssign {
 
 #[derive(Clone, Debug)]
 pub struct MapFieldUpdate {
-    pub key: NodeBox<Expr>,
+    pub key: NodeOne<Expr>,
     pub old_value: NodeOpt<Name>,
-    pub new_value: NodeBox<Expr>,
+    pub new_value: NodeOne<Expr>,
 }
 
 #[derive(Clone, Debug)]
 pub struct MapFieldAssign {
-    pub key: NodeBox<Expr>,
-    pub value: NodeOpt<Name>,
-    pub default: NodeBox<Expr>,
+    pub key: NodeOne<Expr>,
+    pub value: NodeOne<Expr>,
 }
 
 #[derive(Clone, Debug)]
@@ -305,13 +303,13 @@ pub enum ListCompFilter {
 #[derive(Clone, Debug)]
 pub struct Case {
     pattern: NodeOne<Pattern>,
-    branch: NodeMany<CaseBranch>
+    branches: NodeMany<CaseBranch>
 }
 
 #[derive(Clone, Debug)]
 pub struct CaseBranch {
     pub guards: NodeMany<Expr>,
-    pub body: NodeBox<Expr>,
+    pub body: NodeOne<Expr>,
 }
 
 #[derive(Clone, Debug)]
@@ -332,8 +330,8 @@ pub enum Pattern {
         fields: NodeMany<PatternRecordField>,
     },
     Op {
-        op_l: NodeBox<Expr>,
-        op_r: NodeBox<Expr>,
+        op_l: NodeBox<Pattern>,
+        op_r: NodeBox<Pattern>,
         op: NodeOne<BinOp>,
     },
     Let {
@@ -345,9 +343,10 @@ pub enum Pattern {
         t: NodeOne<Type>,
     },
     App {
-        con: NodeOne<Name>,
+        fun: Node<Name>,
         args: NodeMany<Pattern>,
     },
+    Wildcard
 }
 
 #[derive(Clone, Debug)]
@@ -367,7 +366,6 @@ pub enum Literal {
     EmptyMapOrRecord,
     String { val: String },
     Char { val: char },
-    Wildcard,
     LambdaBinOp { val: BinOp },
     LambdaUnOp { val: UnOp },
 }
@@ -392,7 +390,6 @@ pub enum Statement {
     },
     Let {
         pattern: NodeOne<Pattern>,
-        typedecl: NodeOpt<Type>,
         body: NodeOne<Expr>,
     },
     If {
@@ -411,20 +408,26 @@ pub enum Type {
     },
     Fun {
         args: NodeMany<Type>,
-        named_args: NodeIndex<Name, Type>,
+        named_args: NodeMany<TypeNamedArg>,
         ret: NodeBox<Type>,
     },
     Tuple {
         elems: NodeMany<Type>
     },
     App {
-        fun: NodeOne<String>, // no higher rank types
+        fun: NodeBox<Type>,
         args: NodeMany<Type>,
     },
 }
 
 #[derive(Clone, Debug)]
+pub struct TypeNamedArg {
+    name: Node<Name>,
+    typ: NodeBox<Type>,
+}
+
+#[derive(Clone, Debug)]
 pub struct QName {
-    pub name: NodeOne<Name>,
     pub path: NodeMany<Name>,
+    pub name: NodeOne<Name>,
 }
