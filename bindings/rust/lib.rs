@@ -350,7 +350,7 @@ fn re_node<T1: Clone, T2: Clone>(n1: ast::Node<T1>, t: T2) -> ast::Node<T2> {
 fn parse_children<'a, T: Clone, F, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     mut filter: F,
 ) -> ParseResult<Vec<T>>
 where
@@ -380,7 +380,7 @@ where
 fn parse_child<'a, T: Clone, F, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     filter: F,
 ) -> Option<ParseResult<T>>
 where
@@ -402,7 +402,7 @@ where
 fn parse_opt_child_by_idx<'a, T: Clone, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     idx: usize,
 ) -> Option<ParseResult<T>>
 where
@@ -418,7 +418,7 @@ where
 fn parse_child_by_idx<'a, T: Clone, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     idx: usize,
 ) -> ParseResultN<T>
 where
@@ -436,7 +436,7 @@ where
 fn parse_opt_child_by_field<T: Clone, P>(
     tc: &mut tree_sitter::TreeCursor,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     name: &str,
 ) -> Option<ParseResult<T>>
 where P: Fn(&mut tree_sitter::TreeCursor, &mut ParseEnv) -> ParseResult<T>,
@@ -449,12 +449,12 @@ where P: Fn(&mut tree_sitter::TreeCursor, &mut ParseEnv) -> ParseResult<T>,
 fn parse_child_by_field<T: Clone, P>(
     tc: &mut tree_sitter::TreeCursor,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     name: &str,
 ) -> ParseResult<T>
 where P: Fn(&mut tree_sitter::TreeCursor, &mut ParseEnv) -> ParseResult<T>,
 {
-    match parse_opt_child_by_field(tc, env, parse, name) {
+    match parse_opt_child_by_field(tc, env, &parse, name) {
         None => {
             env.err(ParseError::MissingField(name.to_string()));
             None
@@ -479,7 +479,7 @@ where
 fn parse_children_by_kind<'a, T, P>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
-    parse: P,
+    parse: &P,
     name: &str,
 ) -> ParseResult<Vec<ast::Node<T>>>
 where
@@ -498,7 +498,7 @@ fn parse_fields_in_field<'a, T: Clone, P>(
 ) -> ParseResult<ast::NodeMany<T>>
 where P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResultN<T>
 {
-    parse_child_by_field(tc, env, |tc, env| {
+    parse_child_by_field(tc, env, &|tc, env| {
         let children = parse_children_by_field(tc, env, parse, name_in)?;
         Some(mk_node_many(&tc.node(), children))
     }, name)
@@ -529,24 +529,24 @@ fn parse_expr<'a>(
             }
         }
         "expr_literal" => {
-            let lit = parse_child_by_idx(tc, env, parse_literal, 0);
+            let lit = parse_child_by_idx(tc, env, &parse_literal, 0);
             Expr::Literal { val: lit? }
         }
         "expr_tuple" => {
-            let elems = parse_children_by_field(tc, env, parse_expr, "elem");
+            let elems = parse_children_by_field(tc, env, &parse_expr, "elem");
             Expr::Tuple {
                 elems: mk_node_many(node, elems?),
             }
         }
         "expr_list_literal" => {
-            let elems = parse_children_by_field(tc, env, parse_expr, "elem");
+            let elems = parse_children_by_field(tc, env, &parse_expr, "elem");
             Expr::List {
                 elems: mk_node_many(node, elems?),
             }
         }
         "expr_lambda" => {
-            let node_args = parse_fields_in_field(tc, env, parse_pattern, "args", "arg");
-            let body = parse_child_by_field(tc, env, parse_expr, "body");
+            let node_args = parse_fields_in_field(tc, env, &parse_pattern, "args", "arg");
+            let body = parse_child_by_field(tc, env, &parse_expr, "body");
 
             Expr::Lambda {
                 args: node_args?,
@@ -554,19 +554,19 @@ fn parse_expr<'a>(
             }
         }
         "expr_typed" => {
-            let e = parse_child_by_field(tc, env, parse_expr, "expr");
-            let t = parse_child_by_field(tc, env, parse_type, "type");
+            let e = parse_child_by_field(tc, env, &parse_expr, "expr");
+            let t = parse_child_by_field(tc, env, &parse_type, "type");
             Expr::Typed {
                 expr: node_box(e?),
                 t: t?
             }
         }
         "expr_op" => {
-            let op_l = parse_child_by_field(tc, env, parse_expr, "op_l");
-            let op_r_m = parse_opt_child_by_field(tc, env, parse_expr, "op_r");
+            let op_l = parse_child_by_field(tc, env, &parse_expr, "op_l");
+            let op_r_m = parse_opt_child_by_field(tc, env, &parse_expr, "op_r");
             match op_r_m {
                 Some(op_r) => {
-                    let op = parse_child_by_field(tc, env, parse_binop, "op");
+                    let op = parse_child_by_field(tc, env, &parse_binop, "op");
                     Expr::BinOp {
                         op_l: node_box(op_l?),
                         op: op?,
@@ -574,7 +574,7 @@ fn parse_expr<'a>(
                     }
                 }
                 None => {
-                    let op = parse_child_by_field(tc, env, parse_unop, "op");
+                    let op = parse_child_by_field(tc, env, &parse_unop, "op");
                     Expr::UnOp {
                         op_l: node_box(op_l?),
                         op: op?,
@@ -583,23 +583,23 @@ fn parse_expr<'a>(
             }
         }
         "expr_application" => {
-            let fun = parse_child_by_field(tc, env, parse_expr, "fun");
-            let args = parse_fields_in_field(tc, env, parse_expr_arg, "args", "arg");
+            let fun = parse_child_by_field(tc, env, &parse_expr, "fun");
+            let args = parse_fields_in_field(tc, env, &parse_expr_arg, "args", "arg");
             Expr::App {
                 fun: node_box(fun?),
                 args: args?,
             }
         }
         "expr_record" => {
-            let fields = parse_fields_in_field(tc, env, parse_record_field_assign, "fields", "field");
+            let fields = parse_fields_in_field(tc, env, &parse_record_field_assign, "fields", "field");
             Expr::Record {
                 fields: fields?,
             }
         }
         "expr_record_update" => {
-            let updates = parse_fields_in_field(tc, env, parse_record_field_update, "updates", "update");
+            let updates = parse_fields_in_field(tc, env, &parse_record_field_update, "updates", "update");
 
-            let record = parse_child_by_field(tc, env, parse_expr, "record");
+            let record = parse_child_by_field(tc, env, &parse_expr, "record");
 
             Expr::RecordUpdate {
                 record: node_box(record?),
@@ -607,23 +607,23 @@ fn parse_expr<'a>(
             }
         }
         "expr_map" => {
-            let assigns = parse_children_by_field(tc, env, parse_map_field_assign, "field");
+            let assigns = parse_children_by_field(tc, env, &parse_map_field_assign, "field");
             Expr::Map {
                 assigns: mk_node_many(node, assigns?),
             }
         }
 
         "expr_map_update" => {
-            let map = parse_child_by_field(tc, env, parse_expr, "map");
-            let updates = parse_fields_in_field(tc, env, parse_map_field_update, "fields", "field");
+            let map = parse_child_by_field(tc, env, &parse_expr, "map");
+            let updates = parse_fields_in_field(tc, env, &parse_map_field_update, "fields", "field");
             Expr::MapUpdate {
                 map: node_box(map?),
                 updates: updates?,
             }
         }
         "expr_map_access" => {
-            let map = parse_child_by_field(tc, env, parse_expr, "map");
-            let key = parse_child_by_field(tc, env, parse_expr, "key");
+            let map = parse_child_by_field(tc, env, &parse_expr, "map");
+            let key = parse_child_by_field(tc, env, &parse_expr, "key");
             Expr::MapAccess {
                 map: node_box(map?),
                 key: node_box(key?),
@@ -631,16 +631,16 @@ fn parse_expr<'a>(
             }
         }
         "expr_projection" => {
-            let expr = parse_child_by_field(tc, env, parse_expr, "record");
-            let field = parse_child_by_field(tc, env, parse_name, "field");
+            let expr = parse_child_by_field(tc, env, &parse_expr, "record");
+            let field = parse_child_by_field(tc, env, &parse_name, "field");
             Expr::Proj {
                 expr: node_box(expr?),
                 field: field?,
             }
         }
         "expr_switch" => {
-            let node_exprs = parse_fields_in_field(tc, env, parse_expr, "exprs", "expr");
-            let node_cases = parse_fields_in_field(tc, env, parse_case, "cases", "case");
+            let node_exprs = parse_fields_in_field(tc, env, &parse_expr, "exprs", "expr");
+            let node_cases = parse_fields_in_field(tc, env, &parse_case, "cases", "case");
 
             Expr::Switch {
                 exprs: node_exprs?,
@@ -648,9 +648,9 @@ fn parse_expr<'a>(
             }
         }
         "expr_if" => {
-            let conds = parse_children_by_field(tc, env, parse_expr, "cond");
-            let thens = parse_children_by_field(tc, env, parse_expr, "then");
-            let neg = parse_child_by_field(tc, env, parse_expr, "neg");
+            let conds = parse_children_by_field(tc, env, &parse_expr, "cond");
+            let thens = parse_children_by_field(tc, env, &parse_expr, "then");
+            let neg = parse_child_by_field(tc, env, &parse_expr, "neg");
             let zipped: Vec<_> = conds?.iter().zip(thens?.iter()).map(|(c, t)| {
                 mk_node(node, ast::ExprCond {
                     cond: c.to_owned(),
@@ -699,8 +699,8 @@ fn parse_case<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Case> {
     let node = &tc.node();
-    let pattern = parse_child_by_field(tc, env, parse_pattern, "pattern");
-    let branches = parse_children_by_field(tc, env, parse_case_branch, "branch");
+    let pattern = parse_child_by_field(tc, env, &parse_pattern, "pattern");
+    let branches = parse_children_by_field(tc, env, &parse_case_branch, "branch");
     Some(mk_node(node, ast::Case {
         pattern: pattern?,
         branches: mk_node_many(node, branches?),
@@ -712,8 +712,8 @@ fn parse_case_branch<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::CaseBranch> {
     let node = &tc.node();
-    let guards = parse_children_by_field(tc, env, parse_expr, "guard");
-    let body = parse_child_by_field(tc, env, parse_expr, "body");
+    let guards = parse_children_by_field(tc, env, &parse_expr, "guard");
+    let body = parse_child_by_field(tc, env, &parse_expr, "body");
     Some(mk_node(node, ast::CaseBranch {
         guards: mk_node_many(node, guards?),
         body: body?,
@@ -778,8 +778,8 @@ fn parse_expr_arg<'a>(
     let node = &tc.node();
     let arg = match node.kind() {
         "expr_named_argument" => {
-            let name = parse_child_by_field(tc, env, parse_name, "name");
-            let value = parse_child_by_field(tc, env, parse_expr, "value");
+            let name = parse_child_by_field(tc, env, &parse_name, "name");
+            let value = parse_child_by_field(tc, env, &parse_expr, "value");
             ast::ExprArg::NamedArg {
                 name: name?,
                 val: value?,
@@ -800,8 +800,8 @@ fn parse_record_field_assign<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::RecordFieldAssign> {
     let node = &tc.node();
-                let field = parse_child_by_field(tc, env, parse_name, "field");
-                let value = parse_child_by_field(tc, env, parse_expr, "value");
+                let field = parse_child_by_field(tc, env, &parse_name, "field");
+                let value = parse_child_by_field(tc, env, &parse_expr, "value");
                 Some(mk_node(node, ast::RecordFieldAssign{
                     field: field?,
                     value: value?,
@@ -813,9 +813,9 @@ fn parse_record_field_update<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::RecordFieldUpdate> {
     let node = &tc.node();
-    let new_value = parse_child_by_field(tc, env, parse_expr, "new_value");
-                let old_value = parse_opt_child_by_field(tc, env, parse_name, "old_value");
-                let path = parse_fields_in_field(tc, env, parse_name, "path", "field");
+    let new_value = parse_child_by_field(tc, env, &parse_expr, "new_value");
+                let old_value = parse_opt_child_by_field(tc, env, &parse_name, "old_value");
+                let path = parse_fields_in_field(tc, env, &parse_name, "path", "field");
                 Some(mk_node(node, ast::RecordFieldUpdate{
                     new_value: new_value?,
                     old_value: old_value?,
@@ -828,8 +828,8 @@ fn parse_map_field_assign<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::MapFieldAssign> {
     let node = &tc.node();
-    let key = parse_child_by_field(tc, env, parse_expr, "key");
-                let value = parse_child_by_field(tc, env, parse_expr, "value");
+    let key = parse_child_by_field(tc, env, &parse_expr, "key");
+                let value = parse_child_by_field(tc, env, &parse_expr, "value");
                 Some(mk_node(node, ast::MapFieldAssign{
                     key: key?,
                     value: value?,
@@ -841,9 +841,9 @@ fn parse_map_field_update<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::MapFieldUpdate> {
     let node = &tc.node();
-    let key = parse_child_by_field(tc, env, parse_expr, "key");
-    let old_value = parse_opt_child_by_field(tc, env, parse_name, "old_value");
-    let new_value = parse_child_by_field(tc, env, parse_expr, "new_value");
+    let key = parse_child_by_field(tc, env, &parse_expr, "key");
+    let old_value = parse_opt_child_by_field(tc, env, &parse_name, "old_value");
+    let new_value = parse_child_by_field(tc, env, &parse_expr, "new_value");
     Some(mk_node(node, ast::MapFieldUpdate{
         key: key?,
         old_value: old_value?,
@@ -868,16 +868,16 @@ fn parse_type<'a>(
     let node = &tc.node();
     let t = match node.kind() {
         "type_application" => {
-            let fun = parse_child_by_field(tc, env, parse_type, "fun");
-            let args = parse_children_by_field(tc, env, parse_type, "params");
+            let fun = parse_child_by_field(tc, env, &parse_type, "fun");
+            let args = parse_children_by_field(tc, env, &parse_type, "params");
             Type::App {
                 fun: node_box(fun?),
                 args: mk_node_many(node, args?),
             }
         },
         "type_function" => {
-            let args = parse_children_by_field(tc, env, parse_type, "domain");
-            let ret = parse_child_by_field(tc, env, parse_type, "codomain");
+            let args = parse_children_by_field(tc, env, &parse_type, "domain");
+            let ret = parse_child_by_field(tc, env, &parse_type, "codomain");
             Type::Fun {
                 named_args: mk_node_many(node, vec![]),
                 args: mk_node_many(node, args?),
@@ -885,10 +885,10 @@ fn parse_type<'a>(
             }
         },
         "type_paren" => {
-            parse_child_by_field(tc, env, parse_type, "type")?.node
+            parse_child_by_field(tc, env, &parse_type, "type")?.node
         },
         "type_tuple" => {
-            let elems = parse_children_by_field(tc, env, parse_type, "elem");
+            let elems = parse_children_by_field(tc, env, &parse_type, "elem");
             Type::Tuple {
                 elems: mk_node_many(node, elems?),
             }
@@ -923,37 +923,37 @@ fn parse_pattern<'a>(
     let node = &tc.node();
     let pat = match node.kind() {
         "pat_application" => {
-            let fun = parse_child_by_field(tc, env, parse_name, "fun");
-            let args = parse_fields_in_field(tc, env, parse_pattern, "args", "arg");
+            let fun = parse_child_by_field(tc, env, &parse_name, "fun");
+            let args = parse_fields_in_field(tc, env, &parse_pattern, "args", "arg");
             Pattern::App {
                 fun: fun?,
                 args: args?,
             }
         },
         "pat_let" => {
-            let name = parse_child_by_field(tc, env, parse_name, "name");
-            let pat = parse_child_by_field(tc, env, parse_pattern, "pattern");
+            let name = parse_child_by_field(tc, env, &parse_name, "name");
+            let pat = parse_child_by_field(tc, env, &parse_pattern, "pattern");
             Pattern::Let {
                 name: name?,
                 pat: node_box(pat?),
             }
         },
         "pat_list" => {
-            let elems = parse_children_by_field(tc, env, parse_pattern, "elem");
+            let elems = parse_children_by_field(tc, env, &parse_pattern, "elem");
             Pattern::List {
                 elems: mk_node_many(node, elems?),
             }
         },
         "pat_literal" => {
-            let lit = parse_child_by_idx(tc, env, parse_literal, 0);
+            let lit = parse_child_by_idx(tc, env, &parse_literal, 0);
             Pattern::Lit {
                 value: lit?
             }
         },
         "pat_operator" => {
-            let op_l = parse_child_by_field(tc, env, parse_pattern, "op_l");
-            let op_r = parse_child_by_field(tc, env, parse_pattern, "op_r");
-            let op = parse_child_by_field(tc, env, parse_binop, "op");
+            let op_l = parse_child_by_field(tc, env, &parse_pattern, "op_l");
+            let op_r = parse_child_by_field(tc, env, &parse_pattern, "op_r");
+            let op = parse_child_by_field(tc, env, &parse_binop, "op");
             Pattern::Op {
                 op_l: node_box(op_l?),
                 op: op?,
@@ -961,20 +961,20 @@ fn parse_pattern<'a>(
             }
         },
         "pat_record" => {
-            let fields = parse_fields_in_field(tc, env, parse_pat_field, "fields", "field");
+            let fields = parse_fields_in_field(tc, env, &parse_pat_field, "fields", "field");
             Pattern::Record {
                 fields: fields?,
             }
         },
         "pat_tuple" => {
-            let elems = parse_children_by_field(tc, env, parse_pattern, "elem");
+            let elems = parse_children_by_field(tc, env, &parse_pattern, "elem");
             Pattern::Tuple {
                 elems: mk_node_many(node, elems?),
             }
         },
         "pat_typed" => {
-            let p = parse_child_by_field(tc, env, parse_pattern, "pattern");
-            let t = parse_child_by_field(tc, env, parse_type, "type");
+            let p = parse_child_by_field(tc, env, &parse_pattern, "pattern");
+            let t = parse_child_by_field(tc, env, &parse_type, "type");
             Pattern::Typed {
                 pat: node_box(p?),
                 t: t?
@@ -1003,8 +1003,8 @@ fn parse_pat_field<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::PatternRecordField> {
     let node = &tc.node();
-    let path = parse_fields_in_field(tc, env, parse_name, "fields", "field");
-    let pattern = parse_child_by_field(tc, env, parse_pattern, "pattern");
+    let path = parse_fields_in_field(tc, env, &parse_name, "fields", "field");
+    let pattern = parse_child_by_field(tc, env, &parse_pattern, "pattern");
     Some(mk_node(node, ast::PatternRecordField{
         path: path?,
         pattern: pattern?,
@@ -1018,17 +1018,21 @@ fn parse_stmts<'a>(
 ) -> ParseResult<ast::NodeMany<ast::Statement>> {
     use ast::Statement;
     let node = &tc.node();
-    let part_stmts = parse_children_by_field(tc, env, parse_split_stmt, "stmt")?;
+    let mut part_stmts = parse_children_by_field(tc, env, &parse_split_stmt, "stmt")?;
+    part_stmts.reverse();
 
-    let mut stmts = Vec::with_capacity(part_stmts.len());
-    for ps in part_stmts {
-        match ps.node {
+    let mut stmts: Vec<ast::Node<ast::Statement>> = Vec::with_capacity(part_stmts.len());
+    while let Some(psn) = part_stmts.pop() {
+        let ps = psn.node;
+        let ann = psn.ann;
+        match ps {
             SplitStmt::Full(s) => {
-                stmts.push(re_node(ps.to_owned(), s));
+                stmts.push(ast::Node{node: s, ann});
             }
             SplitStmt::PartElIf(cond) => {
-                match stmts.last() {
-                    Some(ast::Node{node: Statement::If{conds: mut conds, neg: None}, ..}) => {
+                let last = stmts.last_mut();
+                match last {
+                    Some(ast::Node{node: Statement::If{conds: ref mut conds, neg: None}, ..}) => {
                         conds.nodes.push(cond);
                     }
                     _ => {
@@ -1067,22 +1071,22 @@ fn parse_split_stmt<'a>(
     let node = &tc.node();
     let stmt = match node.kind() {
         "stmt_expr" => {
-            let expr = parse_child_by_field(tc, env, parse_expr, "expr");
+            let expr = parse_child_by_field(tc, env, &parse_expr, "expr");
             SplitStmt::Full(Statement::Expr {
                 expr: expr?
             })
         }
         "stmt_letval" => {
-            let pattern = parse_child_by_field(tc, env, parse_pattern, "pattern");
-            let value = parse_child_by_field(tc, env, parse_expr, "value");
+            let pattern = parse_child_by_field(tc, env, &parse_pattern, "pattern");
+            let value = parse_child_by_field(tc, env, &parse_expr, "value");
             SplitStmt::Full(Statement::Let {
                 pattern: pattern?,
                 body: value?,
             })
         }
         "stmt_if" => {
-            let cond = parse_child_by_field(tc, env, parse_expr, "cond");
-            let then = parse_child_by_field(tc, env, parse_expr, "then");
+            let cond = parse_child_by_field(tc, env, &parse_expr, "cond");
+            let then = parse_child_by_field(tc, env, &parse_expr, "then");
             let conds = vec![mk_node(node, ast::ExprCond {
                 cond: cond?,
                 pos: then?,
@@ -1093,15 +1097,15 @@ fn parse_split_stmt<'a>(
             })
         }
         "stmt_elif" => {
-            let cond = parse_child_by_field(tc, env, parse_expr, "cond");
-            let then = parse_child_by_field(tc, env, parse_expr, "then");
+            let cond = parse_child_by_field(tc, env, &parse_expr, "cond");
+            let then = parse_child_by_field(tc, env, &parse_expr, "then");
             SplitStmt::PartElIf(mk_node(node, ast::ExprCond {
                 cond: cond?,
                 pos: then?,
             }))
         }
         "stmt_else" => {
-            let expr = parse_child_by_field(tc, env, parse_expr, "else");
+            let expr = parse_child_by_field(tc, env, &parse_expr, "else");
             SplitStmt::PartElse(expr?)
         }
         _ => {
@@ -1146,13 +1150,13 @@ fn parse_any<'a>(
                 "_expression" => parse_expr(tc, env).is_some(),
                 "_literal" => parse_literal(tc, env).is_some(),
                 _ => {
-                    parse_children(tc, env, parse_any, |_| true);
+                    parse_children(tc, env, &parse_any, |_| true);
                     false
                 }
             }
         }
         None => {
-            parse_children(tc, env, parse_any, |_| true);
+            parse_children(tc, env, &parse_any, |_| true);
             false
         }
     };
