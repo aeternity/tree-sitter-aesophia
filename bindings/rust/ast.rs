@@ -19,19 +19,44 @@ impl<T: Clone> Node<T> {
         }
     }
 
-    pub fn boxed(self) -> NodeBox<T> {
+    pub fn rec(self) -> NodeRec<T> {
         self.map(Box::new)
     }
 }
 
+/// Single element node
 pub type NodeOne<T> = Node<T>;
-pub type NodeBox<T> = Node<Box<T>>;
 
+/// Single element node; break recursion
+pub type NodeRec<T> = Node<Box<T>>;
+
+/// Optional node
 pub type NodeOpt<T> = Option<Node<T>>;
-pub type NodeOptBox<T> = Option<NodeBox<T>>;
-pub type VecNode<T> = Vec<Node<T>>;
 
-pub type NodeMany<T> = Node<Vec<Node<T>>>;
+/// Optional node; break recursion
+pub type NodeOptRec<T> = Option<NodeRec<T>>;
+
+/// Collection of nodes. Use when the collection is not to be considered as an independent component
+/// of the parent node. Examples:
+///
+/// - Field assignments in a record creation expression. Because assignments are in fact *the*
+/// record creation, it makes no sense to wrap them in a separate node. There is no case where one
+/// would address those fields without addressing the overall parent expression.
+///
+/// - Cases of a switch expression. Even though they do not define the entire parent expression,
+/// they do not stand for an visible and considerable chunk of it. One could address all cases as a
+/// collection of cases, but not as a unit container for them.
+pub type Nodes<T> = Vec<Node<T>>;
+
+/// Node with a collection of nodes. Use when the collection takes a place of an independent
+/// subentity. Examples:
+///
+/// - Argument list of a function declaration. It is a clearly distinct section of the parent
+/// expression, which is considered as a whole for example during type checking.
+///
+/// - Path in a qualified name. It describes the scope in which the name is referred, therefore it
+/// should be considered a separate node.
+pub type NodeMany<T> = Node<Nodes<T>>;
 
 
 pub type Name = String;
@@ -45,10 +70,10 @@ pub struct QName {
 
 #[derive(Clone, Debug)]
 pub struct Module {
-    pub pragmas: VecNode<Pragma>,
-    pub includes: VecNode<Include>,
-    pub usings: VecNode<Using>,
-    pub scopes: VecNode<ScopeDecl>,
+    pub pragmas: Nodes<Pragma>,
+    pub includes: Nodes<Include>,
+    pub usings: Nodes<Using>,
+    pub scopes: Nodes<ScopeDecl>,
 }
 
 #[derive(Clone, Debug)]
@@ -67,11 +92,13 @@ pub struct Using {
 
 pub type SubVer = String;
 
+pub type Version = Nodes<SubVer>;
+
 #[derive(Clone, Debug)]
 pub enum Pragma {
     CompilerVsn{
         op: NodeOne<BinOp>,
-        vsn: NodeMany<SubVer>,
+        vsn: Node<Version>,
     },
 }
 
@@ -85,19 +112,19 @@ pub enum ScopeDecl {
     Contract {
         name: NodeOne<Name>,
         main: bool,
-        implements: VecNode<QName>,
-        decls: VecNode<InContractDecl>,
+        implements: Nodes<QName>,
+        decls: Nodes<InContractDecl>,
         payable: bool,
     },
     ContractInterface{
         name: NodeOne<Name>,
-        extends: VecNode<QName>,
+        extends: Nodes<QName>,
         payable: bool,
-        decls: VecNode<InInterfaceDecl>,
+        decls: Nodes<InInterfaceDecl>,
     },
     Namespace{
         name: NodeOne<Name>,
-        decls: VecNode<InNamespaceDecl>,
+        decls: Nodes<InNamespaceDecl>,
     },
 }
 
@@ -133,14 +160,14 @@ pub struct FunDef {
     pub payable: bool,
     pub public: bool,
     pub name: NodeOne<Name>,
-    pub clauses: VecNode<FunClause>,
+    pub clauses: Nodes<FunClause>,
     pub signature: NodeOpt<Type>,
 }
 
 #[derive(Clone, Debug)]
 pub struct FunClause {
     pub args: NodeMany<Pattern>,
-    pub rettype: NodeOpt<Type>,
+    pub ret_type: NodeOpt<Type>,
     pub body: NodeOne<Expr>,
 }
 
@@ -159,7 +186,7 @@ pub enum TypeDef {
     Variant {
         name: NodeOne<Name>,
         params: NodeMany<Name>,
-        constructors: VecNode<Constructor>,
+        constructors: Nodes<Constructor>,
     },
 }
 
@@ -186,73 +213,73 @@ pub enum Expr {
     },
     Lambda {
         args: NodeMany<Pattern>,
-        body: NodeBox<Expr>,
+        body: NodeRec<Expr>,
     },
     Typed {
-        expr: NodeBox<Expr>,
+        expr: NodeRec<Expr>,
         t: NodeOne<Type>,
     },
     BinOp {
-        op_l: NodeBox<Expr>,
-        op_r: NodeBox<Expr>,
+        op_l: NodeRec<Expr>,
+        op_r: NodeRec<Expr>,
         op: NodeOne<BinOp>,
     },
     UnOp {
-        op_l: NodeBox<Expr>,
+        op_l: NodeRec<Expr>,
         op: NodeOne<UnOp>,
     },
     App {
-        fun: NodeBox<Expr>,
+        fun: NodeRec<Expr>,
         args: NodeMany<ExprArg>,
     },
     Tuple {
-        elems: NodeMany<Expr>,
+        elems: Nodes<Expr>,
     },
     List {
-        elems: NodeMany<Expr>,
+        elems: Nodes<Expr>,
     },
     ListRange {
-        start: NodeBox<Expr>,
-        end: NodeBox<Expr>,
+        start: NodeRec<Expr>,
+        end: NodeRec<Expr>,
     },
     ListComp {
-        yield_expr: NodeBox<Expr>,
-        filters: NodeMany<ListCompFilter>,
+        yield_expr: NodeRec<Expr>,
+        filters: Nodes<ListCompFilter>,
     },
     Record {
-        fields: NodeMany<RecordFieldAssign>
+        fields: Nodes<RecordFieldAssign>
     },
     RecordUpdate {
-        record: NodeBox<Expr>,
+        record: NodeRec<Expr>,
         updates: NodeMany<RecordFieldUpdate>,
     },
     Map {
-        assigns: NodeMany<MapFieldAssign>
+        assigns: Nodes<MapFieldAssign>
     },
     MapUpdate {
-        map: NodeBox<Expr>,
+        map: NodeRec<Expr>,
         updates: NodeMany<MapFieldUpdate>
     },
     MapAccess {
-        map: NodeBox<Expr>,
-        key: NodeBox<Expr>,
-        default: NodeOptBox<Expr>
+        map: NodeRec<Expr>,
+        key: NodeRec<Expr>,
+        default: NodeOptRec<Expr>
     },
     Proj {
-        expr: NodeBox<Expr>,
+        expr: NodeRec<Expr>,
         field: NodeOne<Name>,
     },
     Switch {
         exprs: NodeMany<Expr>,
-        cases: NodeMany<Case>,
+        cases: Nodes<Case>,
     },
     If {
-        conds: VecNode<ExprCond>,
-        neg: NodeBox<Expr>,
+        conds: Nodes<ExprCond>,
+        neg: NodeRec<Expr>,
     },
     Block {
-        stmts: VecNode<Statement>,
-        value: NodeBox<Expr>,
+        stmts: Nodes<Statement>,
+        value: NodeRec<Expr>,
     },
     Hole
 }
@@ -318,7 +345,7 @@ pub enum ListCompFilter {
 #[derive(Clone, Debug)]
 pub struct Case {
     pub pattern: NodeOne<Pattern>,
-    pub branches: NodeMany<CaseBranch>
+    pub branches: Nodes<CaseBranch>
 }
 
 #[derive(Clone, Debug)]
@@ -336,25 +363,25 @@ pub enum Pattern {
         value: NodeOne<Literal>,
     },
     List {
-        elems: NodeMany<Pattern>,
+        elems: Nodes<Pattern>,
     },
     Tuple {
-        elems: NodeMany<Pattern>,
+        elems: Nodes<Pattern>,
     },
     Record {
-        fields: NodeMany<PatternRecordField>,
+        fields: Nodes<PatternRecordField>,
     },
     Op {
-        op_l: NodeBox<Pattern>,
-        op_r: NodeBox<Pattern>,
+        op_l: NodeRec<Pattern>,
+        op_r: NodeRec<Pattern>,
         op: NodeOne<BinOp>,
     },
     Let {
         name: NodeOne<Name>,
-        pat: NodeBox<Pattern>,
+        pat: NodeRec<Pattern>,
     },
     Typed {
-        pat: NodeBox<Pattern>,
+        pat: NodeRec<Pattern>,
         t: NodeOne<Type>,
     },
     App {
@@ -408,7 +435,7 @@ pub enum Statement {
         body: NodeOne<Expr>,
     },
     If {
-        conds: NodeMany<ExprCond>,
+        conds: Nodes<ExprCond>,
         neg: NodeOpt<Expr>,
     }
 }
@@ -423,14 +450,14 @@ pub enum Type {
     },
     Fun {
         args: NodeMany<Type>,
-        named_args: NodeMany<TypeNamedArg>,
-        ret: NodeBox<Type>,
+        named_args: Nodes<TypeNamedArg>,
+        ret: NodeRec<Type>,
     },
     Tuple {
-        elems: NodeMany<Type>
+        elems: Nodes<Type>
     },
     App {
-        fun: NodeBox<Type>,
+        fun: NodeRec<Type>,
         args: NodeMany<Type>,
     },
 }
@@ -438,5 +465,5 @@ pub enum Type {
 #[derive(Clone, Debug)]
 pub struct TypeNamedArg {
     name: Node<Name>,
-    typ: NodeBox<Type>,
+    typ: NodeRec<Type>,
 }

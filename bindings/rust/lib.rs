@@ -727,7 +727,7 @@ fn parse_function_clause(
             let body = parse_field(tc, env, &parse_expr, "body");
             either::Left(mk_node(node, ast::FunClause {
                 args: args?,
-                rettype: typ,
+                ret_type: typ,
                 body: body?,
             }))
         }
@@ -851,13 +851,13 @@ fn parse_expr<'a>(
         "expr_tuple" => {
             let elems = parse_fields(tc, env, &parse_expr, "elem");
             Expr::Tuple {
-                elems: mk_node(node, elems),
+                elems,
             }
         }
         "expr_list_literal" => {
             let elems = parse_fields(tc, env, &parse_expr, "elem");
             Expr::List {
-                elems: mk_node(node, elems),
+                elems,
             }
         }
         "expr_lambda" => {
@@ -866,14 +866,14 @@ fn parse_expr<'a>(
 
             Expr::Lambda {
                 args: node_args?,
-                body: body?.boxed()
+                body: body?.rec()
             }
         }
         "expr_typed" => {
             let e = parse_field(tc, env, &parse_expr, "expr");
             let t = parse_field(tc, env, &parse_type, "type");
             Expr::Typed {
-                expr: e?.boxed(),
+                expr: e?.rec(),
                 t: t?
             }
         }
@@ -884,15 +884,15 @@ fn parse_expr<'a>(
                 Some(op_r) => {
                     let op = parse_field(tc, env, &parse_binop, "op");
                     Expr::BinOp {
-                        op_l: op_l?.boxed(),
+                        op_l: op_l?.rec(),
                         op: op?,
-                        op_r: op_r.boxed(),
+                        op_r: op_r.rec(),
                     }
                 }
                 None => {
                     let op = parse_field(tc, env, &parse_unop, "op");
                     Expr::UnOp {
-                        op_l: op_l?.boxed(),
+                        op_l: op_l?.rec(),
                         op: op?,
                     }
                 }
@@ -902,14 +902,14 @@ fn parse_expr<'a>(
             let fun = parse_field(tc, env, &parse_expr, "fun");
             let args = parse_fields_in_field(tc, env, &parse_expr_arg, "args", "arg");
             Expr::App {
-                fun: fun?.boxed(),
+                fun: fun?.rec(),
                 args: args?,
             }
         }
         "expr_record" => {
-            let fields = parse_fields_in_field(tc, env, &parse_record_field_assign, "fields", "field");
+            let fields = parse_fields(tc, env, &parse_record_field_assign, "field");
             Expr::Record {
-                fields: fields?,
+                fields,
             }
         }
         "expr_record_update" => {
@@ -918,14 +918,14 @@ fn parse_expr<'a>(
             let record = parse_field(tc, env, &parse_expr, "record");
 
             Expr::RecordUpdate {
-                record: record?.boxed(),
+                record: record?.rec(),
                 updates: updates?,
             }
         }
         "expr_map" => {
             let assigns = parse_fields(tc, env, &parse_map_field_assign, "field");
             Expr::Map {
-                assigns: mk_node(node, assigns),
+                assigns,
             }
         }
 
@@ -933,7 +933,7 @@ fn parse_expr<'a>(
             let map = parse_field(tc, env, &parse_expr, "map");
             let updates = parse_fields_in_field(tc, env, &parse_map_field_update, "fields", "field");
             Expr::MapUpdate {
-                map: map?.boxed(),
+                map: map?.rec(),
                 updates: updates?,
             }
         }
@@ -941,8 +941,8 @@ fn parse_expr<'a>(
             let map = parse_field(tc, env, &parse_expr, "map");
             let key = parse_field(tc, env, &parse_expr, "key");
             Expr::MapAccess {
-                map: map?.boxed(),
-                key: key?.boxed(),
+                map: map?.rec(),
+                key: key?.rec(),
                 default: None, //todo
             }
         }
@@ -950,7 +950,7 @@ fn parse_expr<'a>(
             let expr = parse_field(tc, env, &parse_expr, "record");
             let field = parse_field(tc, env, &parse_name, "field");
             Expr::Proj {
-                expr: expr?.boxed(),
+                expr: expr?.rec(),
                 field: field?,
             }
         }
@@ -960,7 +960,7 @@ fn parse_expr<'a>(
 
             Expr::Switch {
                 exprs: node_exprs?,
-                cases: node_cases?,
+                cases: node_cases?.node,
             }
         }
         "expr_if" => {
@@ -975,7 +975,7 @@ fn parse_expr<'a>(
             }).collect();
             Expr::If {
                 conds: zipped,
-                neg: neg?.boxed()
+                neg: neg?.rec()
             }
         }
         "expr_block" => {
@@ -988,7 +988,7 @@ fn parse_expr<'a>(
                     let stmts = &all_stmts[..all_stmts.len() - 1];
                     Expr::Block {
                         stmts: stmts.to_vec(),
-                        value: expr_last.boxed()
+                        value: expr_last.rec()
                     }
                 }
                 _ => {
@@ -1018,7 +1018,7 @@ fn parse_case<'a>(
     let branches = parse_fields(tc, env, &parse_case_branch, "branch");
     Some(mk_node(node, ast::Case {
         pattern: pattern?,
-        branches: mk_node(node, branches),
+        branches,
     }))
 }
 
@@ -1186,7 +1186,7 @@ fn parse_type<'a>(
             let fun = parse_field(tc, env, &parse_type, "fun");
             let args = parse_fields(tc, env, &parse_type, "params");
             Type::App {
-                fun: fun?.boxed(),
+                fun: fun?.rec(),
                 args: mk_node(node, args),
             }
         },
@@ -1194,9 +1194,9 @@ fn parse_type<'a>(
             let args = parse_fields(tc, env, &parse_type, "domain");
             let ret = parse_field(tc, env, &parse_type, "codomain");
             Type::Fun {
-                named_args: mk_node(node, vec![]),
+                named_args: vec![],
                 args: mk_node(node, args),
-                ret: ret?.boxed()
+                ret: ret?.rec()
             }
         },
         "type_paren" => {
@@ -1205,7 +1205,7 @@ fn parse_type<'a>(
         "type_tuple" => {
             let elems = parse_fields(tc, env, &parse_type, "elem");
             Type::Tuple {
-                elems: mk_node(node, elems),
+                elems,
             }
         },
         "type_variable" => {
@@ -1250,13 +1250,13 @@ fn parse_pattern<'a>(
             let pat = parse_field(tc, env, &parse_pattern, "pattern");
             Pattern::Let {
                 name: name?,
-                pat: pat?.boxed(),
+                pat: pat?.rec(),
             }
         },
         "pat_list" => {
             let elems = parse_fields(tc, env, &parse_pattern, "elem");
             Pattern::List {
-                elems: mk_node(node, elems),
+                elems,
             }
         },
         "pat_literal" => {
@@ -1270,28 +1270,28 @@ fn parse_pattern<'a>(
             let op_r = parse_field(tc, env, &parse_pattern, "op_r");
             let op = parse_field(tc, env, &parse_binop, "op");
             Pattern::Op {
-                op_l: op_l?.boxed(),
+                op_l: op_l?.rec(),
                 op: op?,
-                op_r: op_r?.boxed(),
+                op_r: op_r?.rec(),
             }
         },
         "pat_record" => {
-            let fields = parse_fields_in_field(tc, env, &parse_pat_field, "fields", "field");
+            let fields = parse_fields(tc, env, &parse_pat_field, "field");
             Pattern::Record {
-                fields: fields?,
+                fields,
             }
         },
         "pat_tuple" => {
             let elems = parse_fields(tc, env, &parse_pattern, "elem");
             Pattern::Tuple {
-                elems: mk_node(node, elems),
+                elems,
             }
         },
         "pat_typed" => {
             let p = parse_field(tc, env, &parse_pattern, "pattern");
             let t = parse_field(tc, env, &parse_type, "type");
             Pattern::Typed {
-                pat: p?.boxed(),
+                pat: p?.rec(),
                 t: t?
             }
         },
@@ -1330,7 +1330,7 @@ fn parse_pat_field<'a>(
 fn parse_stmts<'a>(
     tc: &mut tree_sitter::TreeCursor<'a>,
     env: &mut ParseEnv,
-) -> ParseResult<ast::VecNode<ast::Statement>> {
+) -> ParseResult<ast::Nodes<ast::Statement>> {
     use ast::Statement;
     let mut part_stmts = parse_fields(tc, env, &parse_split_stmt, "stmt");
     part_stmts.reverse();
@@ -1347,7 +1347,7 @@ fn parse_stmts<'a>(
                 let last = stmts.last_mut();
                 match last {
                     Some(ast::Node{node: Statement::If{conds: ref mut conds, neg: None}, ..}) => {
-                        conds.node.push(cond);
+                        conds.push(cond);
                     }
                     _ => {
                         env.err(ParseError::LonelyElIf)
@@ -1406,7 +1406,7 @@ fn parse_split_stmt<'a>(
                 pos: then?,
             })];
             SplitStmt::Full(Statement::If {
-                conds: mk_node(node, conds),
+                conds,
                 neg: None,
             })
         }
@@ -1542,8 +1542,8 @@ mod tests {
 
         let mut env = ParseEnv {
             src: &src_data,
-            errs: errs,
-            subtypes: subtypes,
+            errs,
+            subtypes,
             has_errors: root.has_error(),
         };
 
