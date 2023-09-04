@@ -41,7 +41,7 @@ const dispath = (trigger, rule) => seq(
   lex_dispath_begin,
   trigger,
   lex_dispath_end,
-  field("parsed", rule),
+  field(trigger, rule),
 );
 
 const parens = (...rule) => seq(

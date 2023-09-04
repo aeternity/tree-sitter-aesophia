@@ -1617,6 +1617,21 @@
     }
   },
   {
+    "type": "module",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "_top_decl",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "name",
     "named": true,
     "fields": {}
@@ -2046,12 +2061,22 @@
           }
         ]
       },
-      "header": {
+      "head": {
         "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "scope_header",
+            "type": "scope_head",
+            "named": true
+          }
+        ]
+      },
+      "implements": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "qual_scope_name",
             "named": true
           }
         ]
@@ -2066,7 +2091,7 @@
           }
         ]
       },
-      "modifiers": {
+      "modifier": {
         "multiple": true,
         "required": false,
         "types": [
@@ -2107,7 +2132,7 @@
     }
   },
   {
-    "type": "scope_header",
+    "type": "scope_head",
     "named": true,
     "fields": {}
   },
@@ -2125,32 +2150,82 @@
     "type": "source",
     "named": true,
     "fields": {
-      "parsed": {
-        "multiple": true,
+      "_scoped_declaration": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_scoped_declaration",
+            "named": true
+          }
+        ]
+      },
+      "expression": {
+        "multiple": false,
         "required": false,
         "types": [
           {
             "type": "_expression",
             "named": true
-          },
+          }
+        ]
+      },
+      "literal": {
+        "multiple": false,
+        "required": false,
+        "types": [
           {
             "type": "_literal",
             "named": true
-          },
+          }
+        ]
+      },
+      "module": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "module",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": false,
+        "required": false,
+        "types": [
           {
             "type": "_pattern",
             "named": true
-          },
+          }
+        ]
+      },
+      "scope_declaration": {
+        "multiple": false,
+        "required": false,
+        "types": [
           {
-            "type": "_scoped_declaration",
+            "type": "scope_declaration",
             "named": true
-          },
+          }
+        ]
+      },
+      "statement": {
+        "multiple": false,
+        "required": false,
+        "types": [
           {
             "type": "_statement",
             "named": true
-          },
+          }
+        ]
+      },
+      "statements": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "_type",
+            "type": "_statement",
             "named": true
           },
           {
@@ -2164,23 +2239,19 @@
           {
             "type": "block_semi",
             "named": true
-          },
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": false,
+        "types": [
           {
-            "type": "scope_declaration",
+            "type": "_type",
             "named": true
           }
         ]
       }
-    },
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "_top_decl",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -2613,25 +2684,25 @@
             "named": true
           }
         ]
+      },
+      "select": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "using_as",
+            "named": true
+          },
+          {
+            "type": "using_for",
+            "named": true
+          },
+          {
+            "type": "using_hiding",
+            "named": true
+          }
+        ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "using_as",
-          "named": true
-        },
-        {
-          "type": "using_for",
-          "named": true
-        },
-        {
-          "type": "using_hiding",
-          "named": true
-        }
-      ]
     }
   },
   {

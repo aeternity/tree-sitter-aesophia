@@ -155,7 +155,7 @@ module.exports = grammar({
   rules: {
     source: $ => choice(
       seq($._dispath, repeat('\n')),
-      $._top_level
+      field("module", $.module)
     ),
 
     _dispath: $ => choice(
@@ -169,7 +169,7 @@ module.exports = grammar({
       dispath('_scoped_declaration', $._scoped_declaration),
     ),
 
-    _top_level: $ => repeat1(seq($._top_decl, $._block_semi)),
+    module: $ => repeat1(seq($._top_decl, $._block_semi)),
 
     _top_decl: $ => choice(
       $.top_pragma,
@@ -203,11 +203,11 @@ module.exports = grammar({
     using: $ => seq(
       'using',
       field("scope", $.qual_scope_name),
-      optional(choice(
+      optional(field("select", choice(
         $.using_as,
         $.using_hiding,
         $.using_for,
-      ))
+      )))
     ),
 
     using_as: $ => seq(
@@ -238,9 +238,10 @@ module.exports = grammar({
 
     scope_declaration: $ => seq(
       field("modifier", repeat($.scope_modifier)),
-      field("header", $.scope_header),
+      field("head", $.scope_head),
       field("interface", alias(optional('interface'), $.is_interface)),
       field("name", $.scope_name),
+      optional(seq(":", sep1(field("implements", $.qual_scope_name), ","))),
       '=',
       maybe_block($, field("decl", $._scoped_declaration))
     ),
@@ -249,7 +250,7 @@ module.exports = grammar({
       'main', 'payable'
     ),
 
-    scope_header: $ => choice(
+    scope_head: $ => choice(
       'contract', 'namespace'
     ),
 

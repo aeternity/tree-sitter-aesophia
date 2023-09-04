@@ -1,7 +1,5 @@
 use std::ops::Range;
 
-pub type Name = String;
-
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Ann {}
 
@@ -33,7 +31,17 @@ pub type NodeOpt<T> = Option<Node<T>>;
 pub type NodeOptBox<T> = Option<NodeBox<T>>;
 pub type VecNode<T> = Vec<Node<T>>;
 
-pub type NodeMany<T: Clone> = Node<Vec<Node<T>>>;
+pub type NodeMany<T> = Node<Vec<Node<T>>>;
+
+
+pub type Name = String;
+
+#[derive(Clone, Debug)]
+pub struct QName {
+    pub path: NodeMany<Name>,
+    pub name: NodeOne<Name>,
+}
+
 
 #[derive(Clone, Debug)]
 pub struct Module {
@@ -44,7 +52,7 @@ pub struct Module {
 }
 
 #[derive(Clone, Debug)]
-pub enum UsingRange {
+pub enum UsingSelect {
     Include(NodeMany<Name>),
     Exclude(NodeMany<Name>),
     Rename(Node<Name>),
@@ -53,8 +61,8 @@ pub enum UsingRange {
 
 #[derive(Clone, Debug)]
 pub struct Using {
-    pub path: NodeMany<Name>,
-    pub range: NodeOne<UsingRange>,
+    pub scope: NodeOne<QName>,
+    pub select: NodeOne<UsingSelect>,
 }
 
 pub type SubVer = String;
@@ -74,26 +82,41 @@ pub struct Include {
 
 #[derive(Clone, Debug)]
 pub enum ScopeDecl {
-    Namespace{
-        name: NodeOne<Name>,
-        decls: NodeMany<ScopedDecl>
-    },
     Contract {
         name: NodeOne<Name>,
         main: bool,
-        implements: NodeMany<QName>,
-        defs: NodeMany<ScopedDecl>,
+        implements: VecNode<QName>,
+        decls: VecNode<InContractDecl>,
         payable: bool,
     },
     ContractInterface{
         name: NodeOne<Name>,
-        extends: NodeMany<QName>,
+        extends: VecNode<QName>,
         payable: bool,
+        decls: VecNode<InInterfaceDecl>,
+    },
+    Namespace{
+        name: NodeOne<Name>,
+        decls: VecNode<InNamespaceDecl>,
     },
 }
 
 #[derive(Clone, Debug)]
-pub enum ScopedDecl {
+pub enum InContractDecl {
+    FunDef(FunDef),
+    // TypeDef(TypeDef),
+    // ScopeDecl(ScopeDecl),
+}
+
+#[derive(Clone, Debug)]
+pub enum InInterfaceDecl {
+    FunDecl(FunSig),
+    // TypeDef(TypeDef),
+    // ScopeDecl(ScopeDecl),
+}
+
+#[derive(Clone, Debug)]
+pub enum InNamespaceDecl {
     FunDef(FunDef),
     // TypeDef(TypeDef),
     // ScopeDecl(ScopeDecl),
@@ -101,15 +124,16 @@ pub enum ScopedDecl {
 
 #[derive(Clone, Debug)]
 pub struct FunSig {
-    pub name: NodeOne<Name>,
     pub signature: NodeOne<Type>,
 }
 
 #[derive(Clone, Debug)]
 pub struct FunDef {
+    pub stateful: bool,
+    pub payable: bool,
     pub public: bool,
     pub name: NodeOne<Name>,
-    pub clauses: NodeMany<FunClause>,
+    pub clauses: VecNode<FunClause>,
     pub signature: NodeOpt<Type>,
 }
 
@@ -124,14 +148,18 @@ pub struct FunClause {
 pub enum TypeDef {
     Alias {
         name: NodeOne<Name>,
+        params: NodeMany<Name>,
+        def: NodeOne<Type>
     },
     Record {
         name: NodeOne<Name>,
+        params: NodeMany<Name>,
         fields: NodeMany<FieldDecl>,
     },
     Variant {
         name: NodeOne<Name>,
-        constructors: NodeMany<Constructor>,
+        params: NodeMany<Name>,
+        constructors: VecNode<Constructor>,
     },
 }
 
@@ -144,7 +172,7 @@ pub struct FieldDecl {
 #[derive(Clone, Debug)]
 pub struct Constructor {
     pub name: NodeOne<Name>,
-    pub args: NodeMany<Type>,
+    pub params: NodeMany<Type>,
 }
 
 
@@ -411,10 +439,4 @@ pub enum Type {
 pub struct TypeNamedArg {
     name: Node<Name>,
     typ: NodeBox<Type>,
-}
-
-#[derive(Clone, Debug)]
-pub struct QName {
-    pub path: NodeMany<Name>,
-    pub name: NodeOne<Name>,
 }
