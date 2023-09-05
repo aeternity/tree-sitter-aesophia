@@ -143,13 +143,13 @@ module.exports = grammar({
     ),
 
     _dispath: $ => choice(
-      dispath('type', $._type),
-      dispath('literal', $._literal),
-      dispath('expression', $._expression),
-      dispath('statement', $._statement),
-      dispath('statements', maybe_block($, $._statement)),
-      dispath('scope_declaration', $.scope_declaration),
-      dispath('_scoped_declaration', $._scoped_declaration),
+      dispath($, 'type', $._type),
+      dispath($, 'literal', $._literal),
+      dispath($, 'expression', $._expression),
+      dispath($, 'statement', $._statement),
+      dispath($, 'statements', maybe_block($, $._statement)),
+      dispath($, 'scope_declaration', $.scope_declaration),
+      dispath($, '_scoped_declaration', $._scoped_declaration),
     ),
 
     module: $ => repeat1(seq($._top_decl, $._block_semi)),

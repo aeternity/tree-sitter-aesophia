@@ -1,7 +1,15 @@
 use std::ops::Range;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Ann {}
+pub struct Ann {
+    pub start_line: u32,
+    pub start_col: u32,
+    pub start_byte: u32,
+    pub end_line: u32,
+    pub end_col: u32,
+    pub end_byte: u32,
+    pub filename: String,
+}
 
 #[derive(Clone, Debug)]
 pub struct Node<T: Clone> {
@@ -408,8 +416,8 @@ pub enum Literal {
     EmptyMapOrRecord,
     String { val: String },
     Char { val: char },
-    LambdaBinOp { val: BinOp },
-    LambdaUnOp { val: UnOp },
+    LambdaBinOp { val: Node<BinOp> },
+    LambdaUnOp { val: Node<UnOp> },
 }
 
 #[derive(Clone, Debug)]

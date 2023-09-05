@@ -1802,6 +1802,16 @@
           }
         ]
       },
+      "kind": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "trigger",
+            "named": true
+          }
+        ]
+      },
       "literal": {
         "multiple": false,
         "required": false,
@@ -2516,10 +2526,6 @@
     "named": false
   },
   {
-    "type": "_scoped_declaration",
-    "named": false
-  },
-  {
     "type": "as",
     "named": false
   },
@@ -2545,10 +2551,6 @@
   },
   {
     "type": "entrypoint",
-    "named": false
-  },
-  {
-    "type": "expression",
     "named": false
   },
   {
@@ -2586,10 +2588,6 @@
   {
     "type": "line_comment",
     "named": true
-  },
-  {
-    "type": "literal",
-    "named": false
   },
   {
     "type": "main",
@@ -2684,19 +2682,7 @@
     "named": false
   },
   {
-    "type": "scope_declaration",
-    "named": false
-  },
-  {
     "type": "stateful",
-    "named": false
-  },
-  {
-    "type": "statement",
-    "named": false
-  },
-  {
-    "type": "statements",
     "named": false
   },
   {
@@ -2706,6 +2692,10 @@
   {
     "type": "switch",
     "named": false
+  },
+  {
+    "type": "trigger",
+    "named": true
   },
   {
     "type": "true",

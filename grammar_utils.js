@@ -37,9 +37,9 @@ const sep = (rule, delimiter) => optional(sep1(rule, delimiter));
 const lex_dispath_begin = '@ts.parse(';
 const lex_dispath_end = ')';
 
-const dispath = (trigger, rule) => seq(
+const dispath = ($, trigger, rule) => seq(
   lex_dispath_begin,
-  trigger,
+  field("kind", alias(trigger, $.trigger)),
   lex_dispath_end,
   field(trigger, rule),
 );

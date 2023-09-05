@@ -42,8 +42,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "type"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "type"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -67,8 +76,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "literal"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "literal"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -92,8 +110,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "expression"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "expression"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -117,8 +144,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "statement"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "statement"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -142,8 +178,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "statements"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "statements"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -210,8 +255,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "scope_declaration"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "scope_declaration"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -235,8 +289,17 @@
               "value": "@ts.parse("
             },
             {
-              "type": "STRING",
-              "value": "_scoped_declaration"
+              "type": "FIELD",
+              "name": "kind",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "_scoped_declaration"
+                },
+                "named": true,
+                "value": "trigger"
+              }
             },
             {
               "type": "STRING",
@@ -5327,6 +5390,7 @@
     "type_name",
     "constructor_name",
     "scope_name",
+    "qual_constructor_name",
     "qual_variable_name",
     "qual_scope_name"
   ],

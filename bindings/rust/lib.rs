@@ -46,16 +46,27 @@ pub const NODE_TYPES: &str = include_str!("../../src/node-types.json");
 
 
 #[derive(Clone, Debug)]
+pub enum TokenError {
+    InvalidEscape(char),
+    UnclosedEscape,
+    UnclosedChar,
+    EmptyChar,
+    UnclosedString,
+    InvalidInteger,
+    InvalidBool,
+    InvalidByteChar,
+    UnevenBytes,
+}
+
+#[derive(Clone, Debug)]
 pub enum ParseError {
-    InvalidToken(String),
-    InvalidUtf16(std::ops::Range<usize>),
-    InvalidEscape,
-    UnexpectedNode(String),
+    TokenError(TokenError),
+    InvalidUtf16,
     MissingField(String),
     MissingChild(usize),
-    MissingNode(String),
-    NodeError(String),
-    BlockNoExpr(ast::Ann),
+    MissingNode,
+    NodeError,
+    BlockNoExpr,
     LonelyElIf,
     LonelyElse,
     InvalidModifier,
@@ -64,10 +75,10 @@ pub enum ParseError {
     DuplicateSig,
 }
 
-type ParseErrors = Vec<ParseError>;
+type ParseErrors = ast::Nodes<ParseError>;
 type SubtypeMap = std::collections::HashMap<String, String>;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ParseEnv<'a> {
     src: &'a [u16],
     subtypes: SubtypeMap,
@@ -76,9 +87,13 @@ pub struct ParseEnv<'a> {
 }
 
 impl ParseEnv<'_> {
-    fn err(&mut self, err: ParseError) {
-        self.errs.push(err);
+    fn err(&mut self, node: &Node, err: ParseError) {
+        self.errs.push(mk_node(node, err));
         self.has_errors = true;
+    }
+
+    fn tok_err(&mut self, node: &Node, err: TokenError) {
+        self.err(node, ParseError::TokenError(err))
     }
 
     fn check_error(&mut self, tc: &mut TreeCursor) -> ParseResult<()> {
@@ -98,30 +113,98 @@ fn node_content(node: &Node, env: &mut ParseEnv) -> ParseResult<String> {
     match String::from_utf16(as_utf) {
         Ok(content) => Some(content),
         Err(_) => {
-            let range = node.byte_range();
-            env.err(ParseError::InvalidUtf16(range.start..range.end));
+            env.err(node, ParseError::InvalidUtf16);
             None
         }
     }
 }
 
-fn parse_char(token: &str) -> ParseResult<char> {
-    let mut chars = token[1..token.len() - 1].chars();
-    let c = unescape('\'', &mut chars)?;
+fn parse_char(
+    tc: &TreeCursor,
+    env: &mut ParseEnv
+) -> ParseResult<char>
+{
+    let node = &tc.node();
+    let token = node_content(node, env)?;
+    let mut chars = token[1..].chars();
+    let c = match chars.next() {
+        Some('\\') => unescape('\'', &mut chars, node, env)?,
+        Some('\'') => {
+            env.tok_err(node, TokenError::EmptyChar);
+            None?
+        }
+        Some(c) => c,
+        None => {
+            env.tok_err(node, TokenError::UnclosedChar);
+            None?
+        }
+    };
     Some(c)
 }
 
-fn parse_str(token: &str) -> ParseResult<String> {
-    let mut chars = token[1..token.len() - 1].chars().peekable();
+fn parse_str<'a>(
+    tc: &mut TreeCursor<'a>,
+    env: &mut ParseEnv
+) -> ParseResult<String>
+{
+    let node = &tc.node();
+    let token = node_content(node, env)?;
+    let mut chars = token[1..token.len() - 1].chars();
     let mut out = String::with_capacity(token.len());
-    while *(chars.peek()?) != '"' {
-        let c = unescape('"', &mut chars)?;
-        out.push(c)
+    loop {
+        match chars.next() {
+            None => {
+                env.tok_err(node, TokenError::UnclosedString);
+                None?
+            }
+            Some('"') => {
+                break;
+            }
+            Some('\\') => {
+                let c = unescape('"', &mut chars, node, env)?;
+                out.push(c)
+            }
+            Some(c) => {
+                out.push(c)
+            }
+        }
     }
     Some(out)
 }
 
-fn parse_int(token: &str) -> ParseResult<i64> {
+fn unescape<T>(close: char, chars: &mut T, node: &Node, env: &mut ParseEnv) -> ParseResult<char>
+where
+    T: Iterator<Item = char>,
+{
+    let c = match chars.next() {
+        Some('\\') =>'\\',
+        Some('b') => '\u{8}',
+        Some('e') => '\u{27}',
+        Some('f') => '\u{12}',
+        Some('n') => '\n',
+        Some('r') => '\r',
+        Some('t') => '\t',
+        Some('v') => '\u{11}',
+        // 'x' => _,
+        Some(c) if c == close => c,
+        Some(c) => {
+            env.tok_err(node, TokenError::InvalidEscape(c));
+            None?
+        }
+        None => {
+            env.tok_err(node, TokenError::UnclosedEscape);
+            None?
+        }
+    };
+    Some(c)
+}
+
+fn parse_int(
+    tc: &TreeCursor,
+    env: &mut ParseEnv
+) -> ParseResult<i64>
+{
+    let token = node_content(&tc.node(), env)?;
     let (chars_trimmed, radix) = if token.len() > 2 && &token[0..2] == "0x" {
         (token[2..].chars(), 16)
     } else {
@@ -130,47 +213,55 @@ fn parse_int(token: &str) -> ParseResult<i64> {
 
     let mut chars = chars_trimmed.filter(|x| *x != '_' && *x != 'x');
 
-    let mut neg = false;
-
-    let mut out: i64 = match chars.next().unwrap() {
-        '-' => {
-            neg = true;
-            -(chars.next()?.to_digit(radix)? as i64)
-        }
+    let mut out: i64 = match chars.next().unwrap() { // fixme unwrap
         c => c.to_digit(radix).unwrap() as i64,
     };
 
     for c in chars {
-        if c == '_' {
-            continue;
-        }
-        if c == '-' {
-            neg = true
-        }
-
         out *= radix as i64;
 
-        if neg {
-            out = out.checked_sub(c.to_digit(radix).unwrap() as i64).unwrap();
-        } else {
-            out = out.checked_add(c.to_digit(radix).unwrap() as i64).unwrap();
-        }
+        // todo bigint
+        out = out.checked_add(c.to_digit(radix).unwrap() as i64).unwrap();
     }
     Some(out)
 }
 
-fn parse_bytes(token: &str) -> ParseResult<Vec<u8>> {
+fn parse_bool(
+    tc: &TreeCursor,
+    env: &mut ParseEnv
+) -> ParseResult<bool> {
+    let node = &tc.node();
+    let content = node_content(node, env)?;
+
+    if content == "true" { Some(true) }
+    else if content == "false" { Some(false) }
+    else {
+        env.tok_err(node, TokenError::InvalidBool);
+        None
+    }
+}
+
+fn parse_bytes(
+    tc: &TreeCursor,
+    env: &mut ParseEnv
+) -> ParseResult<Vec<u8>>
+{
+    let node = &tc.node();
+    let token = node_content(node, env)?;
     let mut chars = token.chars();
     let mut out: Vec<u8> = Vec::with_capacity(token.len() / 2);
-    while let Ok(c0) = chars
-        .next()
-        .ok_or(ParseError::InvalidToken(token.to_string()))
-    {
+    while let Some(c0) = chars.next() {
         if c0 == '_' {
             continue;
         }
 
-        let c1 = chars.next()?;
+        let c1 = match chars.next() {
+            Some(c1) => c1,
+            None => {
+                env.tok_err(node, TokenError::UnevenBytes);
+                None?
+            }
+        };
 
         let c0d = c0.to_digit(16)?;
         let c1d = c1.to_digit(16)?;
@@ -182,55 +273,10 @@ fn parse_bytes(token: &str) -> ParseResult<Vec<u8>> {
     Some(out)
 }
 
-fn unescape<T>(close: char, chars: &mut T) -> ParseResult<char>
-where
-    T: Iterator<Item = char>,
-{
-    let c0 = chars.next()?;
-    if c0 == '\\' {
-        match chars.next()? {
-            '\\' => Some('\\'),
-            'b' => Some('\u{8}'),
-            'e' => Some('\u{27}'),
-            'f' => Some('\u{12}'),
-            'n' => Some('\n'),
-            'r' => Some('\r'),
-            't' => Some('\t'),
-            'v' => Some('\u{11}'),
-            // 'x' => _,
-            c if c == close => Some(c),
-            _ => None,
-        }
-    } else {
-        Some(c0)
-    }
-}
-
-fn parse_bin_op(token: &str) -> ParseResult<ast::BinOp> {
-    match token {
-        "+" => Some(ast::BinOp::Add),
-        "-" => Some(ast::BinOp::Sub),
-        "*" => Some(ast::BinOp::Mul),
-        "/" => Some(ast::BinOp::Div),
-        "mod" => Some(ast::BinOp::Mod),
-        "^" => Some(ast::BinOp::Pow),
-        "&&" => Some(ast::BinOp::And),
-        "||" => Some(ast::BinOp::Or),
-        "<" => Some(ast::BinOp::LT),
-        "=<" => Some(ast::BinOp::LE),
-        ">" => Some(ast::BinOp::GT),
-        ">=" => Some(ast::BinOp::GE),
-        "==" => Some(ast::BinOp::EQ),
-        "!=" => Some(ast::BinOp::NE),
-        "::" => Some(ast::BinOp::Cons),
-        "++" => Some(ast::BinOp::Concat),
-        _ => None,
-    }
-}
-
-fn parse_qual(tc: &mut TreeCursor,
-              env: &mut ParseEnv) ->
-    ParseResultN<ast::QName> {
+fn parse_qual(
+    tc: &mut TreeCursor,
+    env: &mut ParseEnv) ->
+ParseResultN<ast::QName> {
         let node = &tc.node();
         let path = parse_fields(tc, env, &parse_name, "path");
         let name = parse_field(tc, env, &parse_name, "name");
@@ -245,80 +291,58 @@ fn parse_literal(
     env: &mut ParseEnv
 ) -> ParseResultN<ast::Literal> {
     use ast::Literal;
-    env.check_error(tc)?;
     let node = &tc.node();
-    let content = node_content(node, env)?;
     let lit = match node.kind() {
-        // "lit_constructor" => Literal::Constructor { val: content },
+        "lit_constructor" => {
+            let lit = parse_qual(tc, env);
+            Literal::Constructor { val: lit?.node }
+        }
         "lit_bytes" => {
-            let lit = parse_bytes(&content);
-
-            if lit.is_none() {
-                env.err(ParseError::InvalidToken(content));
-            }
-
+            let lit = parse_bytes(tc, env);
             Literal::Bytes { val: lit? }
         }
         "lit_lambda_op" => {
-            let op = parse_bin_op(&content);
-
-            if op.is_none() {
-                env.err(ParseError::InvalidToken(content));
-            }
-
+            let op = parse_binop(tc, env);
             Literal::LambdaBinOp { val: op? }
         }
         "lit_integer" => {
-            let lit = parse_int(&content);
-
-            if lit.is_none() {
-                env.err(ParseError::InvalidToken(content));
-            }
-
+            let lit = parse_int(tc, env);
             Literal::Int { val: lit? }
         }
         "lit_bool" => {
-            if content == "true" {
-                Literal::Bool { val: true }
-            } else if content == "false" {
-                Literal::Bool { val: false }
-            } else {
-                env.err(ParseError::InvalidToken(content));
-                None?
-            }
+            let lit = parse_bool(tc, env);
+            Literal::Bool { val: lit? }
         }
-        "lit_empty_map_or_record" => Literal::EmptyMapOrRecord,
+        "lit_empty_map_or_record" => {
+            Literal::EmptyMapOrRecord
+        }
         "lit_string" => {
-            let lit = parse_str(&content);
-
-            if lit.is_none() {
-                env.err(ParseError::InvalidToken(content));
-            }
-
+            let lit = parse_str(tc, env);
             Literal::String { val: lit? }
         }
         "lit_char" => {
-            let lit = parse_char(&content);
-
-            if lit.is_none() {
-                env.err(ParseError::InvalidToken(content));
-                None?
-            } else {
-                Literal::Char {
-                    val: parse_char(&content)?,
-                }
-            }
+            let lit = parse_char(tc, env);
+            Literal::Char { val: lit? }
         }
-        _ => {
-            env.err(ParseError::InvalidToken(content));
-            None?
+        e => {
+            panic!("Unknown literal node: {}", e)
         }
     };
     Some(mk_node(node, lit))
 }
 
-fn ann(_node: &tree_sitter::Node) -> ast::Ann {
-    ast::Ann {}
+fn ann(node: &tree_sitter::Node) -> ast::Ann {
+    let Point{row: start_line, column: start_col} = node.start_position();
+    let Point{row: end_line, column: end_col} = node.end_position();
+    ast::Ann {
+        start_line: start_line as u32,
+        start_col: start_col as u32,
+        start_byte: node.start_byte() as u32,
+        end_line: end_line as u32,
+        end_col: end_col as u32,
+        end_byte: node.end_byte() as u32,
+        filename: "<filename mock>".to_string(),
+    }
 }
 
 fn mk_node<T: Clone>(node: &tree_sitter::Node, value: T) -> ast::Node<T> {
@@ -346,7 +370,7 @@ where
     }
 
     while child_found {
-        if (!env.has_errors || !parse_error(tc, env)) && filter(tc) {
+        if filter(tc) {
             children.push(parse(tc, env));
         }
         child_found = tc.goto_next_sibling();
@@ -354,7 +378,7 @@ where
 
     tc.goto_parent();
 
-    children.into_iter().filter_map(|x| x).collect()
+    children.into_iter().flatten().collect()
 }
 
 fn parse_child<'a, T: Clone, F, P>(
@@ -389,10 +413,16 @@ where
     P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResult<T>,
 {
     let mut i = 0;
-    parse_child(tc, env, &parse, |_| {
+    let child = parse_child(tc, env, &parse, |_| {
         i += 1;
         idx == i - 1
-    })
+    });
+
+    if child.is_none() {
+        env.err(&tc.node(), ParseError::MissingChild(idx));
+    }
+
+    child
 }
 
 fn parse_field<'a, T: Clone, P>(
@@ -403,9 +433,15 @@ fn parse_field<'a, T: Clone, P>(
 ) -> ParseResult<T>
 where P: Fn(&mut tree_sitter::TreeCursor<'a>, &mut ParseEnv) -> ParseResult<T>,
 {
-    parse_child(tc, env, &parse, |c| {
+    let child = parse_child(tc, env, &parse, |c| {
         c.field_name() == Some(name)
-    })
+    });
+
+    if child.is_none() {
+        env.err(&tc.node(), ParseError::MissingField(name.to_string()));
+    }
+
+    child
 }
 
 fn parse_fields<'a, T, P>(
@@ -461,7 +497,7 @@ fn parse_module<'a>(
     Some(mk_node(node, ast::Module {
         pragmas,
         includes,
-        usings: vec![],//usings?,
+        usings,
         scopes,
     }))
 }
@@ -498,7 +534,7 @@ fn parse_using_select<'a>(
             let names = parse_fields_in_field(tc, env, &parse_name, "names", "name");
             ast::UsingSelect::Include(names?)
         }
-        _ => None?
+        e => panic!("Unknown using select: {}", e)
     };
     Some(mk_node(node, select))
 }
@@ -521,7 +557,7 @@ fn parse_include<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Include> {
     let node = &tc.node();
-    let path = parse_field(tc, env, &|tc, env| parse_str(&node_content(&tc.node(), env)?), "path");
+    let path = parse_field(tc, env, &parse_str, "path");
     Some(mk_node(node, ast::Include{
         path: path?,
     }))
@@ -550,8 +586,7 @@ fn parse_scope_decl<'a>(
     let sdecl = match head?.node.as_str() {
         "contract" if !is_interface => {
             if is_private || is_stateful {
-                env.err(ParseError::InvalidModifier);
-                None?
+                env.err(node, ParseError::InvalidModifier);
             }
 
             let decls = parse_fields(tc, env, &parse_decl_in_contract, "decl");
@@ -566,27 +601,24 @@ fn parse_scope_decl<'a>(
         }
         "contract" if is_interface => {
             if is_payable || is_private || is_stateful || is_main {
-                env.err(ParseError::InvalidModifier);
-                None?
+                env.err(node, ParseError::InvalidModifier);
             }
 
             unimplemented!("contract interface")
         }
         "namespace" => {
             if is_payable || is_private || is_stateful || is_main || is_interface {
-                env.err(ParseError::InvalidModifier);
-                None?
+                env.err(node, ParseError::InvalidModifier);
             }
 
-            if impls.len() > 0 {
-                env.err(ParseError::NamespaceImpl)
+            if !impls.is_empty() {
+                env.err(node, ParseError::NamespaceImpl)
             }
 
             unimplemented!("namespace")
         }
-        h => {
-            env.err(ParseError::InvalidToken(h.to_string()));
-            None?
+        e => {
+            panic!("Unknown scope header: {}", e)
         }
     };
     Some(mk_node(node, sdecl))
@@ -601,7 +633,7 @@ struct Modifiers {
 
 fn parse_modifiers(
     env: &mut ParseEnv,
-    modifiers: &Vec<ast::Node<String>>
+    modifiers: &Vec<ast::Node<String>>,
 ) -> Modifiers {
     let mut is_payable = false;
     let mut is_stateful = false;
@@ -614,7 +646,7 @@ fn parse_modifiers(
             "stateful" => is_stateful = true,
             "private" => is_private = true,
             "main" => is_main = true,
-            _ => env.err(ParseError::InvalidToken(m.node.to_string()))
+            e => panic!("Unknown modifier: {}", e)
         }
     }
 
@@ -661,14 +693,14 @@ fn parse_function_declaration<'a>(
     } = parse_modifiers(env, &modifiers);
 
     if is_private || is_main {
-        env.err(ParseError::InvalidModifier);
+        env.err(node, ParseError::InvalidModifier);
     }
 
     let is_entrypoint = match head?.node.as_str() {
         "entrypoint" => true,
         "function" => false,
         _ => {
-            env.err(ParseError::InvalidModifier);
+            env.err(node, ParseError::InvalidModifier);
             false
         }
     };
@@ -683,7 +715,7 @@ fn parse_function_declaration<'a>(
             None => fun_name = Some(clause_name.clone()),
             Some(n) => {
                 if n.node != clause_name.node {
-                    env.err(ParseError::InconsistentName);
+                    env.err(node, ParseError::InconsistentName);
                 }
                 fun_name = Some(n)
             }
@@ -695,7 +727,7 @@ fn parse_function_declaration<'a>(
             }
             either::Right(clause_sig) => {
                 if fun_signature.is_some() {
-                    env.err(ParseError::DuplicateSig);
+                    env.err(node, ParseError::DuplicateSig);
                 } else {
                     fun_signature = Some(clause_sig.node.signature);
                 }
@@ -992,7 +1024,7 @@ fn parse_expr<'a>(
                     }
                 }
                 _ => {
-                    env.err(ParseError::BlockNoExpr(last.ann));
+                    env.err(node, ParseError::BlockNoExpr);
                     None?
                 }
             }
@@ -1000,11 +1032,7 @@ fn parse_expr<'a>(
         "expr_hole" => {
             Expr::Hole
         }
-        _ => {
-            let content = node_content(node, env)?;
-            env.err(ParseError::InvalidToken(content));
-            None?
-        }
+        e => panic!("Unknown expression node: {}", e)
     };
     Some(mk_node(node, expr))
 }
@@ -1060,10 +1088,7 @@ fn parse_binop<'a>(
         "||" => Or,
         "::" => Cons,
         "++" => Concat,
-        _ => {
-            env.err(ParseError::InvalidToken(content));
-            None?
-        }
+        e => panic!("Unknown binary op: {}", e)
     };
     Some(mk_node(node, op))
 }
@@ -1078,10 +1103,7 @@ fn parse_unop<'a>(
     let op = match content.as_str() {
         "-" => Neg,
         "!" => Not,
-        _ => {
-            env.err(ParseError::InvalidToken(content));
-            None?
-        }
+        e => panic!("Unknown unary op: {}", e)
     };
     Some(mk_node(node, op))
 }
@@ -1220,11 +1242,7 @@ fn parse_type<'a>(
                 name: mk_node(node, name?),
             }
         },
-        _ => {
-            let content = node_content(node, env)?;
-            env.err(ParseError::InvalidToken(content));
-            None?
-        }
+        e => panic!("Unknown type node: {}", e)
     };
     Some(mk_node(node, t))
 }
@@ -1304,11 +1322,7 @@ fn parse_pattern<'a>(
         "pat_wildcard" => {
             Pattern::Wildcard
         },
-        _ => {
-            let content = node_content(node, env)?;
-            env.err(ParseError::InvalidToken(content));
-            None?
-        }
+        e => panic!("Unknown pattern node: {}", e)
     };
     Some(mk_node(node, pat))
 }
@@ -1332,6 +1346,7 @@ fn parse_stmts<'a>(
     env: &mut ParseEnv,
 ) -> ParseResult<ast::Nodes<ast::Statement>> {
     use ast::Statement;
+    let node = &tc.node();
     let mut part_stmts = parse_fields(tc, env, &parse_split_stmt, "stmt");
     part_stmts.reverse();
 
@@ -1350,7 +1365,7 @@ fn parse_stmts<'a>(
                         conds.push(cond);
                     }
                     _ => {
-                        env.err(ParseError::LonelyElIf)
+                        env.err(node, ParseError::LonelyElIf)
                     }
                 }
             }
@@ -1360,7 +1375,7 @@ fn parse_stmts<'a>(
                         *neg = Some(expr)
                     }
                     _ => {
-                        env.err(ParseError::LonelyElse)
+                        env.err(node, ParseError::LonelyElse)
                     }
                 }
             }
@@ -1422,11 +1437,7 @@ fn parse_split_stmt<'a>(
             let expr = parse_field(tc, env, &parse_expr, "else");
             SplitStmt::PartElse(expr?)
         }
-        _ => {
-            let content = node_content(node, env)?;
-            env.err(ParseError::InvalidToken(content));
-            None?
-        }
+        e => panic!("Unknown statement node: {}", e)
     };
     Some(mk_node(node, stmt))
 }
@@ -1436,18 +1447,15 @@ fn parse_split_stmt<'a>(
 fn parse_error<'a>(tc: &mut TreeCursor<'a>, env: &mut ParseEnv) -> bool {
     let node = &tc.node();
     if node.is_missing() {
-        env.err(ParseError::MissingNode(node.kind().to_string()));
+        env.err(node, ParseError::MissingNode);
         return true;
     }
 
     if node.is_error() {
-        if let Some(content) = node_content(node, env) {
-            env.err(ParseError::NodeError(content))
-        };
-        parse_any(tc, env);
-        return true;
+        env.err(node, ParseError::NodeError);
     }
 
+    parse_children(tc, env, &|tc, env| {Some(parse_error(tc, env))}, |_| true);
     false
 }
 
@@ -1461,16 +1469,16 @@ fn parse_any<'a>(
     let sub_err = match env.subtypes.get(kind) {
         Some(sub) => {
             match sub.as_str() {
-                "_expression" => parse_expr(tc, env).is_some(),
-                "_pattern" => parse_pattern(tc, env).is_some(),
-                "_type" => parse_type(tc, env).is_some(),
-                "_literal" => parse_literal(tc, env).is_some(),
-                // "_list_comprehension_filter" => parse_list_comp(tc, env).is_some(),
-                "_operator" => parse_binop(tc, env).is_some(),
-                // "_scoped_declaration" => parse_scoped_declaration(tc, env).is_some(),
-                "_statement" => parse_split_stmt(tc, env).is_some(),
-                // "_top_decl" => parse_top_decl(tc, env).is_some(),
-                "_type_definition" => parse_type_def(tc, env).is_some(),
+                // "_expression" => parse_expr(tc, env).is_some(),
+                // "_pattern" => parse_pattern(tc, env).is_some(),
+                // "_type" => parse_type(tc, env).is_some(),
+                // "_literal" => parse_literal(tc, env).is_some(),
+                // // "_list_comprehension_filter" => parse_list_comp(tc, env).is_some(),
+                // "_operator" => parse_binop(tc, env).is_some(),
+                // // "_scoped_declaration" => parse_scoped_declaration(tc, env).is_some(),
+                // "_statement" => parse_split_stmt(tc, env).is_some(),
+                // // "_top_decl" => parse_top_decl(tc, env).is_some(),
+                // "_type_definition" => parse_type_def(tc, env).is_some(),
                 _ => {
                     parse_children(tc, env, &parse_any, |_| true);
                     false
@@ -1533,9 +1541,11 @@ mod tests {
             _ => panic!("wtf json")
         }
 
-        let src = "contract C = function f() = 123";
-        let ast = parser.parse(src, None).unwrap();
+        let src = std::fs::read_to_string("C.aes").unwrap();
+        let ast = parser.parse(&src, None).unwrap();
         let root = ast.root_node();
+
+        println!("SEXP: {}\n\n", root.to_sexp());
 
         let errs = vec![];
         let src_data: Vec<u16> = src.encode_utf16().collect();
@@ -1549,19 +1559,27 @@ mod tests {
 
         let mut tc = ast.walk();
 
-        // let node = parse_any(&mut tc, &mut env);
-        let node = parse_field(&mut tc, &mut env, &parse_module, "module");
+        let node = if root.has_error() {
+            println!("PARSING ERROR...");
+            parse_error(&mut tc, &mut env); None
+        } else {
+            let kind = parse_field(&mut tc, &mut env, &|tc, env| node_content(&tc.node(), env), "kind").unwrap_or("module".to_string());
+            println!("PARSING {}", kind);
+            parse_field(&mut tc, &mut env, &parse_expr, &kind)
+        };
 
         println!("ERRORS:");
-        for e in env.errs {
-            println!("ERROR: {:?}", e);
+        for en in env.errs {
+            println!("ERROR: {:?} at", en.node);
+            println!("---\n{}\n---", String::from_utf16(&src_data[en.ann.start_byte as usize ..en.ann.end_byte as usize]).unwrap_or("idk".to_string()));
         }
 
         println!("\nOUTPUT:");
         if let Some(out) = node {
-            println!("SUCCESS {:?}", out);
+            println!("SUCCESS {:#?}", out);
         } else {
             println!("FAILED PARSE");
+
         }
 
         panic!("done :)");
