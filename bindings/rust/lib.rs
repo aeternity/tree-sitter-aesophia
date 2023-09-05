@@ -419,6 +419,7 @@ where
     });
 
     if child.is_none() {
+        // todo: optional fields!
         env.err(&tc.node(), ParseError::MissingChild(idx));
     }
 
