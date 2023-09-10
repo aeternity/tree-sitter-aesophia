@@ -27,14 +27,7 @@ module.exports = grammar({
   name: 'aesophia',
 
   conflicts: $ => [
-    // ((x, y)) --- function args or tuple pattern?
-    [$.pat_args, $.pat_tuple],
-    // (x : t) --- typed variable expression or typed pattern?
-    [$.expr_variable, $._pattern],
-    // Literals are untellable
-    [$.expr_literal, $.pat_literal],
-    // Almost literal
-    [$.expr_list_literal, $.pat_list],
+    [$.pat_args, $.expr_tuple],
   ],
 
   extras: $ => [
@@ -59,7 +52,6 @@ module.exports = grammar({
     $._scoped_declaration,
     $._expression,
     $._list_comprehension_filter,
-    $._pattern,
     $._literal,
     $._statement,
     $._type,
@@ -70,14 +62,20 @@ module.exports = grammar({
     $._expression_body,
     $._expr_atom,
 
-    $._pattern_binhder,
-    $._pat_atom,
+    $._pattern,
 
-    $._qual_variable_name,
-    $._qual,
-    $._scope_name,
-    $._constructor_name,
-    $._qual_constructor_name,
+    $.name,
+    $.variable_name,
+    $.type_variable_poly_name,
+    $.field_name,
+    $.function_name,
+    $.type_name,
+    $.constructor_name,
+    $.scope_name,
+    // $.qual,
+    $.qual_constructor_name,
+    $.qual_variable_name,
+    $.qual_scope_name,
   ],
 
   precedences: $ => [
@@ -88,6 +86,7 @@ module.exports = grammar({
       'EXPR_PROJECTION',
       'EXPR_APP',
       'EXPR_UPDATE_OR_ACCESS',
+      'EXPR_MATCH',
       'EXPR_TYPED',
       'EXPR_BLOCK',
 
@@ -123,18 +122,6 @@ module.exports = grammar({
       'TYPE_FUN',
     ],
 
-    [ // patterns
-      'PAT_ATOM',
-      'PAT_TUPLE',
-      'PAT_LIST',
-      'PAT_ARGS',
-      'PAT_OP',
-      'PAT_APP',
-      'PAT_BINDER',
-      'PAT_LET',
-      'PAT_TYPED',
-    ],
-
     [ // Literals
       'LIT_ATOM',
       'LIT_QUAL',
@@ -143,11 +130,8 @@ module.exports = grammar({
     // conflicts
 
     // switch(x) p | x : type => ...
-    //               ^Should be parsed as (x : type) => ...
+    //               ^Should be parsed as typed guard
     [ 'EXPR_TYPED', 'TYPE_DOMAIN' ],
-
-    // Parse a lambda before claiming a tuple
-    ['PAT_TUPLE', 'PAT_ARGS', 'EXPR_TUPLE'],
   ],
 
   word: $ => $._lex_low_id,
@@ -159,7 +143,6 @@ module.exports = grammar({
     ),
 
     _dispath: $ => choice(
-      dispath('pattern', $._pattern),
       dispath('type', $._type),
       dispath('literal', $._literal),
       dispath('expression', $._expression),
@@ -360,14 +343,14 @@ module.exports = grammar({
       $.expr_if,
       $.expr_variable,
       $.expr_typed,
+      $.expr_match,
+      $.expr_switch,
       $.expr_op,
       $.expr_application,
       $.expr_record_update,
       $.expr_map_update,
       $.expr_map_access,
-      $.expr_variable,
       $.expr_projection,
-      $.expr_switch,
       $.expr_tuple,
       $._expr_atom
     ),
@@ -428,18 +411,13 @@ module.exports = grammar({
     )),
 
     expr_args: $ => parens_comma(
-      field("arg", $._expr_argument)
+      field("arg", $.expr_argument)
     ),
 
-    _expr_argument: $ => choice(
-      $._expression,
-      $.expr_named_argument
-    ),
-
-    expr_named_argument: $ => seq(
-      field("name", $.variable_name), '=',
+    expr_argument: $ => prec('EXPR_MATCH', seq(
+      optional(seq(field("name", $.variable_name), '=')),
       field("value", $._expression)
-    ),
+    )),
 
     expr_record_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
       field("record", $._expression),
@@ -548,7 +526,7 @@ module.exports = grammar({
       $, field("stmt", $._statement)
     )),
 
-    expr_variable: $ => prec('EXPR_QUAL', $._qual_variable_name),
+    expr_variable: $ => prec('EXPR_QUAL', $.qual_variable_name),
 
     _expr_atom: $ => prec('EXPR_ATOM', choice(
       $.expr_literal,
@@ -556,6 +534,7 @@ module.exports = grammar({
       $.expr_map,
       $._expr_list,
       $.expr_hole,
+      $.expr_wildcard,
     )),
 
     expr_literal: $ => prec('EXPR_ATOM', field("literal", $._literal)),
@@ -575,7 +554,7 @@ module.exports = grammar({
 
     map_assign: $ => seq(
       field("key", $.expr_map_key), '=',
-      optional(seq('@', field("old_value", $._variable_name))),
+      optional(seq('@', field("old_value", $.variable_name))),
       field("new_value", $._expression)
     ),
 
@@ -631,87 +610,23 @@ module.exports = grammar({
 
     expr_hole: $ => prec('EXPR_ATOM', $._lex_hole),
 
+    expr_wildcard: $ => prec('EXPR_ATOM', $._lex_wildcard),
+
+    expr_match: $ => prec.right('EXPR_MATCH', seq(
+      field("lvalue", $._expression),
+      '=',
+      field("rvalue", $._expression)
+    )),
+
     //**************************************************************************
     // PATTERN
     //**************************************************************************
 
-    _pattern: $ => choice(
-      $.pat_typed,
-      $.pat_let,
-    //   $._pattern_binder,
-    // ),
+    _pattern: $ => $._expression,
 
-    // _pattern_binder: $ => prec('PAT_BINDER', choice(
-      $.pat_application,
-      $.pat_operator,
-      $.pat_tuple,
-      $._pat_atom
-    ),
-
-    pat_tuple: $ => prec('PAT_TUPLE', parens_comma(
-      field("elem", $._pattern)
-    )),
-
-    _pat_atom: $ => prec('PAT_ATOM', choice(
-      alias($._variable_name, $.pat_variable),
-      $.pat_literal,
-      $.pat_list,
-      $.pat_record,
-      $.pat_wildcard,
-    )),
-
-    pat_typed: $ => prec.left('PAT_TYPED', seq(
-      field("pattern", $._pattern), ':',
-      field("type", $._type)
-    )),
-
-    pat_application: $ => prec.left('PAT_APP', seq(
-      field("fun", $._pattern),
-      field("args", $.pat_args),
-    )),
-
-    pat_args: $ => prec('PAT_ARGS', parens_comma(
+    pat_args: $ => parens_comma(
       field("arg", $._pattern)
-    )),
-
-    pat_let: $ => prec.left('PAT_LET', seq(
-      field("name", alias($._variable_name, $.pat_variable)), '=',
-      field("pattern", $._pattern)
-    )),
-
-    pat_operator: $ => prec.right('PAT_OP', seq(
-      field("op_l", $._pattern), '::',
-      field("op_r", $._pattern)
-    )),
-
-    pat_literal: $ => prec('PAT_ATOM', field("literal", $._literal)),
-
-    _pat_variable: $ => prec('PAT_ATOM', alias($._variable_name, $.pat_variable)),
-
-    pat_list: $ => prec('PAT_ATOM', brackets_comma(
-      field("elem", $._pattern)
-    )),
-
-    pat_record: $ => prec('PAT_ATOM', braces_comma1(
-      field("field", $.pat_record_field)
-    )),
-
-    pat_record_field: $ => seq(
-      field("path", $.field_path), '=',
-      field("pattern", $._pattern)
     ),
-
-    pat_map: $ => prec('PAT_ATOM', braces_comma1(
-      field("field", $.pat_map_field)
-    )),
-
-    pat_map_field: $ => seq(
-      brackets(field("key", $._expression)),
-      '=',
-      field("pattern", $._pattern),
-    ),
-
-    pat_wildcard: $ => prec('PAT_ATOM', $._lex_wildcard),
 
     //**************************************************************************
     // LITERAL
@@ -729,7 +644,7 @@ module.exports = grammar({
       $.lit_char,
     ),
 
-    lit_constructor: $ => prec.left('LIT_QUAL', $._qual_constructor_name),
+    lit_constructor: $ => prec.left('LIT_QUAL', $.qual_constructor_name),
 
     lit_bytes: $ => prec('LIT_ATOM', $._lex_bytes),
 
@@ -761,6 +676,7 @@ module.exports = grammar({
       $.stmt_elif,
       $.stmt_else,
       $.stmt_expr,
+      $.stmt_invalid,
     ),
 
     stmt_letval: $ => prec('STMT_LET', seq(
@@ -794,6 +710,29 @@ module.exports = grammar({
       'else',
       field("else", $._expression_body),
     )),
+
+    stmt_invalid: $ => choice(
+      $.stmt_invalid_return,
+      $.stmt_invalid_while,
+      $.stmt_invalid_return,
+    ),
+
+    stmt_invalid_return: $ => seq(
+      'return',
+       optional($._expression)
+    ),
+
+    stmt_invalid_while: $ => seq(
+      'while',
+      parens($._expression),
+      $._expression,
+    ),
+
+    stmt_invalid_for: $ => seq(
+      'for',
+      parens(sep($._expression, ";")),
+      $._expression,
+    ),
 
     // In statements, all ifs should have their branches indented the same way.  Otherwise, a single
     // space can have vast effects on the AST structure. Consider examples:
@@ -876,9 +815,9 @@ module.exports = grammar({
       ')'
     ),
 
-    type_variable_poly: $ => $._type_variable_poly_name,
+    type_variable_poly: $ => $.type_variable_poly_name,
 
-    type_variable: $ => $._qual_variable_name,
+    type_variable: $ => $.qual_variable_name,
 
     //**************************************************************************
     // OPERATORS
@@ -928,49 +867,38 @@ module.exports = grammar({
     // NAMES
     //**************************************************************************
 
-    _name: $ => choice($._lex_low_id, $._lex_up_id),
-    name: $ => $._name,
+    name: $ => choice($._lex_low_id, $._lex_up_id),
 
-    _variable_name: $ => $._lex_low_id,
-    variable_name: $ => $._variable_name,
+    variable_name: $ => $._lex_low_id,
 
-    _qual_variable_name: $ => seq(
-      optional($._qual),
-      $._variable_name,
+    type_variable_poly_name: $ => $._lex_prim_id,
+
+    field_name: $ => $._lex_low_id,
+
+    function_name: $ => $._lex_low_id,
+
+    type_name: $ => $._lex_low_id,
+
+    constructor_name: $ => $._lex_up_id,
+
+    scope_name: $ => $._lex_up_id,
+
+    qual_variable_name: $ => seq(
+      optional($.qual),
+      $.variable_name,
     ),
-    qual_variable_name: $ => $._qual_variable_name,
 
-    _type_variable_poly_name: $ => $._lex_prim_id,
-    type_variable_poly_name: $ => $._type_variable_poly_name,
-
-    _field_name: $ => $._lex_low_id,
-    field_name: $ => $._field_name,
-
-    _function_name: $ => $._lex_low_id,
-    function_name: $ => $._function_name,
-
-    _type_name: $ => $._lex_low_id,
-    type_name: $ => $._type_name,
-
-    _constructor_name: $ => $._lex_up_id,
-    constructor_name: $ => $._constructor_name,
-
-    _qual_constructor_name: $ => seq(
-      optional($._qual),
-      $._constructor_name,
+    qual_constructor_name: $ => seq(
+      optional($.qual),
+      $.constructor_name,
     ),
-    qual_constructor_name: $ => $._qual_constructor_name,
 
-    _scope_name: $ => $._lex_up_id,
-    scope_name: $ => $._scope_name,
-
-    _qual_scope_name: $ => seq(
-      optional($._qual),
-      $._scope_name
+    qual_scope_name: $ => seq(
+      optional($.qual),
+      $.scope_name
     ),
-    qual_scope_name: $ => $._scope_name,
 
-    _qual: $ => prec.left(repeat1(seq(field("path", $._scope_name), '.'))),
+    qual: $ => prec.left(repeat1(seq(field("path", $.scope_name), '.'))),
 
     //**************************************************************************
     // LEXEMES

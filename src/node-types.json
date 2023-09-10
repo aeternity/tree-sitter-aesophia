@@ -48,6 +48,10 @@
         "named": true
       },
       {
+        "type": "expr_match",
+        "named": true
+      },
+      {
         "type": "expr_op",
         "named": true
       },
@@ -77,6 +81,10 @@
       },
       {
         "type": "expr_variable",
+        "named": true
+      },
+      {
+        "type": "expr_wildcard",
         "named": true
       }
     ]
@@ -220,52 +228,6 @@
     ]
   },
   {
-    "type": "_pattern",
-    "named": true,
-    "subtypes": [
-      {
-        "type": "pat_application",
-        "named": true
-      },
-      {
-        "type": "pat_let",
-        "named": true
-      },
-      {
-        "type": "pat_list",
-        "named": true
-      },
-      {
-        "type": "pat_literal",
-        "named": true
-      },
-      {
-        "type": "pat_operator",
-        "named": true
-      },
-      {
-        "type": "pat_record",
-        "named": true
-      },
-      {
-        "type": "pat_tuple",
-        "named": true
-      },
-      {
-        "type": "pat_typed",
-        "named": true
-      },
-      {
-        "type": "pat_variable",
-        "named": true
-      },
-      {
-        "type": "pat_wildcard",
-        "named": true
-      }
-    ]
-  },
-  {
     "type": "_scoped_declaration",
     "named": true,
     "subtypes": [
@@ -297,6 +259,10 @@
       },
       {
         "type": "stmt_if",
+        "named": true
+      },
+      {
+        "type": "stmt_invalid",
         "named": true
       },
       {
@@ -404,16 +370,6 @@
     "type": "constructor_declaration",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "constructor_name",
-            "named": true
-          }
-        ]
-      },
       "params": {
         "multiple": false,
         "required": false,
@@ -425,11 +381,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "constructor_name",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "doc_comment",
@@ -471,11 +422,23 @@
         "required": false,
         "types": [
           {
-            "type": "_expression",
+            "type": "expr_argument",
             "named": true
-          },
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "expr_argument",
+    "named": true,
+    "fields": {
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
           {
-            "type": "expr_named_argument",
+            "type": "_expression",
             "named": true
           }
         ]
@@ -804,20 +767,20 @@
     }
   },
   {
-    "type": "expr_named_argument",
+    "type": "expr_match",
     "named": true,
     "fields": {
-      "name": {
+      "lvalue": {
         "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "variable_name",
+            "type": "_expression",
             "named": true
           }
         ]
       },
-      "value": {
+      "rvalue": {
         "multiple": false,
         "required": true,
         "types": [
@@ -946,16 +909,6 @@
             "named": true
           }
         ]
-      },
-      "field": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "field_name",
-            "named": true
-          }
-        ]
       }
     }
   },
@@ -979,16 +932,6 @@
     "type": "expr_record_field",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "field_name",
-            "named": true
-          }
-        ]
-      },
       "value": {
         "multiple": false,
         "required": true,
@@ -1098,22 +1041,27 @@
   {
     "type": "expr_variable",
     "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "qual",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "expr_wildcard",
+    "named": true,
     "fields": {}
   },
   {
     "type": "field_declaration",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "field_name",
-            "named": true
-          }
-        ]
-      },
       "type": {
         "multiple": false,
         "required": true,
@@ -1127,25 +1075,9 @@
     }
   },
   {
-    "type": "field_name",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "field_path",
     "named": true,
-    "fields": {
-      "field": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "field_name",
-            "named": true
-          }
-        ]
-      }
-    }
+    "fields": {}
   },
   {
     "type": "function_clause",
@@ -1171,16 +1103,6 @@
           },
           {
             "type": "expr_block",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "function_name",
             "named": true
           }
         ]
@@ -1295,24 +1217,9 @@
     "fields": {}
   },
   {
-    "type": "function_name",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "function_signature",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "function_name",
-            "named": true
-          }
-        ]
-      },
       "type": {
         "multiple": false,
         "required": true,
@@ -1433,7 +1340,7 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "_expression",
             "named": true
           }
         ]
@@ -1475,7 +1382,7 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "_expression",
             "named": true
           }
         ]
@@ -1505,7 +1412,17 @@
   {
     "type": "lit_constructor",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "qual",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "lit_empty_map_or_record",
@@ -1587,16 +1504,6 @@
             "named": true
           }
         ]
-      },
-      "old_value": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "variable_name",
-            "named": true
-          }
-        ]
       }
     }
   },
@@ -1632,45 +1539,9 @@
     }
   },
   {
-    "type": "name",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "op_cons",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "op_mul",
     "named": true,
     "fields": {}
-  },
-  {
-    "type": "pat_application",
-    "named": true,
-    "fields": {
-      "args": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "pat_args",
-            "named": true
-          }
-        ]
-      },
-      "fun": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
   },
   {
     "type": "pat_args",
@@ -1681,216 +1552,12 @@
         "required": false,
         "types": [
           {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_let",
-    "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "pat_variable",
-            "named": true
-          }
-        ]
-      },
-      "pattern": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_list",
-    "named": true,
-    "fields": {
-      "elem": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_literal",
-    "named": true,
-    "fields": {
-      "literal": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_literal",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_map_field",
-    "named": true,
-    "fields": {
-      "key": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
             "type": "_expression",
             "named": true
           }
         ]
-      },
-      "pattern": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
       }
     }
-  },
-  {
-    "type": "pat_operator",
-    "named": true,
-    "fields": {
-      "op_l": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      },
-      "op_r": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_record",
-    "named": true,
-    "fields": {
-      "field": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "pat_record_field",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_record_field",
-    "named": true,
-    "fields": {
-      "path": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "field_path",
-            "named": true
-          }
-        ]
-      },
-      "pattern": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_tuple",
-    "named": true,
-    "fields": {
-      "elem": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_typed",
-    "named": true,
-    "fields": {
-      "pattern": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_pattern",
-            "named": true
-          }
-        ]
-      },
-      "type": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_type",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "pat_variable",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "pat_wildcard",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "pragma_compiler_vsn",
@@ -1939,7 +1606,7 @@
     }
   },
   {
-    "type": "qual_scope_name",
+    "type": "qual",
     "named": true,
     "fields": {}
   },
@@ -1953,16 +1620,6 @@
         "types": [
           {
             "type": "record_fields",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "type_name",
             "named": true
           }
         ]
@@ -1989,16 +1646,6 @@
         "types": [
           {
             "type": "_expression",
-            "named": true
-          }
-        ]
-      },
-      "old_value": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "variable_name",
             "named": true
           }
         ]
@@ -2076,7 +1723,7 @@
         "required": false,
         "types": [
           {
-            "type": "qual_scope_name",
+            "type": "qual",
             "named": true
           }
         ]
@@ -2097,16 +1744,6 @@
         "types": [
           {
             "type": "scope_modifier",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "scope_name",
             "named": true
           }
         ]
@@ -2138,11 +1775,6 @@
   },
   {
     "type": "scope_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "scope_name",
     "named": true,
     "fields": {}
   },
@@ -2186,16 +1818,6 @@
         "types": [
           {
             "type": "module",
-            "named": true
-          }
-        ]
-      },
-      "pattern": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "_pattern",
             "named": true
           }
         ]
@@ -2351,6 +1973,55 @@
     }
   },
   {
+    "type": "stmt_invalid",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "stmt_invalid_return",
+          "named": true
+        },
+        {
+          "type": "stmt_invalid_while",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "stmt_invalid_return",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "stmt_invalid_while",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "stmt_letval",
     "named": true,
     "fields": {
@@ -2359,7 +2030,7 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "_expression",
             "named": true
           }
         ]
@@ -2399,7 +2070,7 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "_expression",
             "named": true
           }
         ]
@@ -2426,16 +2097,6 @@
     "type": "type_alias",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "type_name",
-            "named": true
-          }
-        ]
-      },
       "params": {
         "multiple": false,
         "required": false,
@@ -2556,25 +2217,9 @@
     }
   },
   {
-    "type": "type_name",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "type_param_decls",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "type_variable_poly_name",
-            "named": true
-          }
-        ]
-      }
-    }
+    "fields": {}
   },
   {
     "type": "type_params",
@@ -2639,15 +2284,20 @@
   {
     "type": "type_variable",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "qual",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "type_variable_poly",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "type_variable_poly_name",
     "named": true,
     "fields": {}
   },
@@ -2676,11 +2326,11 @@
     "named": true,
     "fields": {
       "scope": {
-        "multiple": false,
-        "required": true,
+        "multiple": true,
+        "required": false,
         "types": [
           {
-            "type": "qual_scope_name",
+            "type": "qual",
             "named": true
           }
         ]
@@ -2708,18 +2358,7 @@
   {
     "type": "using_as",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "name",
-            "named": true
-          }
-        ]
-      }
-    }
+    "fields": {}
   },
   {
     "type": "using_for",
@@ -2756,22 +2395,6 @@
   {
     "type": "using_name_list",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "name",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "variable_name",
-    "named": true,
     "fields": {}
   },
   {
@@ -2784,16 +2407,6 @@
         "types": [
           {
             "type": "constructor_declaration",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "type_name",
             "named": true
           }
         ]
@@ -2871,7 +2484,7 @@
     "named": false
   },
   {
-    "type": "::",
+    "type": ";",
     "named": false
   },
   {
@@ -2999,6 +2612,10 @@
     "named": true
   },
   {
+    "type": "op_cons",
+    "named": true
+  },
+  {
     "type": "op_div",
     "named": true
   },
@@ -3051,10 +2668,6 @@
     "named": true
   },
   {
-    "type": "pattern",
-    "named": false
-  },
-  {
     "type": "payable",
     "named": false
   },
@@ -3064,6 +2677,10 @@
   },
   {
     "type": "record",
+    "named": false
+  },
+  {
+    "type": "return",
     "named": false
   },
   {
@@ -3100,6 +2717,10 @@
   },
   {
     "type": "using",
+    "named": false
+  },
+  {
+    "type": "while",
     "named": false
   },
   {
