@@ -1256,7 +1256,7 @@ fn parse_pattern<'a>(
     env.check_error(tc)?;
     let node = &tc.node();
     let pat = match node.kind() {
-        "pat_application" => {
+        "expr_application" => {
             let fun = parse_field(tc, env, &parse_name, "fun");
             let args = parse_fields_in_field(tc, env, &parse_pattern, "args", "arg");
             Pattern::App {
@@ -1264,27 +1264,27 @@ fn parse_pattern<'a>(
                 args: args?,
             }
         },
-        "pat_let" => {
-            let name = parse_field(tc, env, &parse_name, "name");
-            let pat = parse_field(tc, env, &parse_pattern, "pattern");
+        "expr_match" => {
+            let name = parse_field(tc, env, &parse_name, "lvalue");
+            let pat = parse_field(tc, env, &parse_pattern, "rvalue");
             Pattern::Let {
                 name: name?,
                 pat: pat?.rec(),
             }
         },
-        "pat_list" => {
+        "expr_list_literal" => {
             let elems = parse_fields(tc, env, &parse_pattern, "elem");
             Pattern::List {
                 elems,
             }
         },
-        "pat_literal" => {
+        "expr_literal" => {
             let lit = parse_field(tc, env, &parse_literal, "literal");
             Pattern::Lit {
                 value: lit?
             }
         },
-        "pat_operator" => {
+        "expr_op" => {
             let op_l = parse_field(tc, env, &parse_pattern, "op_l");
             let op_r = parse_field(tc, env, &parse_pattern, "op_r");
             let op = parse_field(tc, env, &parse_binop, "op");
@@ -1294,19 +1294,19 @@ fn parse_pattern<'a>(
                 op_r: op_r?.rec(),
             }
         },
-        "pat_record" => {
+        "expr_record" => {
             let fields = parse_fields(tc, env, &parse_pat_field, "field");
             Pattern::Record {
                 fields,
             }
         },
-        "pat_tuple" => {
+        "expr_tuple" => {
             let elems = parse_fields(tc, env, &parse_pattern, "elem");
             Pattern::Tuple {
                 elems,
             }
         },
-        "pat_typed" => {
+        "expr_typed" => {
             let p = parse_field(tc, env, &parse_pattern, "pattern");
             let t = parse_field(tc, env, &parse_type, "type");
             Pattern::Typed {
@@ -1314,13 +1314,13 @@ fn parse_pattern<'a>(
                 t: t?
             }
         },
-        "pat_variable" => {
+        "expr_variable" => {
             let name = node_content(node, env);
             Pattern::Var {
                 name: mk_node(node, name?),
             }
         },
-        "pat_wildcard" => {
+        "expr_wildcard" => {
             Pattern::Wildcard
         },
         e => panic!("Unknown pattern node: {}", e)
