@@ -9,12 +9,7 @@ edition = "2018"
 license = "MIT"
 
 build = "bindings/rust/build.rs"
-include = [
-  "bindings/rust/*",
-  "grammar.js",
-  "queries/*",
-  "src/*",
-]
+include = ["bindings/rust/*", "grammar.js", "queries/*", "src/*"]
 
 [lib]
 path = "bindings/rust/lib.rs"
@@ -24,6 +19,8 @@ tree-sitter = "~0.20.0"
 rust-sitter = "0.3.4"
 serde_json = "1.0.0"
 either = "1.9.0"
+num-bigint = "0.4"
+num-traits = "0.2"
 
 [build-dependencies]
 cc = "1.0"

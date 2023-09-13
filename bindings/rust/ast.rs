@@ -1,4 +1,4 @@
-use std::ops::Range;
+use num_bigint::BigInt;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Ann {
@@ -408,7 +408,7 @@ pub struct PatternRecordField {
 // No nodes because it's an atom
 #[derive(Clone, Debug)]
 pub enum Literal {
-    Int { val: i64 }, // TODO: big int!
+    Int { val: BigInt },
     Bool { val: bool },
     Constructor { val: QName },
     Bytes { val: Vec<u8> },
