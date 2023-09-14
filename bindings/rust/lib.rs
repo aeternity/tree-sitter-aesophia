@@ -17,6 +17,8 @@
 
 extern crate tree_sitter;
 
+use num_bigint::BigInt;
+use num_traits::Num;
 use tree_sitter::*;
 
 mod ast;
@@ -199,11 +201,7 @@ where
     Some(c)
 }
 
-fn parse_int(
-    tc: &TreeCursor,
-    env: &mut ParseEnv
-) -> ParseResult<i64>
-{
+fn parse_int(tc: &TreeCursor, env: &mut ParseEnv) -> ParseResult<BigInt> {
     let token = node_content(&tc.node(), env)?;
     let (chars_trimmed, radix) = if token.len() > 2 && &token[0..2] == "0x" {
         (token[2..].chars(), 16)
@@ -211,19 +209,15 @@ fn parse_int(
         (token.chars(), 10)
     };
 
-    let mut chars = chars_trimmed.filter(|x| *x != '_' && *x != 'x');
+    let chars = chars_trimmed.filter(|x| *x != '_');
 
-    let mut out: i64 = match chars.next().unwrap() { // fixme unwrap
-        c => c.to_digit(radix).unwrap() as i64,
-    };
-
-    for c in chars {
-        out *= radix as i64;
-
-        // todo bigint
-        out = out.checked_add(c.to_digit(radix).unwrap() as i64).unwrap();
+    match BigInt::from_str_radix(chars.collect::<String>().as_str(), radix) {
+        Ok(int) => Some(int),
+        Err(_) => {
+            env.tok_err(&tc.node(), TokenError::InvalidInteger);
+            None
+        }
     }
-    Some(out)
 }
 
 fn parse_bool(
