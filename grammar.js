@@ -68,7 +68,7 @@ module.exports = grammar({
     $.variable_name,
     $.type_variable_poly_name,
     $.field_name,
-    $.function_name,
+    //$.function_name,
     $.type_name,
     $.constructor_name,
     $.scope_name,
