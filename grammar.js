@@ -136,6 +136,8 @@ module.exports = grammar({
     ),
 
     _dispatch: $ => choice(
+      dispatch($, 'module', $.module),
+      dispatch($, 'top_decl', $._top_decl),
       dispatch($, 'type', $._type),
       dispatch($, 'literal', $._literal),
       dispatch($, 'expression', $._expression),

@@ -56,7 +56,7 @@ impl ParseError {
         match self {
             Self::TokenError(e) => e.to_str(),
             Self::InvalidUtf16 => "Invalid UTF-16 character".to_string(),
-            Self::MissingField(_s) => "Missing field".to_string(),
+            Self::MissingField(s) => vec!["Missing field: ", s].concat(),
             Self::MissingChild(_i) => "Missing index".to_string(),
             Self::MissingNode => "Missing node".to_string(),
             Self::NodeError => "Parse error".to_string(),

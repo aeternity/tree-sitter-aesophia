@@ -153,7 +153,7 @@ struct Modifiers {
 }
 
 fn parse_modifiers(
-    env: &mut ParseEnv,
+    _env: &mut ParseEnv,
     modifiers: &Vec<ast::Node<String>>,
 ) -> Modifiers {
     let mut is_payable = false;
@@ -161,6 +161,7 @@ fn parse_modifiers(
     let mut is_private = false;
     let mut is_main = false;
 
+    // TODO: ban repeated modifiers
     for m in modifiers {
         match m.node.as_str() {
             "payable" => is_payable = true,
@@ -431,22 +432,22 @@ fn parse_expr<'a>(
             }
         }
         "expr_op" => {
-            let op_l = parse_field(tc, env, &parse_expr, "op_l");
-            let op_r_m = parse_field(tc, env, &parse_expr, "op_r");
-            match op_r_m {
-                Some(op_r) => {
+            let op_l_m = parse_field(tc, env, &parse_expr, "op_l");
+            let op_r = parse_field(tc, env, &parse_expr, "op_r");
+            match op_l_m {
+                Some(op_l) => {
                     let op = parse_field(tc, env, &parse_binop, "op");
                     Expr::BinOp {
-                        op_l: op_l?.rec(),
+                        op_l: op_l.rec(),
                         op: op?,
-                        op_r: op_r.rec(),
+                        op_r: op_r?.rec(),
                     }
                 }
                 None => {
                     let op = parse_field(tc, env, &parse_unop, "op");
                     Expr::UnOp {
-                        op_l: op_l?.rec(),
                         op: op?,
+                        op_r: op_r?.rec(),
                     }
                 }
             }
@@ -737,7 +738,7 @@ fn parse_type<'a>(
             let args = parse_fields(tc, env, &parse_type, "domain");
             let ret = parse_field(tc, env, &parse_type, "codomain");
             Type::Fun {
-                named_args: vec![],
+                // named_args: vec![], // TODO
                 args: mk_node(node, args),
                 ret: ret?.rec()
             }
@@ -882,7 +883,7 @@ fn parse_stmts<'a>(
             SplitStmt::PartElIf(cond) => {
                 let last = stmts.last_mut();
                 match last {
-                    Some(ast::Node{node: Statement::If{conds: ref mut conds, neg: None}, ..}) => {
+                    Some(ast::Node{node: Statement::If{ref mut conds, neg: None}, ..}) => {
                         conds.push(cond);
                     }
                     _ => {
@@ -1179,7 +1180,7 @@ where P: FnOnce(&mut TsCursor, &mut ParseEnv) -> ParseResult<T> {
 }
 
 /// Parses anything based on its kind and the subtype map. Discards the result.
-fn parse_any(
+pub fn parse_any(
     tc: &mut TsCursor,
     env: &mut ParseEnv,
 ) -> ParseResult<()> {
@@ -1201,9 +1202,12 @@ fn parse_any(
                 }
             }
         }
-        None => {
-            parse_children(tc, env, &parse_any, |_| true);
-            None
+        None => match kind {
+            "module" => parse_any_with(tc, env, parse_module),
+            _ => {
+                parse_children(tc, env, &parse_any, |_| true);
+                None
+            }
         }
     }
 }
@@ -1314,6 +1318,6 @@ mod tests {
 
     #[test]
     fn test_simple_file() {
-        run_test_good("lit_int");
+        run_test_good("expr_op_simple");
     }
 }

@@ -234,8 +234,8 @@ pub enum Expr {
         op: NodeOne<BinOp>,
     },
     UnOp {
-        op_l: NodeRec<Expr>,
         op: NodeOne<UnOp>,
+        op_r: NodeRec<Expr>,
     },
     App {
         fun: NodeRec<Expr>,
@@ -459,7 +459,7 @@ pub enum Type {
     },
     Fun {
         args: NodeMany<Type>,
-        named_args: Nodes<TypeNamedArg>,
+        // named_args: Nodes<TypeNamedArg>,
         ret: NodeRec<Type>,
     },
     Tuple {
@@ -471,8 +471,8 @@ pub enum Type {
     },
 }
 
-#[derive(Clone, Debug)]
-pub struct TypeNamedArg {
-    name: Node<Name>,
-    typ: NodeRec<Type>,
-}
+// #[derive(Clone, Debug)]
+// pub struct TypeNamedArg {
+//     name: Node<Name>,
+//     typ: NodeRec<Type>,
+// }

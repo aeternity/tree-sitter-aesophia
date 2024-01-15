@@ -1981,6 +1981,10 @@
             "named": true
           },
           {
+            "type": "_top_decl",
+            "named": true
+          },
+          {
             "type": "_type",
             "named": true
           },
@@ -1997,7 +2001,7 @@
             "named": true
           },
           {
-            "type": "scope_declaration",
+            "type": "module",
             "named": true
           }
         ]
