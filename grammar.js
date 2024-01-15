@@ -65,17 +65,10 @@ module.exports = grammar({
     $._pattern,
 
     $.name,
-    $.variable_name,
     $.type_variable_poly_name,
-    $.field_name,
-    //$.function_name,
-    $.type_name,
-    $.constructor_name,
-    $.scope_name,
-    // $.qual,
+    // TODO: the next 2 should not be inlined
     $.qual_constructor_name,
-    $.qual_variable_name,
-    $.qual_scope_name,
+    $.qual_identifier_name,
   ],
 
   precedences: $ => [
@@ -185,7 +178,7 @@ module.exports = grammar({
 
     using: $ => seq(
       'using',
-      field("scope", $.qual_scope_name),
+      field("scope", $.qual_constructor_name),
       optional(field("select", choice(
         $.using_as,
         $.using_hiding,
@@ -223,8 +216,8 @@ module.exports = grammar({
       field("modifier", repeat($.scope_modifier)),
       field("head", $.scope_head),
       field("interface", alias(optional('interface'), $.is_interface)),
-      field("name", $.scope_name),
-      optional(seq(":", sep1(field("implements", $.qual_scope_name), ","))),
+      field("name", $.constructor),
+      optional(seq(":", sep1(field("implements", $.qual_constructor_name), ","))),
       '=',
       maybe_block($, field("decl", $._scoped_declaration))
     ),
@@ -253,12 +246,12 @@ module.exports = grammar({
     ),
 
     function_signature: $ => seq(
-      field("name", $.function_name), ':',
+      field("name", $.identifier), ':',
       field("type", $._type)
     ),
 
     function_clause: $ => seq(
-      field("name", $.function_name),
+      field("name", $.identifier),
       field("args", $.pat_args),
       field("ret_type", optional(seq(':', $._type))),
       '=',
@@ -292,7 +285,7 @@ module.exports = grammar({
 
     type_alias: $ => seq(
       'type',
-      field("name", $.type_name),
+      field("name", $.identifier),
       field("params", optional($.type_param_decls)),
       '=',
       field("type", $._type)
@@ -300,7 +293,7 @@ module.exports = grammar({
 
     record_declaration: $ => seq(
       'record',
-      field("name", $.type_name),
+      field("name", $.identifier),
       field("params", optional($.type_param_decls)),
       '=',
       field("fields", $.record_fields),
@@ -311,21 +304,21 @@ module.exports = grammar({
     ),
 
     field_declaration: $ => seq(
-      field("name", $.field_name),
+      field("name", $.identifier),
       ':',
       field("type", $._type)
     ),
 
     variant_declaration: $ => seq(
       'datatype',
-      field("name", $.type_name),
+      field("name", $.identifier),
       field("params", optional($.type_param_decls)),
       '=',
       sep1(field("constructor", $.constructor_declaration), '|')
     ),
 
     constructor_declaration: $ => seq(
-      field("name", $.constructor_name),
+      field("name", $.constructor),
       field("params", optional($.type_params))
     ),
 
@@ -415,7 +408,7 @@ module.exports = grammar({
     ),
 
     expr_argument: $ => prec('EXPR_MATCH', seq(
-      optional(seq(field("name", $.variable_name), '=')),
+      optional(seq(field("name", $.identifier), '=')),
       field("value", $._expression)
     )),
 
@@ -430,13 +423,13 @@ module.exports = grammar({
 
     record_field_update: $ => seq(
       field("path", $.field_path),
-      optional(seq('@', field("old_value", $.variable_name))),
+      optional(seq('@', field("old_value", $.identifier))),
       '=',
       field("new_value", $._expression)
     ),
 
     field_path: $ => prec.left(seq(
-      sep1(field("field", $.field_name), '.'),
+      sep1(field("field", $.identifier), '.'),
     )),
 
     expr_map_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
@@ -450,7 +443,7 @@ module.exports = grammar({
 
     map_update: $ => seq(
       field("key", $.expr_map_key), '=',
-      optional(seq('@', field("old_value", $.variable_name))),
+      optional(seq('@', field("old_value", $.identifier))),
       field("new_value", $._expression)
     ),
 
@@ -466,7 +459,7 @@ module.exports = grammar({
 
     expr_projection: $ => prec.left('EXPR_PROJECTION', seq(
       field("expr", $._expression), '.',
-      field("field", $.field_name)
+      field("field", $.identifier)
     )),
 
     expr_if: $ => prec('EXPR_IF', seq(
@@ -526,7 +519,7 @@ module.exports = grammar({
       $, field("stmt", $._statement)
     )),
 
-    expr_variable: $ => prec('EXPR_QUAL', $.qual_variable_name),
+    expr_variable: $ => prec('EXPR_QUAL', $.qual_identifier_name),
 
     _expr_atom: $ => prec('EXPR_ATOM', choice(
       $.expr_literal,
@@ -544,7 +537,7 @@ module.exports = grammar({
     )),
 
     expr_record_field: $ => seq(
-      field("name", $.field_name), '=',
+      field("name", $.identifier), '=',
       field("value", $._expression)
     ),
 
@@ -554,7 +547,7 @@ module.exports = grammar({
 
     map_assign: $ => seq(
       field("key", $.expr_map_key), '=',
-      optional(seq('@', field("old_value", $.variable_name))),
+      optional(seq('@', field("old_value", $.identifier))),
       field("new_value", $._expression)
     ),
 
@@ -688,7 +681,7 @@ module.exports = grammar({
 
     // stmt_letfun: $ => prec('STMT_LET', seq(
     //   'let',
-    //   field("name", $.function_name),
+    //   field("name", $.identifier),
     //   field("args", $.pat_args),
     //   optional(seq(':', field("type", $._type))), '=',
     //   field("value", $._expression)
@@ -817,7 +810,7 @@ module.exports = grammar({
 
     type_variable_poly: $ => $.type_variable_poly_name,
 
-    type_variable: $ => $.qual_variable_name,
+    type_variable: $ => $.qual_identifier_name,
 
     //**************************************************************************
     // OPERATORS
@@ -869,36 +862,23 @@ module.exports = grammar({
 
     name: $ => choice($._lex_low_id, $._lex_up_id),
 
-    variable_name: $ => $._lex_low_id,
-
     type_variable_poly_name: $ => $._lex_prim_id,
 
-    field_name: $ => $._lex_low_id,
+    identifier: $ => $._lex_low_id,
 
-    function_name: $ => $._lex_low_id,
+    constructor: $ => $._lex_up_id,
 
-    type_name: $ => $._lex_low_id,
-
-    constructor_name: $ => $._lex_up_id,
-
-    scope_name: $ => $._lex_up_id,
-
-    qual_variable_name: $ => seq(
+    qual_identifier_name: $ => seq(
       optional($.qual),
-      $.variable_name,
+      field("name", $.identifier),
     ),
 
     qual_constructor_name: $ => seq(
       optional($.qual),
-      $.constructor_name,
+      field("name", $.constructor),
     ),
 
-    qual_scope_name: $ => seq(
-      optional($.qual),
-      $.scope_name
-    ),
-
-    qual: $ => prec.left(repeat1(seq(field("path", $.scope_name), '.'))),
+    qual: $ => prec.left(repeat1(seq(field("path", $.constructor), '.'))),
 
     //**************************************************************************
     // LEXEMES

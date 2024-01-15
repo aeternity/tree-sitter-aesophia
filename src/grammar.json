@@ -485,7 +485,7 @@
           "name": "scope",
           "content": {
             "type": "SYMBOL",
-            "name": "qual_scope_name"
+            "name": "qual_constructor_name"
           }
         },
         {
@@ -692,7 +692,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "scope_name"
+            "name": "constructor"
           }
         },
         {
@@ -718,7 +718,7 @@
                             "name": "implements",
                             "content": {
                               "type": "SYMBOL",
-                              "name": "qual_scope_name"
+                              "name": "qual_constructor_name"
                             }
                           },
                           {
@@ -733,7 +733,7 @@
                       "name": "implements",
                       "content": {
                         "type": "SYMBOL",
-                        "name": "qual_scope_name"
+                        "name": "qual_constructor_name"
                       }
                     }
                   ]
@@ -1018,7 +1018,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "function_name"
+            "name": "identifier"
           }
         },
         {
@@ -1043,7 +1043,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "function_name"
+            "name": "identifier"
           }
         },
         {
@@ -1201,7 +1201,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "type_name"
+            "name": "identifier"
           }
         },
         {
@@ -1246,7 +1246,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "type_name"
+            "name": "identifier"
           }
         },
         {
@@ -1336,7 +1336,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "field_name"
+            "name": "identifier"
           }
         },
         {
@@ -1365,7 +1365,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "type_name"
+            "name": "identifier"
           }
         },
         {
@@ -1431,7 +1431,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "constructor_name"
+            "name": "constructor"
           }
         },
         {
@@ -2291,7 +2291,7 @@
                     "name": "name",
                     "content": {
                       "type": "SYMBOL",
-                      "name": "variable_name"
+                      "name": "identifier"
                     }
                   },
                   {
@@ -2420,7 +2420,7 @@
                   "name": "old_value",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "variable_name"
+                    "name": "identifier"
                   }
                 }
               ]
@@ -2463,7 +2463,7 @@
                       "name": "field",
                       "content": {
                         "type": "SYMBOL",
-                        "name": "field_name"
+                        "name": "identifier"
                       }
                     },
                     {
@@ -2478,7 +2478,7 @@
                 "name": "field",
                 "content": {
                   "type": "SYMBOL",
-                  "name": "field_name"
+                  "name": "identifier"
                 }
               }
             ]
@@ -2594,7 +2594,7 @@
                   "name": "old_value",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "variable_name"
+                    "name": "identifier"
                   }
                 }
               ]
@@ -2708,7 +2708,7 @@
             "name": "field",
             "content": {
               "type": "SYMBOL",
-              "name": "field_name"
+              "name": "identifier"
             }
           }
         ]
@@ -3282,7 +3282,7 @@
       "value": "EXPR_QUAL",
       "content": {
         "type": "SYMBOL",
-        "name": "qual_variable_name"
+        "name": "qual_identifier_name"
       }
     },
     "_expr_atom": {
@@ -3395,7 +3395,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "field_name"
+            "name": "identifier"
           }
         },
         {
@@ -3499,7 +3499,7 @@
                   "name": "old_value",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "variable_name"
+                    "name": "identifier"
                   }
                 }
               ]
@@ -4720,7 +4720,7 @@
     },
     "type_variable": {
       "type": "SYMBOL",
-      "name": "qual_variable_name"
+      "name": "qual_identifier_name"
     },
     "_operator": {
       "type": "CHOICE",
@@ -4884,35 +4884,19 @@
         }
       ]
     },
-    "variable_name": {
-      "type": "SYMBOL",
-      "name": "_lex_low_id"
-    },
     "type_variable_poly_name": {
       "type": "SYMBOL",
       "name": "_lex_prim_id"
     },
-    "field_name": {
+    "identifier": {
       "type": "SYMBOL",
       "name": "_lex_low_id"
     },
-    "function_name": {
-      "type": "SYMBOL",
-      "name": "_lex_low_id"
-    },
-    "type_name": {
-      "type": "SYMBOL",
-      "name": "_lex_low_id"
-    },
-    "constructor_name": {
+    "constructor": {
       "type": "SYMBOL",
       "name": "_lex_up_id"
     },
-    "scope_name": {
-      "type": "SYMBOL",
-      "name": "_lex_up_id"
-    },
-    "qual_variable_name": {
+    "qual_identifier_name": {
       "type": "SEQ",
       "members": [
         {
@@ -4928,8 +4912,12 @@
           ]
         },
         {
-          "type": "SYMBOL",
-          "name": "variable_name"
+          "type": "FIELD",
+          "name": "name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
         }
       ]
     },
@@ -4949,29 +4937,12 @@
           ]
         },
         {
-          "type": "SYMBOL",
-          "name": "constructor_name"
-        }
-      ]
-    },
-    "qual_scope_name": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "qual"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "SYMBOL",
-          "name": "scope_name"
+          "type": "FIELD",
+          "name": "name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "constructor"
+          }
         }
       ]
     },
@@ -4988,7 +4959,7 @@
               "name": "path",
               "content": {
                 "type": "SYMBOL",
-                "name": "scope_name"
+                "name": "constructor"
               }
             },
             {
@@ -5383,15 +5354,9 @@
     "_expr_atom",
     "_pattern",
     "name",
-    "variable_name",
     "type_variable_poly_name",
-    "field_name",
-    "type_name",
-    "constructor_name",
-    "scope_name",
     "qual_constructor_name",
-    "qual_variable_name",
-    "qual_scope_name"
+    "qual_identifier_name"
   ],
   "supertypes": [
     "_top_decl",
