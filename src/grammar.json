@@ -10,7 +10,7 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_dispath"
+              "name": "_dispatch"
             },
             {
               "type": "REPEAT",
@@ -31,7 +31,7 @@
         }
       ]
     },
-    "_dispath": {
+    "_dispatch": {
       "type": "CHOICE",
       "members": [
         {
@@ -60,7 +60,7 @@
             },
             {
               "type": "FIELD",
-              "name": "type",
+              "name": "content",
               "content": {
                 "type": "SYMBOL",
                 "name": "_type"
@@ -94,7 +94,7 @@
             },
             {
               "type": "FIELD",
-              "name": "literal",
+              "name": "content",
               "content": {
                 "type": "SYMBOL",
                 "name": "_literal"
@@ -128,7 +128,7 @@
             },
             {
               "type": "FIELD",
-              "name": "expression",
+              "name": "content",
               "content": {
                 "type": "SYMBOL",
                 "name": "_expression"
@@ -162,7 +162,7 @@
             },
             {
               "type": "FIELD",
-              "name": "statement",
+              "name": "content",
               "content": {
                 "type": "SYMBOL",
                 "name": "_statement"
@@ -196,7 +196,7 @@
             },
             {
               "type": "FIELD",
-              "name": "statements",
+              "name": "content",
               "content": {
                 "type": "CHOICE",
                 "members": [
@@ -273,7 +273,7 @@
             },
             {
               "type": "FIELD",
-              "name": "scope_declaration",
+              "name": "content",
               "content": {
                 "type": "SYMBOL",
                 "name": "scope_declaration"
@@ -307,7 +307,7 @@
             },
             {
               "type": "FIELD",
-              "name": "_scoped_declaration",
+              "name": "content",
               "content": {
                 "type": "SYMBOL",
                 "name": "_scoped_declaration"

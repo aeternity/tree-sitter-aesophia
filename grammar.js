@@ -5,7 +5,7 @@ const {
   braces_comma, braces_comma1, braces_comma2,
   brackets_comma, brackets_comma1, brackets_comma2,
   block, block_or, maybe_block, weak_block, inline_block,
-  dispath,
+  dispatch,
   sep, sep1, sep2,
   qual, qual1,
 } = require('./grammar_utils.js');
@@ -131,18 +131,18 @@ module.exports = grammar({
 
   rules: {
     source: $ => choice(
-      seq($._dispath, repeat('\n')),
+      seq($._dispatch, repeat('\n')),
       field("module", $.module)
     ),
 
-    _dispath: $ => choice(
-      dispath($, 'type', $._type),
-      dispath($, 'literal', $._literal),
-      dispath($, 'expression', $._expression),
-      dispath($, 'statement', $._statement),
-      dispath($, 'statements', maybe_block($, $._statement)),
-      dispath($, 'scope_declaration', $.scope_declaration),
-      dispath($, '_scoped_declaration', $._scoped_declaration),
+    _dispatch: $ => choice(
+      dispatch($, 'type', $._type),
+      dispatch($, 'literal', $._literal),
+      dispatch($, 'expression', $._expression),
+      dispatch($, 'statement', $._statement),
+      dispatch($, 'statements', maybe_block($, $._statement)),
+      dispatch($, 'scope_declaration', $.scope_declaration),
+      dispatch($, '_scoped_declaration', $._scoped_declaration),
     ),
 
     module: $ => repeat1(seq($._top_decl, $._block_semi)),

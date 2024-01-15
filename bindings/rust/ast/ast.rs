@@ -9,6 +9,7 @@ pub struct Ann {
     pub end_col: u32,
     pub end_byte: u32,
     pub filename: String,
+    pub root_node: usize,
 }
 
 #[derive(Clone, Debug)]

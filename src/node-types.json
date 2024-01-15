@@ -1960,22 +1960,44 @@
     "type": "source",
     "named": true,
     "fields": {
-      "_scoped_declaration": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "_scoped_declaration",
-            "named": true
-          }
-        ]
-      },
-      "expression": {
-        "multiple": false,
+      "content": {
+        "multiple": true,
         "required": false,
         "types": [
           {
             "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "_literal",
+            "named": true
+          },
+          {
+            "type": "_scoped_declaration",
+            "named": true
+          },
+          {
+            "type": "_statement",
+            "named": true
+          },
+          {
+            "type": "_type",
+            "named": true
+          },
+          {
+            "type": "block_close",
+            "named": true
+          },
+          {
+            "type": "block_open",
+            "named": true
+          },
+          {
+            "type": "block_semi",
+            "named": true
+          },
+          {
+            "type": "scope_declaration",
             "named": true
           }
         ]
@@ -1990,74 +2012,12 @@
           }
         ]
       },
-      "literal": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "_literal",
-            "named": true
-          }
-        ]
-      },
       "module": {
         "multiple": false,
         "required": false,
         "types": [
           {
             "type": "module",
-            "named": true
-          }
-        ]
-      },
-      "scope_declaration": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "scope_declaration",
-            "named": true
-          }
-        ]
-      },
-      "statement": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "_statement",
-            "named": true
-          }
-        ]
-      },
-      "statements": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "_statement",
-            "named": true
-          },
-          {
-            "type": "block_close",
-            "named": true
-          },
-          {
-            "type": "block_open",
-            "named": true
-          },
-          {
-            "type": "block_semi",
-            "named": true
-          }
-        ]
-      },
-      "type": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "_type",
             "named": true
           }
         ]

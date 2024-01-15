@@ -34,14 +34,14 @@ const sep1 = (rule, delimiter) => seq(
 
 const sep = (rule, delimiter) => optional(sep1(rule, delimiter));
 
-const lex_dispath_begin = '@ts.parse(';
-const lex_dispath_end = ')';
+const lex_dispatch_begin = '@ts.parse(';
+const lex_dispatch_end = ')';
 
-const dispath = ($, trigger, rule) => seq(
-  lex_dispath_begin,
+const dispatch = ($, trigger, rule) => seq(
+  lex_dispatch_begin,
   field("kind", alias(trigger, $.trigger)),
-  lex_dispath_end,
-  field(trigger, rule),
+  lex_dispatch_end,
+  field("content", rule),
 );
 
 const parens = (...rule) => seq(
@@ -185,7 +185,7 @@ module.exports = {
   maybe_block,
   weak_block,
   inline_block,
-  dispath,
+  dispatch,
   sep,
   sep1,
   sep2,
