@@ -4,9 +4,10 @@
 //! tree-sitter [Parser][], and then use the parser to parse Ok code:
 //!
 //! ```
+//! use tree_sitter_aesophia::tree_sitter_aesophia::language;
 //! let code = "";
 //! let mut parser = tree_sitter::Parser::new();
-//! parser.set_language(tree_sitter_aesophia::language()).expect("Error loading aesophia grammar");
+//! parser.set_language(language()).expect("Error loading aesophia grammar");
 //! let tree = parser.parse(code, None).unwrap();
 //! ```
 //!
