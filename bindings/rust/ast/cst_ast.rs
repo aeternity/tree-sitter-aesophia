@@ -15,7 +15,7 @@ fn parse_module<'a>(
     let includes = parse_kinds(tc, env, &parse_include, "include");
     let usings = parse_kinds(tc, env, &parse_using, "using");
     let scopes = parse_kinds(tc, env, &parse_scope_decl, "scope_declaration");
-    Some(mk_node(node, ast::Module {
+        Some(mk_node(node, ast::Module {
         pragmas,
         includes,
         usings,
@@ -28,7 +28,7 @@ fn parse_using<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Using> {
     let node = &tc.node();
-    let scope = parse_field(tc, env, &parse_qual, "scope");
+    let scope = parse_field(tc, env, &parse_name, "scope");
     let select = parse_field(tc, env, &parse_using_select, "select");
     Some(mk_node(node, ast::Using {
         scope: scope?,
@@ -49,7 +49,6 @@ fn parse_using_select<'a>(
         "using_hiding" => {
             let names = parse_fields_in_field(tc, env, &parse_name, "names", "name");
             ast::UsingSelect::Exclude(names?)
-
         }
         "using_for" => {
             let names = parse_fields_in_field(tc, env, &parse_name, "names", "name");
@@ -1299,7 +1298,7 @@ mod tests {
             panic!("Error node")
         }
 
-        tc.reset(tc.node().child_by_field_name("content").expect("No source"));
+        tc.reset(tc.node().child_by_field_name("module").expect("No source"));
 
         let ast = parse_any(&mut tc, &mut env);
 
@@ -1314,7 +1313,7 @@ mod tests {
             }
             panic!("CST->AST conversion failed")
         }
-    }
+            }
 
     #[test]
     fn test_simple_file() {

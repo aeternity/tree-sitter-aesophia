@@ -95,7 +95,7 @@ pub enum UsingSelect {
 
 #[derive(Clone, Debug)]
 pub struct Using {
-    pub scope: NodeOne<QName>,
+    pub scope: NodeOne<Name>,
     pub select: NodeOne<UsingSelect>,
 }
 

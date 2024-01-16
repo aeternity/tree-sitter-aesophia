@@ -553,7 +553,7 @@
           "name": "scope",
           "content": {
             "type": "SYMBOL",
-            "name": "qual_constructor_name"
+            "name": "constructor"
           }
         },
         {
@@ -4968,16 +4968,12 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "qual"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+          "type": "FIELD",
+          "name": "path",
+          "content": {
+            "type": "SYMBOL",
+            "name": "qual"
+          }
         },
         {
           "type": "FIELD",
@@ -4993,16 +4989,12 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "qual"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+          "type": "FIELD",
+          "name": "path",
+          "content": {
+            "type": "SYMBOL",
+            "name": "qual"
+          }
         },
         {
           "type": "FIELD",
@@ -5023,12 +5015,8 @@
           "type": "SEQ",
           "members": [
             {
-              "type": "FIELD",
-              "name": "path",
-              "content": {
-                "type": "SYMBOL",
-                "name": "constructor"
-              }
+              "type": "SYMBOL",
+              "name": "constructor"
             },
             {
               "type": "STRING",
@@ -5421,10 +5409,7 @@
     "_expression_body",
     "_expr_atom",
     "_pattern",
-    "name",
-    "type_variable_poly_name",
-    "qual_constructor_name",
-    "qual_identifier_name"
+    "type_variable_poly_name"
   ],
   "supertypes": [
     "_top_decl",

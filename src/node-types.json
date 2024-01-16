@@ -1086,24 +1086,13 @@
   {
     "type": "expr_variable",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      }
-    },
+    "fields": {},
     "children": {
       "multiple": false,
-      "required": false,
+      "required": true,
       "types": [
         {
-          "type": "qual",
+          "type": "qual_identifier_name",
           "named": true
         }
       ]
@@ -1514,24 +1503,13 @@
   {
     "type": "lit_constructor",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "constructor",
-            "named": true
-          }
-        ]
-      }
-    },
+    "fields": {},
     "children": {
       "multiple": false,
-      "required": false,
+      "required": true,
       "types": [
         {
-          "type": "qual",
+          "type": "qual_constructor_name",
           "named": true
         }
       ]
@@ -1672,6 +1650,11 @@
     }
   },
   {
+    "type": "name",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "op_mul",
     "named": true,
     "fields": {}
@@ -1741,13 +1724,64 @@
   {
     "type": "qual",
     "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "constructor",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "qual_constructor_name",
+    "named": true,
     "fields": {
-      "path": {
-        "multiple": true,
+      "name": {
+        "multiple": false,
         "required": true,
         "types": [
           {
             "type": "constructor",
+            "named": true
+          }
+        ]
+      },
+      "path": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "qual",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "qual_identifier_name",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "path": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "qual",
             "named": true
           }
         ]
@@ -1887,11 +1921,7 @@
         "required": false,
         "types": [
           {
-            "type": "constructor",
-            "named": true
-          },
-          {
-            "type": "qual",
+            "type": "qual_constructor_name",
             "named": true
           }
         ]
@@ -1917,7 +1947,7 @@
         ]
       },
       "name": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
@@ -2446,24 +2476,13 @@
   {
     "type": "type_variable",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      }
-    },
+    "fields": {},
     "children": {
       "multiple": false,
-      "required": false,
+      "required": true,
       "types": [
         {
-          "type": "qual",
+          "type": "qual_identifier_name",
           "named": true
         }
       ]
@@ -2498,26 +2517,12 @@
     "type": "using",
     "named": true,
     "fields": {
-      "name": {
+      "scope": {
         "multiple": false,
         "required": true,
         "types": [
           {
             "type": "constructor",
-            "named": true
-          }
-        ]
-      },
-      "scope": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "constructor",
-            "named": true
-          },
-          {
-            "type": "qual",
             "named": true
           }
         ]
@@ -2545,7 +2550,18 @@
   {
     "type": "using_as",
     "named": true,
-    "fields": {}
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "name",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "using_for",
@@ -2582,7 +2598,18 @@
   {
     "type": "using_name_list",
     "named": true,
-    "fields": {}
+    "fields": {
+      "name": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "name",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "variant_declaration",

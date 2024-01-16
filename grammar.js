@@ -61,14 +61,8 @@ module.exports = grammar({
   inline: $ => [
     $._expression_body,
     $._expr_atom,
-
     $._pattern,
-
-    $.name,
     $.type_variable_poly_name,
-    // TODO: the next 2 should not be inlined
-    $.qual_constructor_name,
-    $.qual_identifier_name,
   ],
 
   precedences: $ => [
@@ -180,7 +174,7 @@ module.exports = grammar({
 
     using: $ => seq(
       'using',
-      field("scope", $.qual_constructor_name),
+      field("scope", $.constructor),
       optional(field("select", choice(
         $.using_as,
         $.using_hiding,
@@ -871,16 +865,16 @@ module.exports = grammar({
     constructor: $ => $._lex_up_id,
 
     qual_identifier_name: $ => seq(
-      optional($.qual),
+      field("path", $.qual),
       field("name", $.identifier),
     ),
 
     qual_constructor_name: $ => seq(
-      optional($.qual),
+      field("path", $.qual),
       field("name", $.constructor),
     ),
 
-    qual: $ => prec.left(repeat1(seq(field("path", $.constructor), '.'))),
+    qual: $ => prec.left(repeat1(seq($.constructor, '.'))),
 
     //**************************************************************************
     // LEXEMES
