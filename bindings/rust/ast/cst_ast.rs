@@ -999,7 +999,7 @@ fn parse_str<'a>(
 {
     let node = &tc.node();
     let token = node_content(node, env)?;
-    let mut chars = token[1..token.len() - 1].chars();
+    let mut chars = token[1..].chars();
     let mut out = String::with_capacity(token.len());
     loop {
         match chars.next() {
