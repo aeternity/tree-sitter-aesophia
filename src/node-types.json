@@ -1092,7 +1092,7 @@
       "required": true,
       "types": [
         {
-          "type": "qual_identifier_name",
+          "type": "identifier",
           "named": true
         }
       ]

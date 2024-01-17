@@ -70,7 +70,7 @@ module.exports = grammar({
     [ // expressions
       'EXPR_ATOM',
       'EXPR_TUPLE',
-      'EXPR_QUAL',
+      'EXPR_VAR',
       'EXPR_PROJECTION',
       'EXPR_APP',
       'EXPR_UPDATE_OR_ACCESS',
@@ -514,7 +514,7 @@ module.exports = grammar({
       $, field("stmt", $._statement)
     )),
 
-    expr_variable: $ => prec('EXPR_QUAL', $.qual_identifier_name),
+    expr_variable: $ => prec('EXPR_VAR', $.identifier),
 
     _expr_atom: $ => prec('EXPR_ATOM', choice(
       $.expr_literal,

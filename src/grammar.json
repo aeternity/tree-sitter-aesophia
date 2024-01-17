@@ -3351,10 +3351,10 @@
     },
     "expr_variable": {
       "type": "PREC",
-      "value": "EXPR_QUAL",
+      "value": "EXPR_VAR",
       "content": {
         "type": "SYMBOL",
-        "name": "qual_identifier_name"
+        "name": "identifier"
       }
     },
     "_expr_atom": {
@@ -5239,7 +5239,7 @@
       },
       {
         "type": "STRING",
-        "value": "EXPR_QUAL"
+        "value": "EXPR_VAR"
       },
       {
         "type": "STRING",
