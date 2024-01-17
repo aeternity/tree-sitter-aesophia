@@ -560,15 +560,23 @@
           "type": "CHOICE",
           "members": [
             {
+              "type": "SYMBOL",
+              "name": "using_as"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
               "type": "FIELD",
               "name": "select",
               "content": {
                 "type": "CHOICE",
                 "members": [
-                  {
-                    "type": "SYMBOL",
-                    "name": "using_as"
-                  },
                   {
                     "type": "SYMBOL",
                     "name": "using_hiding"
@@ -596,7 +604,7 @@
         },
         {
           "type": "FIELD",
-          "name": "name",
+          "name": "alias",
           "content": {
             "type": "SYMBOL",
             "name": "name"
@@ -5409,7 +5417,8 @@
     "_expression_body",
     "_expr_atom",
     "_pattern",
-    "type_variable_poly_name"
+    "type_variable_poly_name",
+    "using_as"
   ],
   "supertypes": [
     "_top_decl",

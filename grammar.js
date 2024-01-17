@@ -63,6 +63,7 @@ module.exports = grammar({
     $._expr_atom,
     $._pattern,
     $.type_variable_poly_name,
+    $.using_as,
   ],
 
   precedences: $ => [
@@ -175,8 +176,8 @@ module.exports = grammar({
     using: $ => seq(
       'using',
       field("scope", $.constructor),
+      optional($.using_as),
       optional(field("select", choice(
-        $.using_as,
         $.using_hiding,
         $.using_for,
       )))
@@ -184,7 +185,7 @@ module.exports = grammar({
 
     using_as: $ => seq(
       'as',
-      field("name", $.name)
+      field("alias", $.name)
     ),
 
     using_hiding: $ => seq(

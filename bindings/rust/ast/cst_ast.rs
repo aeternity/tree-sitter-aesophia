@@ -15,7 +15,7 @@ fn parse_module<'a>(
     let includes = parse_kinds(tc, env, &parse_include, "include");
     let usings = parse_kinds(tc, env, &parse_using, "using");
     let scopes = parse_kinds(tc, env, &parse_scope_decl, "scope_declaration");
-        Some(mk_node(node, ast::Module {
+    Some(mk_node(node, ast::Module {
         pragmas,
         includes,
         usings,
@@ -29,9 +29,11 @@ fn parse_using<'a>(
 ) -> ParseResultN<ast::Using> {
     let node = &tc.node();
     let scope = parse_field(tc, env, &parse_name, "scope");
+    let alias = parse_field(tc, env, &parse_name, "alias");
     let select = parse_field(tc, env, &parse_using_select, "select");
     Some(mk_node(node, ast::Using {
         scope: scope?,
+        alias,
         select: select.unwrap_or(mk_node(node, ast::UsingSelect::All)),
     }))
 }
@@ -42,17 +44,13 @@ fn parse_using_select<'a>(
 ) -> ParseResultN<ast::UsingSelect> {
     let node = &tc.node();
     let select = match node.kind() {
-        "using_as" => {
-            let name = parse_field(tc, env, &parse_name, "name");
-            ast::UsingSelect::Rename(name?)
+        "using_for" => {
+            let names = parse_fields_in_field(tc, env, &parse_name, "names", "name");
+            ast::UsingSelect::Include(names?)
         }
         "using_hiding" => {
             let names = parse_fields_in_field(tc, env, &parse_name, "names", "name");
             ast::UsingSelect::Exclude(names?)
-        }
-        "using_for" => {
-            let names = parse_fields_in_field(tc, env, &parse_name, "names", "name");
-            ast::UsingSelect::Include(names?)
         }
         e => panic!("Unknown using select: {}", e)
     };

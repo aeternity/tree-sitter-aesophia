@@ -2517,6 +2517,16 @@
     "type": "using",
     "named": true,
     "fields": {
+      "alias": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "name",
+            "named": true
+          }
+        ]
+      },
       "scope": {
         "multiple": false,
         "required": true,
@@ -2532,31 +2542,11 @@
         "required": false,
         "types": [
           {
-            "type": "using_as",
-            "named": true
-          },
-          {
             "type": "using_for",
             "named": true
           },
           {
             "type": "using_hiding",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "using_as",
-    "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "name",
             "named": true
           }
         ]

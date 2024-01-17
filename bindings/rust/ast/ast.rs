@@ -89,13 +89,13 @@ pub struct Module {
 pub enum UsingSelect {
     Include(NodeMany<Name>),
     Exclude(NodeMany<Name>),
-    Rename(Node<Name>),
     All
 }
 
 #[derive(Clone, Debug)]
 pub struct Using {
     pub scope: NodeOne<Name>,
+    pub alias: NodeOpt<Name>,
     pub select: NodeOne<UsingSelect>,
 }
 
