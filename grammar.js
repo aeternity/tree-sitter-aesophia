@@ -153,11 +153,9 @@ module.exports = grammar({
 
     top_pragma: $ => seq(
       '@',
-      field("pragma", $._top_pragma),
-    ),
-
-    _top_pragma: $ => choice(
-      $.pragma_compiler_vsn
+      field("pragma", choice(
+        $.pragma_compiler_vsn
+      )),
     ),
 
     pragma_compiler_vsn: $ => seq(

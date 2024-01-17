@@ -433,18 +433,14 @@
           "type": "FIELD",
           "name": "pragma",
           "content": {
-            "type": "SYMBOL",
-            "name": "_top_pragma"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "pragma_compiler_vsn"
+              }
+            ]
           }
-        }
-      ]
-    },
-    "_top_pragma": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "pragma_compiler_vsn"
         }
       ]
     },

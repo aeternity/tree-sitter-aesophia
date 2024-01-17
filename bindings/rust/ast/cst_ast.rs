@@ -61,13 +61,20 @@ fn parse_pragma<'a>(
     tc: &mut TsCursor<'a>,
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Pragma> {
+    tc.reset(tc.node().child_by_field_name("pragma").expect("No pragma"));
+
     let node = &tc.node();
-    let op = parse_field(tc, env, &parse_binop, "op");
-    let vsn = parse_fields_in_field(tc, env, &parse_name, "version", "subver");
-    Some(mk_node(node, ast::Pragma::CompilerVsn {
-        op: op?,
-        vsn: vsn?
-    }))
+    match node.kind() {
+        "pragma_compiler_vsn" => {
+            let op = parse_field(tc, env, &parse_binop, "op");
+            let vsn = parse_fields_in_field(tc, env, &parse_name, "version", "subver");
+            Some(mk_node(node, ast::Pragma::CompilerVsn {
+                op: op?,
+                vsn: vsn?
+            }))
+        }
+        e => panic!("Unknown pragma: {}", e)
+    }
 }
 
 fn parse_include<'a>(
