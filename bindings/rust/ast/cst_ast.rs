@@ -543,7 +543,7 @@ fn parse_expr<'a>(
 
             match last.node {
                 Statement::Expr{expr: expr_last} => {
-                    let stmts = &all_stmts[..all_stmts.len() - 1];
+                    let stmts = &all_stmts[..];
                     Expr::Block {
                         stmts: stmts.to_vec(),
                         value: expr_last.rec()
@@ -588,7 +588,6 @@ fn parse_case_branch<'a>(
         body: body?,
     }))
 }
-
 
 fn parse_binop<'a>(
     tc: &mut TsCursor<'a>,
