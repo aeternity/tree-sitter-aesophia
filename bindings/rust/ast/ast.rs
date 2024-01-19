@@ -95,10 +95,9 @@ pub struct Module {
 
 impl Display for Module {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        //for pragma in &self.pragmas {
-        //    println!("pragma: {pragma}");
-        //    //write!(f, "{pragma}")?;
-        //}
+        for pragma in &self.pragmas {
+            write!(f, "{pragma}")?;
+        }
         for include in &self.includes {
             write!(f, "{include}")?;
         }
@@ -155,6 +154,15 @@ pub enum Pragma {
         op: NodeOne<BinOp>,
         vsn: Node<Version>,
     },
+}
+
+impl Display for Pragma {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Pragma::CompilerVsn { op, vsn } =>
+                write!(f, "@compiler {op} {}\n", vsn.node.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(".")),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -475,10 +483,35 @@ pub enum Literal {
 
 #[derive(Clone, Debug)]
 pub enum BinOp {
-    Add, Sub, Mul, Div, Mod, Pow,
-    LT, LE, GT, GE, EQ, NE,
-    And, Or,
-    Cons, Concat,
+    Add, Sub, Mul, Div, Mod, Pow,  // Arithmetic operators
+    Not, And, Or,                  // Logical operators
+    EQ, NE, LT, GT, LE, GE,        // Comparison operators
+    Cons, Concat,                  // List operators
+}
+
+impl Display for BinOp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let str = match self {
+            BinOp::Add => "+",
+            BinOp::Sub => "-",
+            BinOp::Mul => "*",
+            BinOp::Div => "/",
+            BinOp::Mod => "mod",
+            BinOp::Pow => "^",
+            BinOp::Not => "!",
+            BinOp::And => "&&",
+            BinOp::Or => "||",
+            BinOp::EQ => "==",
+            BinOp::NE => "!=",
+            BinOp::LT => "<",
+            BinOp::GT => ">",
+            BinOp::LE => "=<",
+            BinOp::GE => ">=",
+            BinOp::Cons => "::",
+            BinOp::Concat => "++",
+        };
+        write!(f, "{str}")
+    }
 }
 
 #[derive(Clone, Debug)]

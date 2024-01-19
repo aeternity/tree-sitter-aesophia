@@ -11,7 +11,7 @@ fn parse_module<'a>(
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Module> {
     let node = &tc.node();
-    let pragmas = parse_kinds(tc, env, &parse_pragma, "top_pragma");
+    let pragmas = parse_kinds(tc, env, &parse_top_pragma, "top_pragma");
     let includes = parse_kinds(tc, env, &parse_include, "include");
     let usings = parse_kinds(tc, env, &parse_using, "using");
     let scopes = parse_kinds(tc, env, &parse_scope_decl, "scope_declaration");
@@ -57,12 +57,17 @@ fn parse_using_select<'a>(
     Some(mk_node(node, select))
 }
 
+fn parse_top_pragma<'a>(
+    tc: &mut TsCursor<'a>,
+    env: &mut ParseEnv,
+) -> ParseResultN<ast::Pragma> {
+    parse_field(tc, env, &parse_pragma, "pragma")
+}
+
 fn parse_pragma<'a>(
     tc: &mut TsCursor<'a>,
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Pragma> {
-    tc.reset(tc.node().child_by_field_name("pragma").expect("No pragma"));
-
     let node = &tc.node();
     match node.kind() {
         "pragma_compiler_vsn" => {
@@ -1325,5 +1330,6 @@ mod tests {
     fn test_simple_file() {
         run_test_good("usings");
         run_test_good("includes");
+        run_test_good("pragmas")
     }
 }
