@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use num_bigint::BigInt;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -16,6 +18,12 @@ pub struct Ann {
 pub struct Node<T: Clone> {
     pub node: T,
     pub ann: Ann,
+}
+
+impl<T: Clone + Display> Display for Node<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.node)
+    }
 }
 
 impl<T: Clone> Node<T> {
@@ -85,6 +93,26 @@ pub struct Module {
     pub scopes: Nodes<ScopeDecl>,
 }
 
+impl Display for Module {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        //for pragma in &self.pragmas {
+        //    println!("pragma: {pragma}");
+        //    //write!(f, "{pragma}")?;
+        //}
+        //for include in &self.includes {
+        //    write!(f, "{include}")?;
+        //}
+        for using in &self.usings {
+            write!(f, "{using}")?;
+        }
+        //for scope in &self.scopes {
+        //    write!(f, "{scope}")?;
+        //}
+
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum UsingSelect {
     Include(NodeMany<Name>),
@@ -97,6 +125,24 @@ pub struct Using {
     pub scope: NodeOne<Name>,
     pub alias: NodeOpt<Name>,
     pub select: NodeOne<UsingSelect>,
+}
+
+impl Display for Using {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "using {}", self.scope.node)?;
+        if let Some(alias) = &self.alias {
+            write!(f, " as {}", alias)?;
+        }
+        let selection = match &self.select.node {
+            UsingSelect::Include(items) => Some(("for", items)),
+            UsingSelect::Exclude(items) => Some(("hiding", items)),
+            UsingSelect::All => None,
+        };
+        if let Some((select_type, items)) = selection {
+            write!(f, " {} [{}]", select_type, items.node.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "))?;
+        }
+        write!(f, "\n")
+    }
 }
 
 pub type SubVer = String;
