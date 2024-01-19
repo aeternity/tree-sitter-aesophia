@@ -1,0 +1,6 @@
+using Pair
+using Pair as P
+using Pair for [fst, snd]
+using Pair hiding [fst, snd]
+using Pair as P for [fst]
+using Pair as P hiding [snd]

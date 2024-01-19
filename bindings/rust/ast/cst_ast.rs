@@ -1279,7 +1279,7 @@ mod tests {
         subtypes
     }
 
-    fn prepare_test(good: bool, test_name: &'static str) -> (ParseEnv, tree_sitter::Tree) {
+    fn prepare_test(good: bool, test_name: &'static str) -> (String, ParseEnv, tree_sitter::Tree) {
         let mut parser = load_lang();
         let src = load_test_file(good, test_name);
         let src_data: Vec<u16> = src.encode_utf16().collect();
@@ -1289,11 +1289,11 @@ mod tests {
         let subtypes = load_subtypes();
         let env = ParseEnv::new(src_data, subtypes, tree.root_node().has_error());
 
-        (env, tree)
+        (src, env, tree)
     }
 
     fn run_test_good(test_name: &'static str) {
-        let (mut env, tree) = prepare_test(true, test_name);
+        let (src, mut env, tree) = prepare_test(true, test_name);
         let mut tc = tree.walk();
 
         println!("Parsed {}", tree.root_node().to_sexp());
@@ -1304,23 +1304,25 @@ mod tests {
 
         tc.reset(tc.node().child_by_field_name("module").expect("No source"));
 
-        let ast = parse_any(&mut tc, &mut env);
-
-        if ast.is_none() {
-            for e in env.errs {
-                println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
-                         e.ann.filename,
-                         e.ann.start_line, e.ann.start_col,
-                         e.ann.end_line, e.ann.end_col,
-                         e.node.to_str()
-                )
+        match parse_module(&mut tc, &mut env) {
+            Some(ast) =>
+                assert_eq!(src, ast.to_string()),
+            None => {
+                for e in env.errs {
+                    println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
+                            e.ann.filename,
+                            e.ann.start_line, e.ann.start_col,
+                            e.ann.end_line, e.ann.end_col,
+                            e.node.to_str()
+                    )
+                }
+                panic!("CST->AST conversion failed");
             }
-            panic!("CST->AST conversion failed")
         }
-            }
+    }
 
     #[test]
     fn test_simple_file() {
-        run_test_good("expr_op_simple");
+        run_test_good("usings");
     }
 }
