@@ -487,6 +487,7 @@ pub enum BinOp {
     Not, And, Or,                  // Logical operators
     EQ, NE, LT, GT, LE, GE,        // Comparison operators
     Cons, Concat,                  // List operators
+    Pipe,                          // Functional operators
 }
 
 impl Display for BinOp {
@@ -509,6 +510,7 @@ impl Display for BinOp {
             BinOp::GE => ">=",
             BinOp::Cons => "::",
             BinOp::Concat => "++",
+            BinOp::Pipe => "|>",
         };
         write!(f, "{str}")
     }
