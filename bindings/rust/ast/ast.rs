@@ -140,7 +140,7 @@ impl Display for Using {
         if let Some((select_type, items)) = selection {
             write!(f, " {} [{}]", select_type, items.node.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "))?;
         }
-        write!(f, "\n")
+        writeln!(f)
     }
 }
 
@@ -160,7 +160,7 @@ impl Display for Pragma {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Pragma::CompilerVsn { op, vsn } =>
-                write!(f, "@compiler {op} {}\n", vsn.node.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(".")),
+                writeln!(f, "@compiler {op} {}", vsn.node.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(".")),
         }
     }
 }
@@ -172,7 +172,7 @@ pub struct Include {
 
 impl Display for Include {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "include \"{}\"\n", self.path)
+        writeln!(f, "include \"{}\"", self.path)
     }
 }
 
