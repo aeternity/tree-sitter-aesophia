@@ -99,9 +99,9 @@ impl Display for Module {
         //    println!("pragma: {pragma}");
         //    //write!(f, "{pragma}")?;
         //}
-        //for include in &self.includes {
-        //    write!(f, "{include}")?;
-        //}
+        for include in &self.includes {
+            write!(f, "{include}")?;
+        }
         for using in &self.usings {
             write!(f, "{using}")?;
         }
@@ -160,6 +160,12 @@ pub enum Pragma {
 #[derive(Clone, Debug)]
 pub struct Include {
     pub path: String,
+}
+
+impl Display for Include {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "include \"{}\"\n", self.path)
+    }
 }
 
 #[derive(Clone, Debug)]

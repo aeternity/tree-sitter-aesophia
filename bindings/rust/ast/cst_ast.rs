@@ -1324,5 +1324,6 @@ mod tests {
     #[test]
     fn test_simple_file() {
         run_test_good("usings");
+        run_test_good("includes");
     }
 }
