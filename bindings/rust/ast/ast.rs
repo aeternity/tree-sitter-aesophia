@@ -520,6 +520,16 @@ pub enum UnOp {
     Neg, Not,
 }
 
+impl Display for UnOp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let str = match self {
+            UnOp::Neg => "-",
+            UnOp::Not => "!",
+        };
+        write!(f, "{str}")
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum Statement {
     Expr {
