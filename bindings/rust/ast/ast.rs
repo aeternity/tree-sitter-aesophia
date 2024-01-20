@@ -484,7 +484,7 @@ pub enum Literal {
 #[derive(Clone, Debug)]
 pub enum BinOp {
     Add, Sub, Mul, Div, Mod, Pow,  // Arithmetic operators
-    Not, And, Or,                  // Logical operators
+    And, Or,                       // Logical operators
     EQ, NE, LT, GT, LE, GE,        // Comparison operators
     Cons, Concat,                  // List operators
     Pipe,                          // Functional operators
@@ -499,7 +499,6 @@ impl Display for BinOp {
             BinOp::Div => "/",
             BinOp::Mod => "mod",
             BinOp::Pow => "^",
-            BinOp::Not => "!",
             BinOp::And => "&&",
             BinOp::Or => "||",
             BinOp::EQ => "==",
