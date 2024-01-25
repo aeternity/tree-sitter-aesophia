@@ -1330,6 +1330,7 @@ mod tests {
     fn test_simple_file() {
         run_test_good("usings");
         run_test_good("includes");
-        run_test_good("pragmas")
+        run_test_good("pragmas");
+        run_test_good("simple_contract");
     }
 }

@@ -453,10 +453,10 @@ pub enum Statement {
 #[derive(Clone, Debug)]
 pub enum Type {
     Var {
-        name: NodeOne<String>
+        name: NodeOne<Name>
     },
     PolyVar {
-        name: NodeOne<String>
+        name: NodeOne<Name>
     },
     Fun {
         args: NodeMany<Type>,
