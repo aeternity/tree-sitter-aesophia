@@ -6,7 +6,7 @@ use num_traits::Num;
 use crate::ast::ast;
 use crate::ast::cst_parse::*;
 
-fn parse_module<'a>(
+pub fn parse_module<'a>(
     tc: &mut TsCursor<'a>,
     env: &mut ParseEnv,
 ) -> ParseResultN<ast::Module> {
