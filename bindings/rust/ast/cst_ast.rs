@@ -1326,11 +1326,42 @@ mod tests {
         }
     }
 
+    // TODO: duplication of `run_test_good`. Fix later
+    fn run_dispatch_good(test_name: &'static str) {
+        let (_, mut env, tree) = prepare_test(true, test_name);
+        let mut tc = tree.walk();
+
+        println!("Parsed {}", tree.root_node().to_sexp());
+
+        if tc.node().has_error() {
+            panic!("Error node")
+        }
+
+        let ast = parse_any(&mut tc, &mut env);
+
+        if ast.is_none() {
+            for e in env.errs {
+                println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
+                        e.ann.filename,
+                        e.ann.start_line, e.ann.start_col,
+                        e.ann.end_line, e.ann.end_col,
+                        e.node.to_str()
+                )
+            }
+            panic!("CST->AST conversion failed");
+        }
+    }
+
     #[test]
     fn test_simple_file() {
         run_test_good("usings");
         run_test_good("includes");
         run_test_good("pragmas");
         run_test_good("simple_contract");
+    }
+
+    #[test]
+    fn test_dispatch_file() {
+        run_dispatch_good("qual_expr_application");
     }
 }
