@@ -80,11 +80,15 @@
         "named": true
       },
       {
-        "type": "expr_variable",
+        "type": "expr_wildcard",
         "named": true
       },
       {
-        "type": "expr_wildcard",
+        "type": "identifier",
+        "named": true
+      },
+      {
+        "type": "qual_identifier",
         "named": true
       }
     ]
@@ -1081,25 +1085,6 @@
           }
         ]
       }
-    }
-  },
-  {
-    "type": "expr_variable",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "qual_identifier",
-          "named": true
-        }
-      ]
     }
   },
   {

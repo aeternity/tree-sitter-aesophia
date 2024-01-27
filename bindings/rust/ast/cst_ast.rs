@@ -4,6 +4,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 
 use crate::ast::ast;
+use crate::ast::ast::QName;
 use crate::ast::cst_parse::*;
 
 pub fn parse_module<'a>(
@@ -400,7 +401,18 @@ fn parse_expr<'a>(
     use ast::Expr;
     let node = &tc.node();
     let expr = match node.kind() {
-        "expr_variable" => {
+        "identifier" => {
+            let name = parse_name(tc, env);
+            let qname = QName {
+                path: mk_node(node, vec![]),
+                name: name?,
+            };
+
+            Expr::Var {
+                var: qname
+            }
+        }
+        "qual_identifier" => {
             let qname = parse_qual(tc, env);
 
             Expr::Var {
@@ -843,7 +855,7 @@ fn parse_pattern<'a>(
                 t: t?
             }
         },
-        "expr_variable" => {
+        "identifier" => {
             let name = node_content(node, env);
             Pattern::Var {
                 name: mk_node(node, name?),
@@ -1337,6 +1349,8 @@ mod tests {
             panic!("Error node")
         }
 
+        tc.reset(tc.node().child_by_field_name("content").expect("No source"));
+
         let ast = parse_any(&mut tc, &mut env);
 
         if ast.is_none() {
@@ -1362,6 +1376,7 @@ mod tests {
 
     #[test]
     fn test_dispatch_file() {
+        run_dispatch_good("expr_application");
         run_dispatch_good("qual_expr_application");
     }
 }

@@ -1550,7 +1550,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "expr_variable"
+          "name": "_expr_variable"
         },
         {
           "type": "SYMBOL",
@@ -3349,7 +3349,7 @@
         ]
       }
     },
-    "expr_variable": {
+    "_expr_variable": {
       "type": "PREC",
       "value": "EXPR_VAR",
       "content": {

@@ -329,7 +329,7 @@ module.exports = grammar({
     _expression: $ => choice(
       $.expr_lambda,
       $.expr_if,
-      $.expr_variable,
+      $._expr_variable,
       $.expr_typed,
       $.expr_match,
       $.expr_switch,
@@ -514,7 +514,10 @@ module.exports = grammar({
       $, field("stmt", $._statement)
     )),
 
-    expr_variable: $ => prec('EXPR_VAR', choice($.identifier, $.qual_identifier)),
+    _expr_variable: $ => prec('EXPR_VAR', choice(
+      $.identifier,
+      $.qual_identifier
+    )),
 
     _expr_atom: $ => prec('EXPR_ATOM', choice(
       $.expr_literal,
