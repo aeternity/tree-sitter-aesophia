@@ -1094,6 +1094,10 @@
         {
           "type": "identifier",
           "named": true
+        },
+        {
+          "type": "qual_identifier",
+          "named": true
         }
       ]
     }
@@ -1509,7 +1513,7 @@
       "required": true,
       "types": [
         {
-          "type": "qual_constructor_name",
+          "type": "qual_constructor",
           "named": true
         }
       ]
@@ -1737,7 +1741,7 @@
     }
   },
   {
-    "type": "qual_constructor_name",
+    "type": "qual_constructor",
     "named": true,
     "fields": {
       "name": {
@@ -1763,7 +1767,7 @@
     }
   },
   {
-    "type": "qual_identifier_name",
+    "type": "qual_identifier",
     "named": true,
     "fields": {
       "name": {
@@ -1921,7 +1925,7 @@
         "required": false,
         "types": [
           {
-            "type": "qual_constructor_name",
+            "type": "qual_constructor",
             "named": true
           }
         ]
@@ -2482,7 +2486,7 @@
       "required": true,
       "types": [
         {
-          "type": "qual_identifier_name",
+          "type": "qual_identifier",
           "named": true
         }
       ]

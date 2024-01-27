@@ -212,7 +212,7 @@ module.exports = grammar({
       field("head", $.scope_head),
       field("interface", alias(optional('interface'), $.is_interface)),
       field("name", $.constructor),
-      optional(seq(":", sep1(field("implements", $.qual_constructor_name), ","))),
+      optional(seq(":", sep1(field("implements", $.qual_constructor), ","))),
       '=',
       maybe_block($, field("decl", $._scoped_declaration))
     ),
@@ -514,7 +514,7 @@ module.exports = grammar({
       $, field("stmt", $._statement)
     )),
 
-    expr_variable: $ => prec('EXPR_VAR', $.identifier),
+    expr_variable: $ => prec('EXPR_VAR', choice($.identifier, $.qual_identifier)),
 
     _expr_atom: $ => prec('EXPR_ATOM', choice(
       $.expr_literal,
@@ -632,7 +632,7 @@ module.exports = grammar({
       $.lit_char,
     ),
 
-    lit_constructor: $ => prec.left('LIT_QUAL', $.qual_constructor_name),
+    lit_constructor: $ => prec.left('LIT_QUAL', $.qual_constructor),
 
     lit_bytes: $ => prec('LIT_ATOM', $._lex_bytes),
 
@@ -805,7 +805,7 @@ module.exports = grammar({
 
     type_variable_poly: $ => $.type_variable_poly_name,
 
-    type_variable: $ => $.qual_identifier_name,
+    type_variable: $ => $.qual_identifier,
 
     //**************************************************************************
     // OPERATORS
@@ -863,12 +863,12 @@ module.exports = grammar({
 
     constructor: $ => $._lex_up_id,
 
-    qual_identifier_name: $ => seq(
+    qual_identifier: $ => seq(
       field("path", $.qual),
       field("name", $.identifier),
     ),
 
-    qual_constructor_name: $ => seq(
+    qual_constructor: $ => seq(
       field("path", $.qual),
       field("name", $.constructor),
     ),

@@ -790,7 +790,7 @@
                             "name": "implements",
                             "content": {
                               "type": "SYMBOL",
-                              "name": "qual_constructor_name"
+                              "name": "qual_constructor"
                             }
                           },
                           {
@@ -805,7 +805,7 @@
                       "name": "implements",
                       "content": {
                         "type": "SYMBOL",
-                        "name": "qual_constructor_name"
+                        "name": "qual_constructor"
                       }
                     }
                   ]
@@ -3353,8 +3353,17 @@
       "type": "PREC",
       "value": "EXPR_VAR",
       "content": {
-        "type": "SYMBOL",
-        "name": "identifier"
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "identifier"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "qual_identifier"
+          }
+        ]
       }
     },
     "_expr_atom": {
@@ -4070,7 +4079,7 @@
       "value": "LIT_QUAL",
       "content": {
         "type": "SYMBOL",
-        "name": "qual_constructor_name"
+        "name": "qual_constructor"
       }
     },
     "lit_bytes": {
@@ -4792,7 +4801,7 @@
     },
     "type_variable": {
       "type": "SYMBOL",
-      "name": "qual_identifier_name"
+      "name": "qual_identifier"
     },
     "_operator": {
       "type": "CHOICE",
@@ -4968,7 +4977,7 @@
       "type": "SYMBOL",
       "name": "_lex_up_id"
     },
-    "qual_identifier_name": {
+    "qual_identifier": {
       "type": "SEQ",
       "members": [
         {
@@ -4989,7 +4998,7 @@
         }
       ]
     },
-    "qual_constructor_name": {
+    "qual_constructor": {
       "type": "SEQ",
       "members": [
         {
