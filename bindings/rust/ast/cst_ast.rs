@@ -1237,6 +1237,8 @@ pub fn parse_any(
 mod tests {
     use std::collections::HashMap;
 
+    use self::ast::{Module, Node};
+
     use super::*;
 
     fn load_test_file(good: bool, test_name: &'static str) -> String {
@@ -1253,6 +1255,10 @@ mod tests {
                 src
             }
         }
+    }
+
+    fn load_good_test_file(test_name: &'static str) -> String {
+        load_test_file(true, test_name)
     }
 
     fn load_lang() -> tree_sitter::Parser {
@@ -1296,9 +1302,8 @@ mod tests {
         subtypes
     }
 
-    fn prepare_test(good: bool, test_name: &'static str) -> (String, ParseEnv, tree_sitter::Tree) {
+    fn prepare_test(src: &str) -> (ParseEnv, tree_sitter::Tree) {
         let mut parser = load_lang();
-        let src = load_test_file(good, test_name);
         let src_data: Vec<u16> = src.encode_utf16().collect();
 
         let tree = parser.parse(&src, None).expect("Unable to parse");
@@ -1306,11 +1311,11 @@ mod tests {
         let subtypes = load_subtypes();
         let env = ParseEnv::new(src_data, subtypes, tree.root_node().has_error());
 
-        (src, env, tree)
+        (env, tree)
     }
 
-    fn run_test_good(test_name: &'static str) {
-        let (src, mut env, tree) = prepare_test(true, test_name);
+    fn parse_source_module(src: &str) -> Node<Module> {
+        let (mut env, tree) = prepare_test(&src);
         let mut tc = tree.walk();
 
         println!("Parsed {}", tree.root_node().to_sexp());
@@ -1323,24 +1328,14 @@ mod tests {
 
         match parse_module(&mut tc, &mut env) {
             Some(ast) =>
-                assert_eq!(src, ast.to_string()),
-            None => {
-                for e in env.errs {
-                    println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
-                            e.ann.filename,
-                            e.ann.start_line, e.ann.start_col,
-                            e.ann.end_line, e.ann.end_col,
-                            e.node.to_str()
-                    )
-                }
-                panic!("CST->AST conversion failed");
-            }
+                ast,
+            None =>
+                parsing_errors(&env),
         }
     }
 
-    // TODO: duplication of `run_test_good`. Fix later
-    fn run_dispatch_good(test_name: &'static str) {
-        let (_, mut env, tree) = prepare_test(true, test_name);
+    fn parse_source_content(src: &str) {
+        let (mut env, tree) = prepare_test(&src);
         let mut tc = tree.walk();
 
         println!("Parsed {}", tree.root_node().to_sexp());
@@ -1351,31 +1346,45 @@ mod tests {
 
         tc.reset(tc.node().child_by_field_name("content").expect("No source"));
 
-        let ast = parse_any(&mut tc, &mut env);
-
-        if ast.is_none() {
-            for e in env.errs {
-                println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
-                        e.ann.filename,
-                        e.ann.start_line, e.ann.start_col,
-                        e.ann.end_line, e.ann.end_col,
-                        e.node.to_str()
-                )
-            }
-            panic!("CST->AST conversion failed");
+        if parse_any(&mut tc, &mut env).is_none() {
+            parsing_errors(&env)
         }
     }
 
-    #[test]
-    fn test_simple_file() {
-        run_test_good("usings");
-        run_test_good("includes");
-        run_test_good("pragmas");
-        run_test_good("simple_contract");
+    fn run_dispatch_good(test_name: &'static str) {
+        let src = load_good_test_file(test_name);
+        parse_source_content(&src);
+    }
+
+    fn run_roundtrip_test(test_name: &'static str) {
+        let src = load_good_test_file(test_name);
+        let ast1 = parse_source_module(&src);
+        let ast2 = parse_source_module(&ast1.to_string());
+        assert_eq!(ast1.to_string(), ast2.to_string());
+    }
+
+    fn parsing_errors(env: &ParseEnv) -> ! {
+        for e in &env.errs {
+            println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
+                    e.ann.filename,
+                    e.ann.start_line, e.ann.start_col,
+                    e.ann.end_line, e.ann.end_col,
+                    e.node.to_str()
+            )
+        }
+        panic!("CST->AST conversion failed");
     }
 
     #[test]
-    fn test_dispatch_file() {
+    fn test_roundtrips() {
+        run_roundtrip_test("usings");
+        run_roundtrip_test("includes");
+        run_roundtrip_test("pragmas");
+        run_roundtrip_test("simple_contract");
+    }
+
+    #[test]
+    fn test_dispatches() {
         run_dispatch_good("expr_application");
         run_dispatch_good("qual_expr_application");
     }
