@@ -1385,7 +1385,10 @@ mod tests {
 
     #[test]
     fn test_dispatches() {
+        run_dispatch_good("expr_int");
+        run_dispatch_good("expr_op_simple");
         run_dispatch_good("expr_application");
         run_dispatch_good("qual_expr_application");
+        run_dispatch_good("lit_int");
     }
 }
