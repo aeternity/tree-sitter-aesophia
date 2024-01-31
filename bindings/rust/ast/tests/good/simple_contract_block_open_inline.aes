@@ -1,0 +1,6 @@
+contract C =
+    entrypoint f(x) =
+        1
+
+    entrypoint g() =
+        2
