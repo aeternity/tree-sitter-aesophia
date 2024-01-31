@@ -1,21 +1,12 @@
 use num_bigint::BigInt;
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Ann {
-    pub start_line: u32,
-    pub start_col: u32,
-    pub start_byte: u32,
-    pub end_line: u32,
-    pub end_col: u32,
-    pub end_byte: u32,
-    pub filename: String,
-    pub root_node: usize,
-}
+use crate::cst::*;
+
 
 #[derive(Clone, Debug)]
-pub struct Node<T: Clone> {
+pub struct Node<T> {
     pub node: T,
-    pub ann: Ann,
+    pub id: NodeId,
 }
 
 impl<T: Clone> Node<T> {
@@ -24,12 +15,18 @@ impl<T: Clone> Node<T> {
     {
         Node {
             node: f(self.node.to_owned()),
-            ann: self.ann
+            id: self.id,
         }
     }
 
     pub fn rec(self) -> NodeRec<T> {
         self.map(Box::new)
+    }
+}
+
+impl<T> HasNodeId for Node<T> {
+    fn node_id(&self) -> NodeId {
+        self.id
     }
 }
 

@@ -3,6 +3,8 @@
 use num_bigint::BigInt;
 use num_traits::Num;
 
+use crate::cst::*;
+
 use crate::ast::ast;
 use crate::ast::ast::QName;
 use crate::ast::cst_parse::*;
@@ -895,10 +897,10 @@ fn parse_stmts<'a>(
     let mut stmts: Vec<ast::Node<ast::Statement>> = Vec::with_capacity(part_stmts.len());
     while let Some(psn) = part_stmts.pop() {
         let ps = psn.node;
-        let ann = psn.ann;
+        let node_id = psn.id;
         match ps {
             SplitStmt::Full(s) => {
-                stmts.push(ast::Node{node: s, ann});
+                stmts.push(ast::Node{node: s, id: node_id});
             }
             SplitStmt::PartElIf(cond) => {
                 let last = stmts.last_mut();

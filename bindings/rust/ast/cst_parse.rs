@@ -1,7 +1,10 @@
 //! Fundamental tree-sitter parsing utilities.
 
 use crate::ast::ast;
+use crate::cst::*;
+
 use tree_sitter;
+
 
 /// Errors related to lexing
 #[derive(Clone, Debug)]
@@ -133,35 +136,12 @@ pub type ParseResult<T> = Option<T>;
 /// Parsing result with location info
 pub type ParseResultN<T> = ParseResult<ast::Node<T>>;
 
-/// Alias for tree-sitter node
-pub type TsNode<'a> = tree_sitter::Node<'a>;
-
-/// Alias for tree-sitter coursor
-pub type TsCursor<'a> = tree_sitter::TreeCursor<'a>;
-
-
-/// Extracts annotation from a tree-sitter node
-pub fn ann(node: &TsNode) -> ast::Ann {
-    let tree_sitter::Point{row: start_line, column: start_col} = node.start_position();
-    let tree_sitter::Point{row: end_line, column: end_col} = node.end_position();
-    ast::Ann {
-        start_line: start_line as u32,
-        start_col: start_col as u32,
-        start_byte: node.start_byte() as u32,
-        end_line: end_line as u32,
-        end_col: end_col as u32,
-        end_byte: node.end_byte() as u32,
-        filename: "<filename mock>".to_string(),
-        root_node: node.id()
-    }
-}
-
 
 /// Wraps an item with an AST node based on a tree-sitter node
 pub fn mk_node<T: Clone>(node: &TsNode, value: T) -> ast::Node<T> {
     ast::Node {
         node: value,
-        ann: ann(node),
+        id: node.id(),
     }
 }
 
