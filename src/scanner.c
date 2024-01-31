@@ -419,17 +419,15 @@ static bool scan(Scanner *scanner,
         ACCEPT(BLOCK_COMMENT_CONTENT);
     }
 
-    /* if (valid_symbols[BLOCK_OPEN_INLINE] && */
-    /*     !lexer->eof(lexer) && */
-    /*     !has_line_end && */
-    /*     lexer->is_at_included_range_start(lexer) && */
-    /*     has_space */
-    /*     ) { */
-    /*   VEC_PUSH(scanner->indents, lexer->get_column(lexer)); */
-    /*   lexer->result_symbol = BLOCK_OPEN_INLINE; */
-    /*   lexer->mark_end(lexer); */
-    /*   ACCEPT; */
-    /* } */
+    if (valid_symbols[BLOCK_OPEN_INLINE] &&
+        !lexer->eof(lexer) &&
+        !has_line_end &&
+        has_space)
+    {
+        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
+        lexer->mark_end(lexer);
+        ACCEPT(BLOCK_OPEN_INLINE);
+    }
 
     if (has_line_end)
     {

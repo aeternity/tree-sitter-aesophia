@@ -1,8 +1,6 @@
 contract C =
-    entrypoint
-        f(x) =
-            1
+    entrypoint f(x) =
+        1
 
-    entrypoint
-        g() =
-            2
+    entrypoint g() =
+        2
