@@ -18,19 +18,21 @@ impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for ast::Node<T> {
     }
 }
 
-impl Infer<type_env::LocalEnv> for ast::Literal {
+impl Infer<LocalEnv> for ast::Literal {
     fn infer(&self, _env: &mut LocalEnv) -> Type {
         match self {
             ast::Literal::Int{..} => Type::Var("int".to_string()),
+            ast::Literal::Bool{..} => Type::Var("bool".to_string()),
             _ => unimplemented!()
         }
     }
 }
 
-impl Infer<type_env::LocalEnv> for ast::Expr {
+impl Infer<LocalEnv> for ast::Expr {
     fn infer(&self, env: &mut LocalEnv) -> Type {
         match self {
             ast::Expr::Literal{val: lit} => lit.infer(env),
+
             _ => unimplemented!()
         }
     }

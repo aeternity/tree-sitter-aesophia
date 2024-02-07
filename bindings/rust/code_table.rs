@@ -33,7 +33,22 @@ impl CodeTableRef {
     pub fn new(file_id: cst::FileId, node_id: TreeTableRef) -> Self {
         CodeTableRef{file_id, node_id}
     }
+
+    pub fn file_id(&self) -> cst::FileId {
+        self.file_id
+    }
+
+    pub fn node_id(&self) -> TreeTableRef {
+        self.node_id
+    }
 }
+
+impl std::fmt::Display for CodeTableRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}:{}", self.file_id, self.node_id)
+    }
+}
+
 
 #[derive(Debug)]
 pub struct CodeTable<T> {
