@@ -1,4 +1,4 @@
-use crate::code_table::{CodeTable, CodeTableRef};
+use crate::code_table::{CodeTableRef};
 
 pub type TypeRef = CodeTableRef;
 
@@ -13,7 +13,6 @@ pub enum Type {
 }
 
 impl std::fmt::Display for Type {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Type::Ref(u) => write!(f, "?{}", u),
@@ -48,48 +47,6 @@ impl std::fmt::Display for Type {
         }
     }
 }
-
-pub struct Subst {
-    assigns: std::collections::HashMap<TypeRef, Type>,
-}
-
-impl Subst {
-    pub fn new() -> Self {
-        Self {
-            assigns: std::collections::HashMap::new(),
-        }
-    }
-
-    pub fn find(&mut self, u: TypeRef) -> Type {
-        match self.assigns.get(&u) {
-            None => Type::Ref(u),
-            Some(Type::Ref(u1)) => {
-                let t = self.find(*u1);
-                self.assigns.insert(u, t.clone());
-                t
-            }
-            Some(t) => t.clone()
-        }
-    }
-
-    pub fn set(&mut self, u: TypeRef, t: Type) {
-        match self.assigns.get(&u) {
-            None => {
-                self.assigns.insert(u, t);
-            }
-            _ => panic!("Subst overwrite!")
-        }
-    }
-}
-
-impl<'a> IntoIterator for Subst {
-    type Item = (TypeRef, Type);
-    type IntoIter = <std::collections::HashMap<TypeRef, Type> as IntoIterator>::IntoIter;
-    fn into_iter(self) -> Self::IntoIter {
-        self.assigns.into_iter()
-    }
-}
-
 pub type TypeTable = crate::code_table::CodeTable<Type>;
 
 impl TypeTable {
@@ -99,139 +56,27 @@ impl TypeTable {
         }
     }
 
-    fn find_with_subst(&self, subst: &mut Subst, u: TypeRef) -> Type {
+    /// Finds type based on the reference. If the type is undefined, a
+    /// reference is returned.
+    pub fn find(&self, u: TypeRef) -> Type {
         match self.get(u) {
-            None => {
-                match subst.find(u) {
-                    Type::Ref(u0) => {
-                        if u == u0 {
-                            Type::Ref(u0)
-                        } else {
-                            self.find_with_subst(subst, u0)
-                        }
-                    }
-                    t => t
-                }
-            }
-            Some(Type::Ref(u0)) => self.find_with_subst(subst, u0),
-            Some(t) => t
-        }
-    }
-}
-
-pub trait Visitor<Env, Res> {
-    fn visit_ref(env: Env, u: TypeRef) -> Res;
-    fn visit_var(env: Env, var: &String) -> Res;
-    fn visit_record(env: Env, name: &String) -> Res;
-    fn visit_variant(env: Env, name: &String) -> Res;
-    fn visit_fun(env: Env, args: Vec<Res>, ret: Res) -> Res;
-    fn visit_tuple(env: Env, elems: Vec<Res>) -> Res;
-}
-
-struct DerefVisitor<Env, Res, Vis, Deref>
-{
-    env: std::marker::PhantomData<Env>,
-    res: std::marker::PhantomData<Res>,
-    vis: std::marker::PhantomData<Vis>,
-    der: std::marker::PhantomData<Deref>,
-}
-impl<Env, Res, Vis, Deref> Visitor<(Deref, Env), Res> for DerefVisitor<Env, Res, Vis, Deref>
-where
-    Vis: Visitor<Env, Res>,
-    Deref: Fn(TypeRef) -> Option<Type> + Copy,
-    Env: Copy,
-{
-    fn visit_ref(env: (Deref, Env), u: TypeRef) -> Res {
-        match env.0(u) {
-            None => Vis::visit_ref(env.1, u),
-            Some(t) => t.visit::<(Deref, Env), Res, DerefVisitor<Env, Res, Vis, Deref>>(env),
-        }
-    }
-    fn visit_var(env: (Deref, Env), var: &String) -> Res {
-        Vis::visit_var(env.1, var)
-    }
-    fn visit_record(env: (Deref, Env), name: &String) -> Res {
-        unimplemented!()
-    }
-    fn visit_variant(env: (Deref, Env), name: &String) -> Res {
-        unimplemented!()
-    }
-    fn visit_fun(env: (Deref, Env), args: Vec<Res>, ret: Res) -> Res {
-        Vis::visit_fun(env.1, args, ret)
-    }
-    fn visit_tuple(env: (Deref, Env), elems: Vec<Res>) -> Res {
-        Vis::visit_tuple(env.1, elems)
-    }
-}
-
-impl Type {
-    pub fn visit<Env, Res, Vis>(&self, env: Env) -> Res
-    where
-        Vis: Visitor<Env, Res>,
-    Env: Copy,
-    {
-        match self {
-            Self::Ref(u) => Vis::visit_ref(env, *u),
-            Self::Var(v) => Vis::visit_var(env, v),
-            Self::Fun { args, ret } => {
-                let args_res = args.iter().map(|u| Vis::visit_ref(env, *u)).collect();
-                let ret_res = Vis::visit_ref(env, *ret);
-                Vis::visit_fun(env, args_res, ret_res)
-            },
-            Self::Tuple { elems } => {
-                let elems_res = elems.iter().map(|u| Vis::visit_ref(env, *u)).collect();
-                Vis::visit_tuple(env, elems_res)
-            }
-            _ => unimplemented!(),
+            None => Type::Ref(u),
+            Some(Type::Ref(u0)) => self.find(u0),
+            Some(t) => t.clone()
         }
     }
 
-    pub fn walk_f<Env, Res, Vis, Deref>(&self, deref: Deref, env: Env) -> Res
-    where
-        Vis: Visitor<Env, Res>,
-        Deref: Fn(TypeRef) -> Option<Type> + Copy,
-        Env: Copy,
-    {
-        self.visit::<(Deref, Env), _, DerefVisitor<Env, Res, Vis, Deref>>((deref, env))
-    }
+    pub fn mgu(&self, subst: &mut Subst, u0: TypeRef, u1: TypeRef) {
+        let t0 = self.find(u0);
+        let t1 = self.find(u1);
 
-    pub fn walk<Env, Res, Vis>(&self, table: &TypeTable, env: Env) -> Res
-    where
-        Vis: Visitor<Env, Res>,
-        Env: Copy
-    {
-        self.walk_f::<Env, Res, Vis, _>(|u| table.get(u), env)
-    }
-
-    pub fn unify(&self, table: &mut TypeTable, t: &Type) -> Vec<(Type, Type)> {
-        let mut subst = Subst::new();
-        let mut errs = Vec::<(Type, Type)>::new();
-
-        self.mgu(table, t, &mut subst, &mut errs);
-
-        table.apply_subst(subst);
-
-        errs
-    }
-
-    /// Most General Unifier. Computes minimal substitution of uvars
-    /// that makes two types match
-    pub(crate) fn mgu(&self,
-                      table: &TypeTable,
-                      t: &Type,
-                      subst: &mut Subst,
-                      errs: &mut Vec<(Type, Type)>
-    ) {
-        let t = t.deref(table, subst);
-        println!("MGU {} ~ {}", self, t);
-
-        match (self, &t) {
+        match (t0, t1) {
             // Identical references, nothing to do
-            (Type::Ref(s_u), Type::Ref(t_u)) if *s_u == *t_u => (),
+            (Type::Ref(r0), Type::Ref(r1)) if r0 == r1 => (),
 
             // Matching with a resolved reference
             (_, Type::Ref(t_u)) => {
-                if self.occurs_check(table, subst, *t_u) {
+                if self.occurs_check(t0, r1) {
                     // Illegal infinite type.  TODO: distinguish
                     // occurs check errors from plain unification
                     // errors
@@ -239,7 +84,7 @@ impl Type {
                     errs.push((self.clone(), t.clone()));
                 } else {
                     // Substitute
-                    subst.set(*t_u, self.clone());
+                    subst.set(t_u, self.clone());
                 }
             }
 
@@ -261,9 +106,9 @@ impl Type {
                 }
 
                 for (s_a, t_a) in s_args.iter().zip(t_args) {
-                    Type::Ref(*s_a).mgu(table, &Type::Ref(*t_a), subst, errs);
+                    Type::Ref(*s_a).mgu(table, &Type::Ref(t_a), subst, errs);
                 }
-                Type::Ref(*s_ret).mgu(table, &Type::Ref(*t_ret), subst, errs);
+                Type::Ref(s_ret).mgu(table, &Type::Ref(t_ret), subst, errs);
             }
 
             (Type::Tuple{elems: s_elems}, Type::Tuple{elems: t_elems}) => {
@@ -275,7 +120,177 @@ impl Type {
                     errs.push((self.clone(), t.clone()))
                 } else {
                     for (s_e, t_e) in s_elems.iter().zip(t_elems) {
-                        Type::Ref(*s_e).mgu(table, &Type::Ref(*t_e), subst, errs);
+                        Type::Ref(*s_e).mgu(table, &Type::Ref(t_e), subst, errs);
+                    }
+                }
+
+            }
+            _ => {
+
+                println!("BAD UNIF: {} ~ {}", self, t);
+                errs.push((self.clone(), t.clone()))
+            }
+        }
+    }
+}
+
+
+/// Type substitution. Describes a pending update to the type table.
+pub struct Subst {
+    assigns: std::collections::HashMap<TypeRef, Type>,
+}
+
+impl Subst {
+    /// Creates a new empty substitution.
+    pub fn new() -> Self {
+        Self {
+            assigns: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Lookup the substitution.
+    pub fn get(&self, u: TypeRef) -> Option<Type> {
+        let t = self.assigns.get(&u)?;
+        Some(t.clone())
+    }
+
+    /// Lookup the substitution. Optimizes chains of references. If a
+    /// reference chain leads to an uninstantiated type, returns the
+    /// final reference.
+    pub fn find(&mut self, u: TypeRef) -> Type {
+        match self.get(u) {
+            None => Type::Ref(u),
+            Some(Type::Ref(u0)) => {
+                let t = self.find(u0);
+                self.assigns.insert(u, t.clone());
+                t
+            }
+            Some(t) => t.clone()
+        }
+    }
+
+    /// Lookup the substitution within the type table. Optimizes
+    /// chains of references. If a reference chain leads to an
+    /// uninstantiated type, returns the final reference.
+    pub fn find_in(&mut self, table: &TypeTable, u: TypeRef) -> Type {
+        match self.find(u) {
+            Type::Ref(u0) => {
+                match table.find(u0) {
+                    Type::Ref(u1) if u1 == u0 => Type::Ref(u1),
+                    Type::Ref(u1) => self.find_in(table, u1),
+                    t => t
+                }
+            }
+            t => t
+        }
+    }
+
+
+    /// Updates substitution with a new assignment. Does not unify or
+    /// union --- panics if the reference is instantiated.
+    pub fn set(&mut self, u: TypeRef, t: Type) {
+        match self.assigns.get(&u) {
+            None => {
+                self.assigns.insert(u, t);
+            }
+            _ => panic!("Subst overwrite!")
+        }
+    }
+}
+
+impl<'a> IntoIterator for Subst {
+    type Item = (TypeRef, Type);
+    type IntoIter = <std::collections::HashMap<TypeRef, Type> as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        self.assigns.into_iter()
+    }
+}
+
+
+impl Type {
+    /// Seeks for the most concrete known representation of the type.
+    fn deref(&self, table: &TypeTable, subst: &mut Subst) -> Type {
+        match self {
+            Type::Ref(u) => subst.find_in(table, *u),
+            _ => self.clone()
+        }
+    }
+
+    /// Unifies two types in the table.
+    pub fn unify(&self, table: &mut TypeTable, t: &Type) -> Vec<(Type, Type)> {
+        let mut subst = Subst::new();
+        let mut errs = Vec::<(Type, Type)>::new();
+
+        self.mgu(table, t, &mut subst, &mut errs);
+
+        table.apply_subst(subst);
+
+        errs
+    }
+
+    /// Most General Unifier. Computes a minimal substitution that
+    /// makes two types match
+    pub(crate) fn mgu(&self,
+                      table: &TypeTable,
+                      t: &Type,
+                      subst: &mut Subst,
+                      errs: &mut Vec<(Type, Type)>
+    ) {
+        let s = self.deref(table, subst);
+        let t = t.deref(table, subst);
+        println!("MGU {} ~ {}", s, t);
+
+        match (s, t) {
+            // Identical references, nothing to do
+            (Type::Ref(s_u), Type::Ref(t_u)) if s_u == t_u => (),
+
+            // Matching with a resolved reference
+            (_, Type::Ref(t_u)) => {
+                if self.occurs_check(table, subst, t_u) {
+                    // Illegal infinite type.  TODO: distinguish
+                    // occurs check errors from plain unification
+                    // errors
+                    println!("OCCURS CHECK: {} ~ {}", t_u, self);
+                    errs.push((self.clone(), t.clone()));
+                } else {
+                    // Substitute
+                    subst.set(t_u, self.clone());
+                }
+            }
+
+            // MGU is symmetric up to isomorphism
+            (Type::Ref(_), _) => {
+                t.mgu(table, self, subst, errs)
+            }
+
+            // Rigid type vars must be the same
+            (Type::Var(s_var), Type::Var(t_var)) if *s_var == *t_var => (),
+
+            (Type::Fun{args: s_args, ret: s_ret}, Type::Fun{args: t_args, ret: t_ret}) => {
+                // If the lengths do not match we report an error, but
+                // proceed nevertheless for coverage. We assume
+                // arguments are missing at the end. TODO: is this
+                // helpful or confusing?
+                if s_args.len() != t_args.len() {
+                    errs.push((self.clone(), t.clone()))
+                }
+
+                for (s_a, t_a) in s_args.iter().zip(t_args) {
+                    Type::Ref(*s_a).mgu(table, &Type::Ref(t_a), subst, errs);
+                }
+                Type::Ref(s_ret).mgu(table, &Type::Ref(t_ret), subst, errs);
+            }
+
+            (Type::Tuple{elems: s_elems}, Type::Tuple{elems: t_elems}) => {
+                // If the lengths do not match we report an error, and
+                // not proceed, because it is seems more probable that
+                // someone mistook variables, rather than forgot about
+                // a tuple element.
+                if s_elems.len() != s_elems.len() {
+                    errs.push((self.clone(), t.clone()))
+                } else {
+                    for (s_e, t_e) in s_elems.iter().zip(t_elems) {
+                        Type::Ref(*s_e).mgu(table, &Type::Ref(t_e), subst, errs);
                     }
                 }
 
@@ -288,28 +303,16 @@ impl Type {
         }
     }
 
-
-    fn deref(&self, table: &TypeTable, subst: &mut Subst) -> Type {
-        match self {
-            Type::Ref(u) => table.find_with_subst(subst, *u),
-            _ => self.clone()
-        }
-    }
-
-
     /// Checks if a unifiable variable is used in a type.
     pub(crate) fn occurs_check(&self, table: &TypeTable, subst: &mut Subst, u: TypeRef) -> bool {
-        let t = self.deref(table, subst);
-        match t {
-            Type::Ref(u0) => u == u0,
+        match self {
+            Type::Ref(u0) => u == *u0,
             Type::Var(_) => false,
             Type::Record(_) => unimplemented!(),
             Type::Variant(_) => unimplemented!(),
             Type::Fun{args, ret} => {
-                table.find_with_subst(subst, ret)
-                    .occurs_check(table, subst, u)
-                    || args.iter()
-                    .any(|a| table.find_with_subst(subst, *a)
+                subst.find_in(table, *ret).occurs_check(table, subst, u) ||
+                    args.iter().any(|a| subst.find_in(table, *a)
                          .occurs_check(table, subst, u)
                     )
             }
@@ -463,50 +466,5 @@ mod tests {
                    vec![]);
 
         unify_test(&table, vec![(t::r(8), t::r(11))], vec![]);
-    }
-}
-
-pub mod visitors {
-    use super::*;
-    pub struct IsFv {}
-    impl Visitor<TypeRef, bool> for IsFv {
-        fn visit_ref(env: TypeRef, u: TypeRef) -> bool {
-            env == u
-        }
-        fn visit_var(_env: TypeRef, _var: &String) -> bool {
-            false
-        }
-        fn visit_record(_env: TypeRef, _name: &String) -> bool {
-            unimplemented!()
-        }
-        fn visit_variant(_env: TypeRef, _name: &String) -> bool {
-            unimplemented!()
-        }
-        fn visit_fun(_env: TypeRef, args: Vec<bool>, ret: bool) -> bool {
-            ret || args.iter().any(|x| *x)
-        }
-        fn visit_tuple(_env: TypeRef, elems: Vec<bool>) -> bool {
-            elems.iter().any(|x| *x)
-        }
-    }
-
-    pub struct Fvs {}
-    impl Visitor<&mut Vec<TypeRef>, ()> for Fvs {
-        fn visit_ref(fvs: &mut Vec<TypeRef>, u: TypeRef) {
-            fvs.push(u)
-        }
-        fn visit_var(_fvs: &mut Vec<TypeRef>, _var: &String) {}
-        fn visit_record(_fvs: &mut Vec<TypeRef>, _name: &String) {
-            unimplemented!()
-        }
-        fn visit_variant(_fvs: &mut Vec<TypeRef>, _name: &String) {
-            unimplemented!()
-        }
-        fn visit_fun(
-            _fvs: &mut Vec<TypeRef>,
-            _args: Vec<()>,
-            _ret: (),
-        ) {}
-        fn visit_tuple(_fvs: &mut Vec<TypeRef>, _elems: Vec<()>) {}
     }
 }
