@@ -57,6 +57,7 @@ pub trait HasTEnv {
     fn t_env_mut(&mut self) -> &mut TEnv;
 }
 
+/// Execute function with another node set as the current location
 pub fn in_node<Env: HasTEnv, F, R>(env: &mut Env, node_id: cst::NodeId, exec: F) -> R
 where F: FnOnce(&mut Env) -> R,
 {
@@ -166,13 +167,17 @@ impl TEnv {
         self.visible_scopes().find_map(|s| s.funs.get(&name))
     }
 
-    pub fn set_type(&mut self, tref: TypeRef, t: Type) {
-        self.type_table.set(tref, t);
+    pub fn unify(&mut self, t0: &Type, t1: &Type) {
+        let errs = self.type_table.unify(t0, t1);
+        if !errs.is_empty() {
+            panic!("TYPE ERRORS: {:?}", errs)
+        }
     }
 
-    pub fn set_type_here(&mut self, node: cst::NodeId, t: Type) {
+    pub fn unify_here(&mut self, t: &Type) {
         let file = self.current_file;
+        let node = self.current_node;
         let tref = CodeTableRef::new(file, node);
-        self.set_type(tref, t);
+        self.unify(&Type::Ref(tref), t);
     }
 }
