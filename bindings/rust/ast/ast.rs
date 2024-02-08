@@ -10,6 +10,13 @@ pub struct Node<T> {
 }
 
 impl<T: Clone> Node<T> {
+    pub fn new(i: NodeId, n: T) -> Self {
+        Node {
+            id: i,
+            node: n,
+        }
+    }
+
     pub fn map<T1: Clone, F>(self, f: F) -> Node<T1>
     where F: FnOnce(T) -> T1
     {

@@ -84,31 +84,6 @@ impl cst::HasNodeId for TEnv {
     }
 }
 
-pub struct VarSpec {
-    t: Type,
-}
-
-pub struct LocalEnv {
-    global: TEnv,
-    vars: HashMap<Name, VarSpec>
-}
-
-impl cst::HasNodeId for LocalEnv {
-    fn node_id(&self) -> cst::NodeId {
-        self.global.node_id()
-    }
-}
-
-impl HasTEnv for LocalEnv {
-    fn t_env(&self) -> &TEnv {
-        &self.global
-    }
-
-    fn t_env_mut(&mut self) -> &mut TEnv {
-        &mut self.global
-    }
-}
-
 impl TEnv {
     pub fn switch_scope(&mut self, scope: ScopePath) {
         self.current_scope = scope;
@@ -167,6 +142,17 @@ impl TEnv {
         self.visible_scopes().find_map(|s| s.funs.get(&name))
     }
 
+    pub fn location(&self) -> CodeTableRef {
+        let file = self.current_file;
+        let node = self.current_node;
+        CodeTableRef::new(file, node)
+    }
+
+    pub fn node_ref(&self, node_id: cst::NodeId) -> CodeTableRef {
+        let file = self.current_file;
+        CodeTableRef::new(file, node_id)
+    }
+
     pub fn unify(&mut self, t0: &Type, t1: &Type) {
         let errs = self.type_table.unify(t0, t1);
         if !errs.is_empty() {
@@ -175,9 +161,56 @@ impl TEnv {
     }
 
     pub fn unify_here(&mut self, t: &Type) {
-        let file = self.current_file;
-        let node = self.current_node;
-        let tref = CodeTableRef::new(file, node);
+        let tref = self.location();
         self.unify(&Type::Ref(tref), t);
+    }
+}
+
+pub type LocalVars = HashMap<Name, cst::NodeId>;
+
+pub struct LocalEnv {
+    global: TEnv,
+    vars: LocalVars,
+}
+
+impl cst::HasNodeId for LocalEnv {
+    fn node_id(&self) -> cst::NodeId {
+        self.global.node_id()
+    }
+}
+
+impl HasTEnv for LocalEnv {
+    fn t_env(&self) -> &TEnv {
+        &self.global
+    }
+
+    fn t_env_mut(&mut self) -> &mut TEnv {
+        &mut self.global
+    }
+}
+
+impl LocalEnv {
+    pub fn new(t_env: TEnv) -> Self {
+        LocalEnv {
+            global: t_env,
+            vars: LocalVars::new(),
+        }
+    }
+
+    pub fn save_vars<F, Res>(&mut self, f: F) -> Res
+    where F: FnOnce(&mut Self) -> Res
+    {
+        let old_vars = self.vars.clone();
+        let res = f(self);
+        self.vars = old_vars;
+        res
+    }
+
+    pub fn get_var(&self, name: &Name) -> Option<CodeTableRef> {
+        self.vars.get(name).map(|i| self.global.node_ref(*i))
+    }
+
+    pub fn set_var(&mut self, name: Name, node_id: cst::NodeId) {
+        self.vars.insert(name, node_id);
     }
 }

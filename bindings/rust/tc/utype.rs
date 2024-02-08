@@ -75,9 +75,57 @@ impl TypeTable {
 
         errs
     }
+
+    pub fn render_ast(&mut self, u: TypeRef)
+                      -> crate::ast::ast::Node<crate::ast::ast::Type> {
+        use crate::ast::ast;
+        use crate::ast::ast::Node;
+        match self.find(u) {
+            Type::Ref(u) => {
+                Node::new(
+                    u.node_id(),
+                    ast::Type::PolyVar{
+                        name: Node::new(u.node_id(), format!("{}", u))
+                    })
+            },
+            Type::Var(v) => {
+                Node::new(
+                    u.node_id(),
+                    ast::Type::Var{
+                        name: Node::new(u.node_id(), v)
+                    })
+            },
+            Type::Tuple{elems} => {
+                let t = ast::Type::Tuple {
+                    elems: elems.into_iter().map(|e| self.render_ast(e)).collect()
+                };
+                Node::new(u.node_id(), t)
+            },
+            Type::Fun{args, ret} => {
+                let t = ast::Type::Fun {
+                    args: Node::new(
+                        u.node_id(),
+                        args.into_iter().map(|a| self.render_ast(a)).collect()
+                    ),
+                    ret: self.render_ast(ret).rec()
+                };
+                Node::new(u.node_id(), t)
+            },
+            _ => unimplemented!()
+        }
+    }
 }
 
 impl Type {
+
+    pub fn int() -> Self {
+        Type::Var("int".to_string())
+    }
+
+    pub fn bool() -> Self {
+        Type::Var("int".to_string())
+    }
+
     pub fn deref(&self, table: &mut TypeTable) -> Type {
         match self {
             Type::Ref(u) => table.find(*u),
