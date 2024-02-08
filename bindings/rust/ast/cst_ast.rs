@@ -1367,10 +1367,7 @@ mod tests {
 
     fn parsing_errors(env: &ParseEnv) -> ! {
         for e in &env.errs {
-            println!("PARSE ERROR AT {}:({}:{} - {}:{}): {}",
-                    e.ann.filename,
-                    e.ann.start_line, e.ann.start_col,
-                    e.ann.end_line, e.ann.end_col,
+            println!("PARSE ERROR: {}",
                     e.node.to_str()
             )
         }
