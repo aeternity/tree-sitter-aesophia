@@ -298,14 +298,9 @@ pub enum Expr {
 }
 
 #[derive(Clone, Debug)]
-pub enum ExprArg {
-    Arg{
-        val: NodeOne<Expr>
-    },
-    NamedArg {
-        name: Node<Name>,
-        val: NodeOne<Expr>,
-    }
+pub struct ExprArg {
+    pub name: NodeOpt<Name>,
+    pub value: NodeOne<Expr>,
 }
 
 #[derive(Clone, Debug)]

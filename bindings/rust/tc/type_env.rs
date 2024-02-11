@@ -259,7 +259,7 @@ impl LocalEnv {
     where F: FnOnce(&mut Self) -> Res
     {
         self.save_vars(|self_in| {
-            self_in.vars = vars;
+            self_in.vars.extend(vars);
             f(self_in)
         })
     }

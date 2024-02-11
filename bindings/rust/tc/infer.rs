@@ -30,8 +30,12 @@ fn infer_nodes<Env: HasTEnv, T: Infer<Env>>(xs: &ast::Nodes<T>, env: &mut Env) -
     xs.iter().map(|x| infer_node(x, env)).collect()
 }
 
+fn type_ref_here<Env: HasTEnv>(env: &Env) -> TypeRef {
+    env.t_env().location()
+}
+
 fn type_here<Env: HasTEnv>(env: &Env) -> Type {
-    let u = env.t_env().location();
+    let u = type_ref_here(env);
     Type::Ref(u)
 }
 
@@ -47,7 +51,7 @@ impl Infer<LocalEnv> for ast::Literal {
         match self {
             ast::Literal::Int{..} => Type::int(),
             ast::Literal::Bool{..} => Type::bool(),
-            _ => unimplemented!()
+            _ => todo!()
         }
     }
 }
@@ -58,34 +62,47 @@ impl Infer<LocalEnv> for ast::Expr {
         match self {
             Literal{val: lit} => lit.infer(env),
             Lambda {args,body} => {
-                env.save_vars(|env_in| {
-                    let mut vars =  LocalVars::new();
-                    let t_args = args.node.iter().map(|arg| infer_node(arg, &mut (env_in, &mut vars))).collect();
-                    let t_body = infer_node(body, env_in);
-                    Type::Fun{
-                        args: t_args,
-                        ret: t_body,
-                    }
-                })
+                let mut vars =  LocalVars::new();
+                let t_args = args.node.iter().map(|arg| infer_node(arg, &mut (env, &mut vars))).collect();
+
+                let t_body = env.with_vars(vars, |env_in| infer_node(body, env_in));
+                Type::Fun{
+                    args: t_args,
+                    ret: t_body,
+                }
             }
-            Typed {expr,t} => unimplemented!(),
-            BinOp {op,op_l,op_r} => unimplemented!(),
-            UnOp {op,op_r} => unimplemented!(),
-            App {fun,args} => unimplemented!(),
+            Typed {expr,t} => todo!(),
+            BinOp {op,op_l,op_r} => todo!(),
+            UnOp {op,op_r} => todo!(),
+            App {fun,args} => {
+                let u_ret = type_ref_here(env);
+                let t_args = infer_nodes(&args.node, env);
+
+                let t_fun_exp = Type::Fun {
+                    args: t_args,
+                    ret: u_ret,
+                };
+
+                let t_fun = fun.check(env, &t_fun_exp);
+
+                Type::Ref(u_ret)
+            }
+            Tuple {elems} if elems.is_empty() => Type::unit(),
+            Tuple {elems} if elems.len() == 1 => elems[0].infer(env),
             Tuple {elems} => {
                 let t_elems = elems.iter().map(|e| infer_node(e, env)).collect();
                 Type::Tuple{elems: t_elems}
             }
-            List {elems} => unimplemented!(),
-            ListRange {start,end} => unimplemented!(),
-            ListComp {yield_expr,filters} => unimplemented!(),
-            Record {fields} => unimplemented!(),
-            RecordUpdate {record,updates} => unimplemented!(),
-            Map {assigns} => unimplemented!(),
-            MapUpdate{map,updates} => unimplemented!(),
-            MapAccess {map,key,default} => unimplemented!(),
-            Proj {expr,field} => unimplemented!(),
-            Switch {exprs,cases} => unimplemented!(),
+            List {elems} => todo!(),
+            ListRange {start,end} => todo!(),
+            ListComp {yield_expr,filters} => todo!(),
+            Record {fields} => todo!(),
+            RecordUpdate {record,updates} => todo!(),
+            Map {assigns} => todo!(),
+            MapUpdate{map,updates} => todo!(),
+            MapAccess {map,key,default} => todo!(),
+            Proj {expr,field} => todo!(),
+            Switch {exprs,cases} => todo!(),
             If {conds, neg} => {
                 let t_neg = neg.infer(env);
                 for c in conds {
@@ -93,10 +110,22 @@ impl Infer<LocalEnv> for ast::Expr {
                 }
                 t_neg
             }
-            Var {var} => unimplemented!(),
-            Block {stmts,value} => unimplemented!(),
-            Hole => unimplemented!()
+            Var {var} => {
+                match env.get_var(&var.name.node) {
+                    None => panic!("UNDEFINED VAR {}", var.name.node),
+                    Some(u) => Type::Ref(u)
+                }
+            },
+            Block {stmts,value} => todo!(),
+            Hole => todo!()
         }
+    }
+}
+
+impl Infer<LocalEnv> for ast::ExprArg {
+    fn infer(&self, env: &mut LocalEnv) -> Type {
+        // TODO Named args!
+        self.value.infer(env)
     }
 }
 
@@ -124,13 +153,13 @@ impl Infer<(&mut LocalEnv, &mut LocalVars)> for ast::Pattern {
                 }
             },
             Lit {value} => value.infer(l_env),
-            List {elems} => unimplemented!(),
+            List {elems} => todo!(),
             Tuple {elems} => {
                 let t_elems = infer_nodes(elems, env);
                 Type::Tuple{elems: t_elems}
             },
-            Record {fields} => unimplemented!(),
-            Op {op_l,op_r,op} => unimplemented!(),
+            Record {fields} => todo!(),
+            Op {op_l,op_r,op} => todo!(),
             Let {name,pat} => {
                 let t_name = Var{name: name.clone()}.infer(env);
                 let t_pat = pat.infer(env);
@@ -142,7 +171,7 @@ impl Infer<(&mut LocalEnv, &mut LocalVars)> for ast::Pattern {
                 pat.check(env, &ut);
                 ut
             }
-            App {fun,args} => unimplemented!(),
+            App {fun,args} => todo!(),
             Wildcard => type_here(env)
         }
     }
@@ -174,8 +203,8 @@ impl Infer<LocalEnv> for ast::Type {
                     elems: infer_nodes(elems, env)
                 }
             },
-            App {fun,args} => unimplemented!(), // TODO type-app utype
-            _ => unimplemented!()
+            App {fun,args} => todo!(), // TODO type-app utype
+            _ => todo!()
         }
     }
 }
@@ -208,15 +237,49 @@ mod tests {
     #[test]
     fn check_literals() {
         check_expr("2137\n", "int");
+        check_expr("0\n", "int");
+        // check_expr("-100000\n", "int"); // FIXME (parser goes crazy)
         check_expr("true\n", "bool");
+        check_expr("false\n", "bool");
     }
 
     #[test]
     fn check_tuples() {
         check_expr("(21, 37)\n", "int * int");
         check_expr("(21, true, 37, false)\n", "int * bool * int * bool");
+
+        // Nested
         check_expr("((21, true), (37, false))\n", "(int * bool) * (int * bool)");
+        check_expr("((21, true), (false, 37))\n", "(int * bool) * (bool * int)");
+        check_expr("((21, 37), (false, true))\n", "(int * int) * (bool * bool)");
         check_expr("(21, (true, 37, false))\n", "int * (bool * int * bool)");
         check_expr("((21, true, 37), false)\n", "(int * bool * int) * bool");
+
+        // *THE* edge case
+        check_expr("()", "unit");
+    }
+
+    #[test]
+    fn check_lambdas() {
+        check_expr("() => 2137", "() => int");
+        check_expr("(x) => 2137", "(int) => int");
+        check_expr("(x, y) => 2137", "(int, int) => int");
+
+        // Applications
+        check_expr("(() => 2137)()", "int");
+        check_expr("((x) => 21)(37)", "int");
+        check_expr("((x, y) => 21)(3, 7)", "int");
+
+        // Poly-mono
+        check_expr("(x) => x", "(int) => int");
+        check_expr("(x, y) => (y, x)", "(int, int) => (int * int)");
+        check_expr("(x, y) => (y, x)", "(int, bool) => (bool * int)");
+
+        // Nested
+        check_expr("(f, x) => f(x)", "((int) => bool, int) => bool");
+        check_expr("(f) => (x) => f(x)", "((int) => bool) => (int) => bool");
+
+        // Shadow
+        check_expr("((x, y) => (x, ((x) => x)(y)))(123, true)", "(int * bool)");
     }
 }

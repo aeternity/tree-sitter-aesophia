@@ -136,6 +136,10 @@ impl Type {
         Type::Var("int".to_string())
     }
 
+    pub fn unit() -> Self {
+        Type::Var("unit".to_string())
+    }
+
     pub fn bool() -> Self {
         Type::Var("bool".to_string())
     }

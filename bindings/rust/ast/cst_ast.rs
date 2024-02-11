@@ -712,15 +712,19 @@ impl CstNode for ast::ExprArg {
             "expr_named_argument" => {
                 let name = parse_field(tc, env, &parse_name, "name");
                 let value = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "value");
-                ast::ExprArg::NamedArg {
-                    name: name?,
-                    val: value?,
+                ast::ExprArg {
+                    name: Some(name?),
+                    value: value?,
                 }
             }
-            _ => {
-                let value = <ast::Expr as CstNode>::parse(tc, env);
-                ast::ExprArg::Arg { val: value? }
+            "expr_argument" => {
+                let value = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "value");
+                ast::ExprArg {
+                    name: None,
+                    value: value?,
+                }
             }
+            e => panic!("Unknown arg node: {}", e)
         };
         Some(mk_node(node, arg))
     }
@@ -820,11 +824,11 @@ impl CstNode for ast::Type {
                 }
             }
             "type_function" => {
-                let args = parse_fields(tc, env, &<ast::Type as CstNode>::parse, "domain");
+                let args = parse_field(tc, env, &parse_fun_domain, "domain");
                 let ret = parse_field(tc, env, &<ast::Type as CstNode>::parse, "codomain");
                 Type::Fun {
                     // named_args: vec![], // TODO
-                    args: mk_node(node, args),
+                    args: args?,
                     ret: ret?.rec(),
                 }
             }
@@ -851,6 +855,22 @@ impl CstNode for ast::Type {
     }
 }
 
+fn parse_fun_domain<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Nodes<ast::Type>> {
+    env.check_error(tc)?;
+    let node = &tc.node();
+    let args = match node.kind() {
+        "type_domain_zero" => vec![],
+        "type_domain_one" => {
+            parse_fields(tc, env, &<ast::Type as CstNode>::parse, "param")
+        }
+        "type_domain_many" => {
+            parse_fields(tc, env, &<ast::Type as CstNode>::parse, "param")
+        }
+        e => panic!("Unknown type node: {}", e),
+    };
+    Some(mk_node(node, args))
+}
+
 impl CstNode for ast::Pattern {
     fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Pattern> {
         use ast::Pattern;
@@ -862,7 +882,7 @@ impl CstNode for ast::Pattern {
                 let args = parse_fields_in_field(
                     tc,
                     env,
-                    &<ast::Pattern as CstNode>::parse,
+                    &<ast::Pattern as CstNode>::parse, // TODO this is broken
                     "args",
                     "arg",
                 );

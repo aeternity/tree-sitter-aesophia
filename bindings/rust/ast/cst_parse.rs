@@ -301,8 +301,10 @@ where
     parse_children(tc, env, parse, |c| c.node().kind() == name)
 }
 
-/// Within the field parses all children on the given inner field using the given parser. Useful
-/// when a node has multiple subnodes of the same kind hidden under a single wrapping field.
+
+/// Within the field parses all children by field on the given inner
+/// field using the given parser. Useful when a node has multiple
+/// subnodes of the same kind hidden under a single wrapping field.
 pub fn parse_fields_in_field<'a, T: Clone, P>(
     tc: &mut TsCursor<'a>,
     env: &mut ParseEnv,
@@ -314,6 +316,26 @@ where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>
 {
     parse_field(tc, env, &|tc, env| {
         let children = parse_fields(tc, env, parse, name_in);
+        Some(mk_node(&tc.node(), children))
+    }, name)
+}
+
+
+/// Within the field parses all children on the given inner field
+/// using the given parser. Useful when a node has multiple subnodes
+/// of the same kind hidden under a single wrapping field.
+pub fn parse_children_in_field<'a, T: Clone, P, F>(
+    tc: &mut TsCursor<'a>,
+    env: &mut ParseEnv,
+    parse: &P,
+    name: &str,
+    mut filter: F,
+) -> ParseResult<ast::NodeMany<T>>
+where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
+      F: FnMut(&TsCursor<'a>) -> bool + Copy,
+{
+    parse_field(tc, env, &|tc, env| {
+        let children = parse_children(tc, env, parse, filter);
         Some(mk_node(&tc.node(), children))
     }, name)
 }
