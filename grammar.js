@@ -808,7 +808,7 @@ module.exports = grammar({
 
     type_variable_poly: $ => $.type_variable_poly_name,
 
-    type_variable: $ => $.qual_identifier,
+    type_variable: $ => choice($.identifier, $.qual_identifier),
 
     //**************************************************************************
     // OPERATORS

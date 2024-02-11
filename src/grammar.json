@@ -4800,8 +4800,17 @@
       "name": "type_variable_poly_name"
     },
     "type_variable": {
-      "type": "SYMBOL",
-      "name": "qual_identifier"
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "qual_identifier"
+        }
+      ]
     },
     "_operator": {
       "type": "CHOICE",

@@ -43,6 +43,7 @@ impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for Box<T> {
 
 impl Infer<LocalEnv> for ast::Literal {
     fn infer(&self, _env: &mut LocalEnv) -> Type {
+        println!("INFER LIT {}", self);
         match self {
             ast::Literal::Int{..} => Type::int(),
             ast::Literal::Bool{..} => Type::bool(),
@@ -58,8 +59,9 @@ impl Infer<LocalEnv> for ast::Expr {
             Literal{val: lit} => lit.infer(env),
             Lambda {args,body} => {
                 env.save_vars(|env_in| {
-                    let t_args = infer_nodes(&args.node, env_in);
-                    let t_body = infer_node(body,env_in);
+                    let mut vars =  LocalVars::new();
+                    let t_args = args.node.iter().map(|arg| infer_node(arg, &mut (env_in, &mut vars))).collect();
+                    let t_body = infer_node(body, env_in);
                     Type::Fun{
                         args: t_args,
                         ret: t_body,
@@ -106,16 +108,22 @@ impl Infer<LocalEnv> for ast::ExprCond {
     }
 }
 
-
-impl Infer<LocalEnv> for ast::Pattern {
-    fn infer(&self, env: &mut LocalEnv) -> Type {
+impl Infer<(&mut LocalEnv, &mut LocalVars)> for ast::Pattern {
+    fn infer(&self, env: &mut (&mut LocalEnv, &mut LocalVars)) -> Type {
         use ast::Pattern::*;
+        let l_env = &mut env.0;
+        let vars = &mut env.1;
         match self {
             Var {name} => {
-                env.set_var(name.node.clone(), name.id);
-                Type::Ref(env.t_env().node_ref(name.id))
+                match vars.get(&name.node) {
+                    Some(u) => panic!("DUPL VAR IN PATTERN {} at {}", name, u),
+                    None => {
+                        vars.insert(name.node.clone(), name.id);
+                        Type::Ref(l_env.t_env().node_ref(name.id))
+                    }
+                }
             },
-            Lit {value} => value.infer(env),
+            Lit {value} => value.infer(l_env),
             List {elems} => unimplemented!(),
             Tuple {elems} => {
                 let t_elems = infer_nodes(elems, env);
@@ -130,7 +138,7 @@ impl Infer<LocalEnv> for ast::Pattern {
                 t_name
             }
             Typed {pat,t} => {
-                let ut = t.infer(env);
+                let ut = t.infer(l_env);
                 pat.check(env, &ut);
                 ut
             }
@@ -144,6 +152,7 @@ impl Infer<LocalEnv> for ast::Type {
     /// This essetially converts a syntax type into a runtime type
     fn infer(&self, env: &mut LocalEnv) -> Type {
         use ast::Type::*;
+        println!("INFER TYPE {}", self);
         match self {
             Var {name} => Type::Var(name.node.clone()),
             PolyVar{name} => Type::Var(name.node.clone()), // TODO: does this make sense?
@@ -168,5 +177,46 @@ impl Infer<LocalEnv> for ast::Type {
             App {fun,args} => unimplemented!(), // TODO type-app utype
             _ => unimplemented!()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::ast;
+
+
+    fn check_expr(e: &str, t: &str) {
+        let e: ast::Node<ast::Expr> = crate::ast::parse_str(e).expect("Parse error: expr");
+        let t: ast::Node<ast::Type> = crate::ast::parse_str(t).expect("Parse error: type");
+
+        let table = TypeTable::new(vec!["expr".to_string(), "type".to_string()]);
+        let t_env = TEnv::new(table);
+        let mut env = LocalEnv::new(t_env);
+
+        let t = type_env::in_location(&mut env, 1, 0, |env_in| infer_node(&t, env_in));
+
+        println!("\nDEDUCTED TYPE: {}\n", env.t_env_mut().type_table().render_ast(t));
+
+        let te = type_env::in_location(&mut env, 0, 0, |env_in| infer_node(&e, env_in));
+
+        println!("\nINFERRED TYPE: {}\n", env.t_env_mut().type_table().render_ast(te));
+
+        env.t_env_mut().unify(&Type::Ref(te), &Type::Ref(t));
+    }
+
+    #[test]
+    fn check_literals() {
+        check_expr("2137\n", "int");
+        check_expr("true\n", "bool");
+    }
+
+    #[test]
+    fn check_tuples() {
+        check_expr("(21, 37)\n", "int * int");
+        check_expr("(21, true, 37, false)\n", "int * bool * int * bool");
+        check_expr("((21, true), (37, false))\n", "(int * bool) * (int * bool)");
+        check_expr("(21, (true, 37, false))\n", "int * (bool * int * bool)");
+        check_expr("((21, true, 37), false)\n", "(int * bool * int) * bool");
     }
 }

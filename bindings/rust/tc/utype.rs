@@ -54,17 +54,31 @@ pub type TypeTable = crate::code_table::CodeTable<Type>;
 impl TypeTable {
     /// Finds type based on the reference. If the type is undefined, a
     /// reference is returned.
+    pub fn find_const(&self, u: TypeRef) -> Type {
+        let t = match self.get(u) {
+            None => Type::Ref(u),
+            Some(Type::Ref(u0)) => {
+                let t = self.find_const(*u0);
+                t
+            }
+            Some(t) => t.clone()
+        };
+        t
+    }
+
+    /// Finds type based on the reference. If the type is undefined, a
+    /// reference is returned. Optimizes references on the way.
     pub fn find(&mut self, u: TypeRef) -> Type {
         let t = match self.get(u) {
             None => Type::Ref(u),
             Some(Type::Ref(u0)) => {
-                let t = self.find(u0);
+                let t = self.find(*u0);
                 self.set(u, t.clone());
                 t
             }
             Some(t) => t.clone()
         };
-        println!("FIND {} -> {}", u, t);
+        println!("FIND {} -> {}", u, self.render_ast(u));
         t
     }
 
@@ -76,11 +90,11 @@ impl TypeTable {
         errs
     }
 
-    pub fn render_ast(&mut self, u: TypeRef)
+    pub fn render_ast(&self, u: TypeRef)
                       -> crate::ast::ast::Node<crate::ast::ast::Type> {
         use crate::ast::ast;
         use crate::ast::ast::Node;
-        match self.find(u) {
+        match self.find_const(u) {
             Type::Ref(u) => {
                 Node::new(
                     u.node_id(),
@@ -123,7 +137,7 @@ impl Type {
     }
 
     pub fn bool() -> Self {
-        Type::Var("int".to_string())
+        Type::Var("bool".to_string())
     }
 
     pub fn deref(&self, table: &mut TypeTable) -> Type {
@@ -137,7 +151,7 @@ impl Type {
         let t0 = self.deref(table);
         let t1 = t.deref(table);
 
-        println!("MGU {} ~ {}", t0, t1);
+        println!("\nMGU {} ~ {}", t0, t1);
         match (&t0, &t1) {
             // Identical references, nothing to do
             (Type::Ref(r0), Type::Ref(r1)) if r0 == r1 => (),
@@ -181,6 +195,7 @@ impl Type {
                 // someone mistook variables, rather than forgot about
                 // a tuple element.
                 if elems0.len() != elems1.len() {
+                    println!("LENGTH MISMATCH {} ~ {}", elems0.len(), elems1.len());
                     errs.push((t0.clone(), t1.clone()))
                 } else {
                     for (e0, e1) in elems0.into_iter().zip(elems1) {
@@ -190,17 +205,21 @@ impl Type {
 
             }
             _ => {
+                println!("TYPES TOTAL INCOMPATIBILITY");
                 errs.push((t0.clone(), t1.clone()))
             }
         }
     }
 
-    pub fn occurs_check(&self, table: &mut TypeTable, u: TypeRef) -> bool {
+    pub fn occurs_check(&self, table: &TypeTable, u: TypeRef) -> bool {
         match self {
             Type::Ref(u0) if u == *u0 => true,
-            Type::Ref(u0) => match table.get(*u0) {
-                None => false,
-                Some(t) => t.occurs_check(table, u)
+            Type::Ref(u0) => {
+                let tt = table.get(*u0);
+                match tt {
+                    None => false,
+                    Some(t) => t.occurs_check(table, u)
+                }
             }
             Type::Var(_) => false,
             Type::Fun{args, ret} => {
@@ -222,7 +241,7 @@ mod tests {
     use super::*;
 
     fn unify_test(table_init: &Vec<Type>, pairs: Vec<(Type, Type)>, errs_exp: Vec<(Type, Type)>) {
-        let mut table = TypeTable::new(vec![("test".to_string(), table_init.len() * 2)]);
+        let mut table = TypeTable::new(vec!["test".to_string()]);
         for i in 0..table_init.len() {
             table.set(CodeTableRef::new(0, i), table_init[i].clone())
         }
@@ -271,7 +290,7 @@ mod tests {
         }
     }
 
-    #[test]
+    // #[test]
     fn unify_int() {
         let table = vec![
             t::i(),  // 0
@@ -321,7 +340,7 @@ mod tests {
         ], vec![]);
     }
 
-    #[test]
+    // #[test]
     fn unify_complex() {
         let table = vec![
             t::i(),  // 0

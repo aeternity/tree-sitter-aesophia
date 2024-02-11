@@ -1,0 +1,3 @@
+enum TypeError {
+    Unify
+}

@@ -77,8 +77,6 @@ impl ParseError {
 /// Data structure to store parse errors
 pub type ParseErrors = ast::Nodes<ParseError>;
 
-/// Information about CST node subtyping. Maps subtype to its supertype. This says for example that
-/// `expr_if` is a special case of `expr`.
 pub type SubtypeMap = std::collections::HashMap<String, String>;
 
 /// Parsing environment for CST processing.

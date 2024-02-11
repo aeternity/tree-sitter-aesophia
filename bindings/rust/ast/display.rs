@@ -134,12 +134,42 @@ impl Display for FunDef {
 }
 
 impl Display for Type {
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Type::Var { name: _ } => todo!(),
-            Type::PolyVar { name: _ } => todo!(),
-            Type::Fun { args: _, ret: _ } => todo!(),
-            Type::Tuple { elems: _  } => todo!(),
+            Type::Var { name } => write!(f, "{name}"),
+            Type::PolyVar { name } => write!(f, "'{name}"),
+            Type::Fun { args, ret } => {
+                let mut args = args.node.iter();
+                match args.next() {
+                    None => {
+                        write!(f, "()")?
+                    }
+                    Some(fst) => {
+                        write!(f, "({}", fst)?;
+                        for a in args {
+                            write!(f, ", {a}")?;
+                        }
+                    write!(f, ")")?;
+                    }
+                }
+
+                write!(f, " => {ret}")
+            }
+            Type::Tuple { elems  } => {
+                let mut elems = elems.iter();
+                match elems.next() {
+                    None => {
+                        write!(f, "()")
+                    }
+                    Some(fst) => {
+                        write!(f, "({}", fst)?;
+                        for e in elems {
+                            write!(f, ", {e}")?;
+                        }
+                        write!(f, ")")
+                    }
+                }
+            }
             Type::App { fun: _, args: _ } => todo!(),
         }
     }

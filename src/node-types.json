@@ -2471,6 +2471,10 @@
       "required": true,
       "types": [
         {
+          "type": "identifier",
+          "named": true
+        },
+        {
           "type": "qual_identifier",
           "named": true
         }

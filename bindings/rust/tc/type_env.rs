@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef};
-use crate::ast::ast::{QName, Name};
+use crate::ast::ast::{Name};
 use crate::tc::utype::*;
 
 pub struct FunSpec {
@@ -26,6 +26,16 @@ struct Scope {
     subscopes: HashMap<ScopeName, Scope>,
     funs: HashMap<Name, FunSpec>,
     types: HashMap<Name, TypeSpec>,
+}
+
+impl Scope {
+    pub fn new() -> Self {
+        Self {
+            subscopes: HashMap::new(),
+            funs: HashMap::new(),
+            types: HashMap::new(),
+        }
+    }
 }
 
 
@@ -57,6 +67,15 @@ pub trait HasTEnv {
     fn t_env_mut(&mut self) -> &mut TEnv;
 }
 
+impl<Env: HasTEnv, T> HasTEnv for (&mut Env, T) {
+    fn t_env(&self) -> &TEnv {
+        self.0.t_env()
+    }
+    fn t_env_mut(&mut self) -> &mut TEnv {
+        self.0.t_env_mut()
+    }
+}
+
 /// Execute function with another node set as the current location
 pub fn in_node<Env: HasTEnv, F, R>(env: &mut Env, node_id: cst::NodeId, exec: F) -> R
 where F: FnOnce(&mut Env) -> R,
@@ -68,11 +87,24 @@ where F: FnOnce(&mut Env) -> R,
     res
 }
 
+/// Execute function with another file and node set as the current location
+pub fn in_location<Env: HasTEnv, F, R>(env: &mut Env, file_id: cst::FileId, node_id: cst::NodeId, exec: F) -> R
+where F: FnOnce(&mut Env) -> R,
+{
+    let previous_file = env.t_env().current_file;
+    let previous_node = env.t_env().current_node;
+    env.t_env_mut().current_file = file_id;
+    env.t_env_mut().current_node = node_id;
+    let res = exec(env);
+    env.t_env_mut().current_file = previous_file;
+    env.t_env_mut().current_node = previous_node;
+    res
+}
+
 impl HasTEnv for TEnv {
     fn t_env(&self) -> &TEnv {
         self
     }
-
     fn t_env_mut(&mut self) -> &mut TEnv {
         self
     }
@@ -85,6 +117,17 @@ impl cst::HasNodeId for TEnv {
 }
 
 impl TEnv {
+    pub fn new(table: TypeTable) -> Self {
+        Self {
+            top_scope: Scope::new(),
+            current_scope: vec![],
+            usings: vec![],
+            current_node: 0,
+            current_file: 0,
+            type_table: table,
+        }
+    }
+
     pub fn switch_scope(&mut self, scope: ScopePath) {
         self.current_scope = scope;
     }
@@ -156,13 +199,20 @@ impl TEnv {
     pub fn unify(&mut self, t0: &Type, t1: &Type) {
         let errs = self.type_table.unify(t0, t1);
         if !errs.is_empty() {
-            panic!("TYPE ERRORS: {:?}", errs)
+            for (t1, t2) in errs {
+                println!("{} ~ {}", t1, t2);
+            }
+            panic!("TYPE ERRORS")
         }
     }
 
     pub fn unify_here(&mut self, t: &Type) {
         let tref = self.location();
         self.unify(&Type::Ref(tref), t);
+    }
+
+    pub fn type_table(&mut self) -> &mut TypeTable {
+        &mut self.type_table
     }
 }
 
@@ -183,7 +233,6 @@ impl HasTEnv for LocalEnv {
     fn t_env(&self) -> &TEnv {
         &self.global
     }
-
     fn t_env_mut(&mut self) -> &mut TEnv {
         &mut self.global
     }
@@ -204,6 +253,15 @@ impl LocalEnv {
         let res = f(self);
         self.vars = old_vars;
         res
+    }
+
+    pub fn with_vars<F, Res>(&mut self, vars: LocalVars, f: F) -> Res
+    where F: FnOnce(&mut Self) -> Res
+    {
+        self.save_vars(|self_in| {
+            self_in.vars = vars;
+            f(self_in)
+        })
     }
 
     pub fn get_var(&self, name: &Name) -> Option<CodeTableRef> {
