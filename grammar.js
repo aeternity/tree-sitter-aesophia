@@ -139,6 +139,7 @@ module.exports = grammar({
       dispatch($, 'statement', $._statement),
       dispatch($, 'statements', maybe_block($, $._statement)),
       dispatch($, 'scope_declaration', $.scope_declaration),
+      dispatch($, 'function_declaration', $.function_declaration),
       dispatch($, '_scoped_declaration', $._scoped_declaration),
     ),
 

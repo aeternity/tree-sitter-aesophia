@@ -218,6 +218,10 @@ impl CstNode for ast::InContractDecl {
 }
 
 impl CstNode for ast::FunDef {
+    fn ts_dispatch() -> Option<String> {
+        Some("function_declaration".to_string())
+    }
+
     fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::FunDef> {
         let node = &tc.node();
         let modifiers = parse_fields(tc, env, &parse_name, "modifier");

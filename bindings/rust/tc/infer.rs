@@ -45,8 +45,8 @@ impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for Box<T> {
     }
 }
 
-impl Infer<LocalEnv> for ast::Literal {
-    fn infer(&self, _env: &mut LocalEnv) -> Type {
+impl Infer<TEnv> for ast::Literal {
+    fn infer(&self, _env: &mut TEnv) -> Type {
         println!("INFER LIT {}", self);
         match self {
             ast::Literal::Int{..} => Type::int(),
@@ -56,14 +56,14 @@ impl Infer<LocalEnv> for ast::Literal {
     }
 }
 
-impl Infer<LocalEnv> for ast::Expr {
-    fn infer(&self, env: &mut LocalEnv) -> Type {
+impl Infer<TEnv> for ast::Expr {
+    fn infer(&self, env: &mut TEnv) -> Type {
         use ast::Expr::*;
         match self {
-            Literal{val: lit} => lit.infer(env),
+            Literal{val: lit} => lit.infer(env.t_env_mut()),
             Lambda {args,body} => {
-                let mut vars =  LocalVars::new();
-                let t_args = args.node.iter().map(|arg| infer_node(arg, &mut (env, &mut vars))).collect();
+                let mut vars = LocalVars::new();
+                let t_args = args.node.iter().map(|arg| infer_node(arg, &mut (env.t_env_mut(), &mut vars))).collect();
 
                 let t_body = env.with_vars(vars, |env_in| infer_node(body, env_in));
                 Type::Fun{
@@ -122,23 +122,23 @@ impl Infer<LocalEnv> for ast::Expr {
     }
 }
 
-impl Infer<LocalEnv> for ast::ExprArg {
-    fn infer(&self, env: &mut LocalEnv) -> Type {
+impl Infer<TEnv> for ast::ExprArg {
+    fn infer(&self, env: &mut TEnv) -> Type {
         // TODO Named args!
         self.value.infer(env)
     }
 }
 
-impl Infer<LocalEnv> for ast::ExprCond {
-    fn infer(&self, env: &mut LocalEnv) -> Type {
+impl Infer<TEnv> for ast::ExprCond {
+    fn infer(&self, env: &mut TEnv) -> Type {
         self.cond.check(env, &Type::bool());
         let t_e = self.pos.infer(env);
         t_e
     }
 }
 
-impl Infer<(&mut LocalEnv, &mut LocalVars)> for ast::Pattern {
-    fn infer(&self, env: &mut (&mut LocalEnv, &mut LocalVars)) -> Type {
+impl Infer<(&mut TEnv, &mut LocalVars)> for ast::Pattern {
+    fn infer(&self, env: &mut (&mut TEnv, &mut LocalVars)) -> Type {
         use ast::Pattern::*;
         let l_env = &mut env.0;
         let vars = &mut env.1;
@@ -147,7 +147,7 @@ impl Infer<(&mut LocalEnv, &mut LocalVars)> for ast::Pattern {
                 match vars.get(&name.node) {
                     Some(u) => panic!("DUPL VAR IN PATTERN {} at {}", name, u),
                     None => {
-                        vars.insert(name.node.clone(), name.id);
+                        vars.insert(name.node.clone(), l_env.node_ref(name.id));
                         Type::Ref(l_env.t_env().node_ref(name.id))
                     }
                 }
@@ -177,9 +177,9 @@ impl Infer<(&mut LocalEnv, &mut LocalVars)> for ast::Pattern {
     }
 }
 
-impl Infer<LocalEnv> for ast::Type {
+impl Infer<TEnv> for ast::Type {
     /// This essetially converts a syntax type into a runtime type
-    fn infer(&self, env: &mut LocalEnv) -> Type {
+    fn infer(&self, env: &mut TEnv) -> Type {
         use ast::Type::*;
         println!("INFER TYPE {}", self);
         match self {
@@ -209,21 +209,53 @@ impl Infer<LocalEnv> for ast::Type {
     }
 }
 
+impl Infer<TEnv> for ast::FunDef {
+    fn infer(&self, env: &mut TEnv) -> Type {
+        let t_sig = match &self.signature {
+            None => type_here(env),
+            Some(sig) => sig.infer(env)
+        };
+
+        for clause in &self.clauses {
+            clause.check(env, &t_sig);
+        }
+
+        t_sig
+    }
+}
+
+impl Infer<TEnv> for ast::FunClause {
+    fn infer(&self, env: &mut TEnv) -> Type {
+        let mut vars =  LocalVars::new();
+        let t_args = self.args.node.iter().map(|arg| infer_node(arg, &mut (env, &mut vars))).collect();
+        let t_body = env.with_vars(vars, |env_in| infer_node(&self.body, env_in));
+        match &self.ret_type {
+            None => (),
+            Some(ret_t) => {
+                let t_ret = ret_t.infer(env);
+                env.unify(&t_ret, &Type::Ref(t_body));
+            }
+        }
+        Type::Fun{
+            args: t_args,
+            ret: t_body,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ast::ast;
 
-
-    fn check_expr(e: &str, t: &str) {
-        let e: ast::Node<ast::Expr> = crate::ast::parse_str(e).expect("Parse error: expr");
+    fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(e: &str, t: &str) {
+        let e: ast::Node<T> = crate::ast::parse_str(e).expect("Parse error: item");
         let t: ast::Node<ast::Type> = crate::ast::parse_str(t).expect("Parse error: type");
 
-        let table = TypeTable::new(vec!["expr".to_string(), "type".to_string()]);
-        let t_env = TEnv::new(table);
-        let mut env = LocalEnv::new(t_env);
+        let table = TypeTable::new(vec!["item".to_string(), "type".to_string()]);
+        let mut env = TEnv::new(table);
 
-        let t = type_env::in_location(&mut env, 1, 0, |env_in| infer_node(&t, env_in));
+        let t = type_env::in_location(&mut env, 1, 0, |env_in| infer_node(&t, env_in.t_env_mut()));
 
         println!("\nDEDUCTED TYPE: {}\n", env.t_env_mut().type_table().render_ast(t));
 
@@ -234,52 +266,87 @@ mod tests {
         env.t_env_mut().unify(&Type::Ref(te), &Type::Ref(t));
     }
 
+
     #[test]
     fn check_literals() {
-        check_expr("2137\n", "int");
-        check_expr("0\n", "int");
-        // check_expr("-100000\n", "int"); // FIXME (parser goes crazy)
-        check_expr("true\n", "bool");
-        check_expr("false\n", "bool");
+        check_item::<ast::Expr>("2137\n", "int");
+        check_item::<ast::Expr>("0\n", "int");
+        // check_item::<ast::Expr>("-100000\n", "int"); // FIXME (parser goes crazy)
+        check_item::<ast::Expr>("true\n", "bool");
+        check_item::<ast::Expr>("false\n", "bool");
     }
 
     #[test]
     fn check_tuples() {
-        check_expr("(21, 37)\n", "int * int");
-        check_expr("(21, true, 37, false)\n", "int * bool * int * bool");
+        check_item::<ast::Expr>("(21, 37)\n", "int * int");
+        check_item::<ast::Expr>("(21, true, 37, false)\n", "int * bool * int * bool");
 
         // Nested
-        check_expr("((21, true), (37, false))\n", "(int * bool) * (int * bool)");
-        check_expr("((21, true), (false, 37))\n", "(int * bool) * (bool * int)");
-        check_expr("((21, 37), (false, true))\n", "(int * int) * (bool * bool)");
-        check_expr("(21, (true, 37, false))\n", "int * (bool * int * bool)");
-        check_expr("((21, true, 37), false)\n", "(int * bool * int) * bool");
+        check_item::<ast::Expr>("((21, true), (37, false))\n", "(int * bool) * (int * bool)");
+        check_item::<ast::Expr>("((21, true), (false, 37))\n", "(int * bool) * (bool * int)");
+        check_item::<ast::Expr>("((21, 37), (false, true))\n", "(int * int) * (bool * bool)");
+        check_item::<ast::Expr>("(21, (true, 37, false))\n", "int * (bool * int * bool)");
+        check_item::<ast::Expr>("((21, true, 37), false)\n", "(int * bool * int) * bool");
 
         // *THE* edge case
-        check_expr("()", "unit");
+        check_item::<ast::Expr>("()", "unit");
     }
 
     #[test]
     fn check_lambdas() {
-        check_expr("() => 2137", "() => int");
-        check_expr("(x) => 2137", "(int) => int");
-        check_expr("(x, y) => 2137", "(int, int) => int");
+        check_item::<ast::Expr>("() => 2137", "() => int");
+        check_item::<ast::Expr>("(x) => 2137", "(int) => int");
+        check_item::<ast::Expr>("(x, y) => 2137", "(int, int) => int");
 
         // Applications
-        check_expr("(() => 2137)()", "int");
-        check_expr("((x) => 21)(37)", "int");
-        check_expr("((x, y) => 21)(3, 7)", "int");
+        check_item::<ast::Expr>("(() => 2137)()", "int");
+        check_item::<ast::Expr>("((x) => 21)(37)", "int");
+        check_item::<ast::Expr>("((x, y) => 21)(3, 7)", "int");
 
         // Poly-mono
-        check_expr("(x) => x", "(int) => int");
-        check_expr("(x, y) => (y, x)", "(int, int) => (int * int)");
-        check_expr("(x, y) => (y, x)", "(int, bool) => (bool * int)");
+        check_item::<ast::Expr>("(x) => x", "(int) => int");
+        check_item::<ast::Expr>("(x, y) => (y, x)", "(int, int) => (int * int)");
+        check_item::<ast::Expr>("(x, y) => (y, x)", "(int, bool) => (bool * int)");
 
         // Nested
-        check_expr("(f, x) => f(x)", "((int) => bool, int) => bool");
-        check_expr("(f) => (x) => f(x)", "((int) => bool) => (int) => bool");
+        check_item::<ast::Expr>("(f, x) => f(x)", "((int) => bool, int) => bool");
+        check_item::<ast::Expr>("(f) => (x) => f(x)", "((int) => bool) => (int) => bool");
 
         // Shadow
-        check_expr("((x, y) => (x, ((x) => x)(y)))(123, true)", "(int * bool)");
+        check_item::<ast::Expr>("((x, y) => (x, ((x) => x)(y)))(123, true)", "(int * bool)");
+    }
+
+    #[test]
+    fn check_fun_def() {
+        check_item::<ast::FunDef>(
+            "function f() = 123",
+            "() => int"
+        );
+
+        // TODO: POLYMORPHISM!!! This should fail!
+        // check_item::<ast::FunDef>(
+        //     "function f(x) = 123",
+        //     "(int) => int"
+        // );
+
+        check_item::<ast::FunDef>(
+            r#"
+function
+  f : () => int
+  f() = 123
+                "#,
+            "() => int"
+                );
+        check_item::<ast::FunDef>(
+            r#"
+function
+  f : (int) => int
+  f(0) = 321
+  f(x) = x
+                "#,
+            "(int) => int"
+        );
+
+
     }
 }

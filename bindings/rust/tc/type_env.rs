@@ -16,8 +16,7 @@ impl FunSpec {
     }
 }
 
-pub struct TypeSpec {
-}
+pub struct TypeSpec {}
 
 type ScopeName = Name;
 type ScopePath = Vec<Name>;
@@ -26,6 +25,7 @@ struct Scope {
     subscopes: HashMap<ScopeName, Scope>,
     funs: HashMap<Name, FunSpec>,
     types: HashMap<Name, TypeSpec>,
+    vars: HashMap<Name, CodeTableRef>,
 }
 
 impl Scope {
@@ -34,6 +34,7 @@ impl Scope {
             subscopes: HashMap::new(),
             funs: HashMap::new(),
             types: HashMap::new(),
+            vars: HashMap::new(),
         }
     }
 }
@@ -53,6 +54,8 @@ pub struct Using {
     pub select: UsingSelect,
 }
 
+pub type LocalVars = HashMap<Name, CodeTableRef>;
+
 pub struct TEnv {
     top_scope: Scope,
     current_scope: ScopePath,
@@ -60,6 +63,7 @@ pub struct TEnv {
     current_node: cst::NodeId,
     current_file: cst::FileId,
     type_table: CodeTable<Type>,
+    local_vars: LocalVars
 }
 
 pub trait HasTEnv {
@@ -125,6 +129,7 @@ impl TEnv {
             current_node: 0,
             current_file: 0,
             type_table: table,
+            local_vars: LocalVars::new(),
         }
     }
 
@@ -214,44 +219,13 @@ impl TEnv {
     pub fn type_table(&mut self) -> &mut TypeTable {
         &mut self.type_table
     }
-}
-
-pub type LocalVars = HashMap<Name, cst::NodeId>;
-
-pub struct LocalEnv {
-    global: TEnv,
-    vars: LocalVars,
-}
-
-impl cst::HasNodeId for LocalEnv {
-    fn node_id(&self) -> cst::NodeId {
-        self.global.node_id()
-    }
-}
-
-impl HasTEnv for LocalEnv {
-    fn t_env(&self) -> &TEnv {
-        &self.global
-    }
-    fn t_env_mut(&mut self) -> &mut TEnv {
-        &mut self.global
-    }
-}
-
-impl LocalEnv {
-    pub fn new(t_env: TEnv) -> Self {
-        LocalEnv {
-            global: t_env,
-            vars: LocalVars::new(),
-        }
-    }
 
     pub fn save_vars<F, Res>(&mut self, f: F) -> Res
     where F: FnOnce(&mut Self) -> Res
     {
-        let old_vars = self.vars.clone();
+        let old_vars = self.local_vars.clone();
         let res = f(self);
-        self.vars = old_vars;
+        self.local_vars = old_vars;
         res
     }
 
@@ -259,16 +233,17 @@ impl LocalEnv {
     where F: FnOnce(&mut Self) -> Res
     {
         self.save_vars(|self_in| {
-            self_in.vars.extend(vars);
+            self_in.local_vars.extend(vars);
             f(self_in)
         })
     }
 
     pub fn get_var(&self, name: &Name) -> Option<CodeTableRef> {
-        self.vars.get(name).map(|i| self.global.node_ref(*i))
+        self.local_vars.get(name).map(|c| *c)
     }
 
     pub fn set_var(&mut self, name: Name, node_id: cst::NodeId) {
-        self.vars.insert(name, node_id);
+        let loc = self.node_ref(node_id);
+        self.local_vars.insert(name, loc);
     }
 }
