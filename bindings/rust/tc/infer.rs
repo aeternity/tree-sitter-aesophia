@@ -147,7 +147,7 @@ impl Infer<TEnv> for ast::Pattern {
             Var {name} => {
                 let loc = env.code_ref();
                 let t = Type::Ref(loc);
-                let spec = VarSpec::new(loc, t.clone());
+                let spec = VarSpec::new(loc, true, t.clone());
                 env.add_var(name.node.clone(), spec);
                 t
             },
