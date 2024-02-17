@@ -52,6 +52,11 @@ impl std::fmt::Display for CodeTableRef {
 }
 
 
+pub trait HasCodeRef {
+    fn code_ref(&self) -> CodeTableRef;
+}
+
+
 #[derive(Debug)]
 pub struct CodeTable<T> {
     pub tables: Vec<TreeTable<T>>,

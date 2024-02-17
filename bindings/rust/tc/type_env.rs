@@ -1,70 +1,273 @@
-use std::collections::HashMap;
-
 use crate::cst;
-use crate::code_table::{CodeTable, CodeTableRef};
+use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
 use crate::ast::ast::{Name};
 use crate::tc::utype::*;
+use crate::tc::scope::*;
 
-pub struct FunSpec {
-    args: Vec<Type>,
-    ret_t: Type
+#[derive(Clone)]
+pub struct LocalScope {
+    vars: VarEnv,
+    function_name: Name,
 }
 
-impl FunSpec {
-    pub fn new(args: Vec<Type>, ret_t: Type) -> FunSpec {
-        FunSpec {args, ret_t}
-    }
-}
-
-pub struct TypeSpec {}
-
-type ScopeName = Name;
-type ScopePath = Vec<Name>;
-
-struct Scope {
-    subscopes: HashMap<ScopeName, Scope>,
-    funs: HashMap<Name, FunSpec>,
-    types: HashMap<Name, TypeSpec>,
-    vars: HashMap<Name, CodeTableRef>,
-}
-
-impl Scope {
-    pub fn new() -> Self {
+impl LocalScope {
+    fn new(name: Name) -> Self {
         Self {
-            subscopes: HashMap::new(),
-            funs: HashMap::new(),
-            types: HashMap::new(),
-            vars: HashMap::new(),
+            vars: VarEnv::new(),
+            function_name: name,
         }
     }
 }
 
-
-#[derive(Clone, Debug)]
-pub enum UsingSelect {
-    Include(Vec<Name>),
-    Exclude(Vec<Name>),
-    Rename(Name),
-    All
-}
-
-#[derive(Clone, Debug)]
-pub struct Using {
-    pub scope: ScopePath,
-    pub select: UsingSelect,
-}
-
-pub type LocalVars = HashMap<Name, CodeTableRef>;
-
 pub struct TEnv {
     top_scope: Scope,
     current_scope: ScopePath,
+    local_scope: Option<LocalScope>,
     usings: Vec<Using>,
     current_node: cst::NodeId,
     current_file: cst::FileId,
     type_table: CodeTable<Type>,
-    local_vars: LocalVars
 }
+
+/// Constructors
+impl TEnv {
+    pub fn new(table: TypeTable) -> Self {
+        let loc = CodeTableRef::new(0, 0);
+        Self {
+            top_scope: Scope::new(loc, ScopeKind::TopLevel),
+            current_scope: vec![],
+            usings: vec![],
+            current_node: loc.node_id(),
+            current_file: loc.file_id(),
+            type_table: table,
+            local_scope: None,
+        }
+    }
+}
+
+/// Scopes
+impl TEnv {
+    /// Adds a new scope within the current scope.
+    fn create_scope(&mut self, name: Name, kind: ScopeKind) {
+        let loc = self.code_ref();
+        let current = &mut self.current_scope_mut();
+        match current.subscopes.get(&name) {
+            Some(_) => panic!("Duplicate scope"),
+            None => {
+                let scope = Scope::new(loc, kind);
+                current.subscopes.insert(name, scope);
+            }
+        }
+    }
+
+    /// Opens scope under absolute path.
+    pub fn open_scope_abs(&mut self, scope: ScopePath) {
+        self.current_scope = scope;
+    }
+
+    /// Opens scope under relative path.
+    pub fn open_scope(&mut self, scope: Name) {
+        let current = &mut self.current_scope;
+        current.push(scope);
+    }
+
+    /// Closes scope by moving to the superscope. Returns the name of
+    /// the closed scope, or `None` if in already on the top level.
+    pub fn pop_scope(&mut self) -> Option<Name> {
+        self.current_scope.pop()
+    }
+
+    /// Finds reference to scope by absolute path without opening it.
+    pub fn get_scope_abs<'a>(&'a self, path: ScopePath) -> &'a Scope {
+        let mut scope = &self.top_scope;
+        for name in path {
+            let next_scope = &scope.subscopes[&name];
+            scope = next_scope;
+        }
+        scope
+    }
+
+    /// Finds mutable reference to scope by absolute path without
+    /// opening it.
+    pub fn get_scope_abs_mut<'a>(&'a mut self, path: ScopePath) -> &'a mut Scope {
+        let mut scope = &mut self.top_scope;
+        for name in path {
+            let next_scope = scope.subscopes.get_mut(&name).expect("Not found scope");
+            scope = next_scope;
+        }
+        scope
+    }
+
+    /// Returns reference to the current scope.
+    pub fn current_scope<'a>(&'a self) -> &'a Scope {
+        let current = &self.current_scope.clone();
+        self.get_scope_abs(current.clone())
+    }
+
+    /// Returns mutable reference to the current scope.
+    pub fn current_scope_mut<'a>(&'a mut self) -> &'a mut Scope {
+        let current = &self.current_scope.clone();
+        self.get_scope_abs_mut(current.clone())
+    }
+
+    /// Checks whether local scope is open
+    pub fn is_local(&self) -> bool {
+        self.local_scope.is_some()
+    }
+
+    /// Executes a function in the given scope by relative path. The
+    /// scope has to exist beforehand. Does not work if local scope is
+    /// open.
+    pub fn in_scope<F, R>(&mut self, name: Name, fun: F) -> R
+    where F: FnOnce(&mut Self) -> R {
+        if self.is_local() {
+            panic!("Global in local");
+        }
+
+        self.open_scope(name);
+        let res = fun(self);
+        self.pop_scope();
+        res
+    }
+
+    /// Executes a function in the given scope by relative path. Does
+    /// not work if local scope is already open.
+    pub fn in_local_scope<F, R>(&mut self, name: Name, fun: F) -> R
+    where F: FnOnce(&mut Self) -> R {
+        if self.is_local() {
+            panic!("Reopen local");
+        }
+
+        self.local_scope = Some(LocalScope::new(name));
+        let res = fun(self);
+        self.local_scope = None;
+        res
+    }
+
+    /// Lists currently visible scopes.
+    pub fn visible_scopes<'a>(&'a self) -> impl Iterator<Item=&'a Scope> {
+        // TODO actually all scopes
+        std::iter::once(self.current_scope())
+    }
+}
+
+/// Access
+impl TEnv {
+    /// Registers a function in the current scope. Fails in a local
+    /// scope.
+    pub fn add_fun(&mut self, name: Name, spec: FunSpec) {
+        if self.is_local() {
+            panic!("Fundef in local");
+        }
+
+        let scope = self.current_scope_mut();
+        let funs = &mut scope.funs;
+        funs.insert(name, spec);
+    }
+
+    /// Registers a variable in the current scope. If the scope is
+    /// local, the variable is registered in the local
+    /// scope. Otherwise the current global scope fathers the
+    /// variable. If the variable was already defined, returns the
+    /// previous definition's spec.
+    pub fn add_var(&mut self, name: Name, spec: VarSpec) -> Option<VarSpec> {
+        match self.local_scope.as_mut() {
+            Some(ls) => {
+                ls.vars.insert(name, spec)
+            }
+            None => {
+                let scope = &mut self.current_scope_mut();
+                if scope.vars.contains_key(&name) {
+                    panic!("Redefinition of global var");
+                }
+                scope.vars.insert(name, spec)
+            }
+        }
+    }
+
+    /// Finds a function in the global scope.
+    pub fn get_fun<'a>(&'a self, name: &Name) -> Option<&'a FunSpec> {
+        self.visible_scopes().find_map(|s| s.funs.get(name))
+    }
+
+    /// Finds variable by name in the local scope. If not in local
+    /// scope, returns None.
+    pub fn get_local_var<'a>(&'a self, name: &Name) -> Option<&'a VarSpec> {
+        match &self.local_scope {
+            None => None,
+            Some(ls) => ls.vars.get(name)
+        }
+    }
+
+    /// Finds variable by name in the global scope. Ignores local scope.
+    pub fn get_global_var<'a>(&'a self, name: &Name) -> Option<&'a VarSpec> {
+        self.current_scope().vars.get(name)
+    }
+
+    /// Finds variable by name. First looks in the local scope, then
+    /// in the global. TODO: look for functions too and return a
+    /// FunSpec.
+    pub fn get_var<'a>(&'a self, name: &Name) -> Option<&'a VarSpec> {
+        self.get_local_var(name)
+            .or_else(|| self.get_global_var(name))
+    }
+
+    /// Executes a function and rolls back all changes to the local
+    /// variables after.
+    pub fn with_local_vars<F, R>(&mut self, fun: F) -> R
+    where F: FnOnce(&mut Self) -> R {
+        // TODO: check for duplicate patterns
+        match self.local_scope.clone() {
+            None => panic!("Binder in non-local scope"),
+            Some(ls) => {
+                let res = fun(self);
+                self.local_scope = Some(ls);
+                res
+            }
+        }
+    }
+}
+
+impl TEnv {
+    /// Returns code table reference to a given node in the currently
+    /// visited file
+    pub fn node_ref(&self, node_id: cst::NodeId) -> CodeTableRef {
+        let file = self.current_file;
+        CodeTableRef::new(file, node_id)
+    }
+
+    /// Unifies two types in this environment
+    pub fn unify(&mut self, t0: &Type, t1: &Type) {
+        let errs = self.type_table.unify(t0, t1);
+        if !errs.is_empty() {
+            for (t1, t2) in errs {
+                println!("{} ~ {}", t1, t2);
+            }
+            panic!("TYPE ERRORS")
+        }
+    }
+
+    /// Unifies types with the currently visited node
+    pub fn unify_here(&mut self, t: &Type) {
+        let tref = self.code_ref();
+        self.unify(&Type::Ref(tref), t);
+    }
+
+    /// Returns the internal type table
+    pub fn type_table(&mut self) -> &mut TypeTable {
+        &mut self.type_table
+    }
+
+}
+
+impl HasCodeRef for TEnv {
+    fn code_ref(&self) -> CodeTableRef {
+        let file = self.current_file;
+        let node = self.current_node;
+        CodeTableRef::new(file, node)
+    }
+}
+
 
 pub trait HasTEnv {
     fn t_env(&self) -> &TEnv;
@@ -117,133 +320,5 @@ impl HasTEnv for TEnv {
 impl cst::HasNodeId for TEnv {
     fn node_id(&self) -> cst::NodeId {
         self.current_node
-    }
-}
-
-impl TEnv {
-    pub fn new(table: TypeTable) -> Self {
-        Self {
-            top_scope: Scope::new(),
-            current_scope: vec![],
-            usings: vec![],
-            current_node: 0,
-            current_file: 0,
-            type_table: table,
-            local_vars: LocalVars::new(),
-        }
-    }
-
-    pub fn switch_scope(&mut self, scope: ScopePath) {
-        self.current_scope = scope;
-    }
-
-    pub fn push_scope(&mut self, scope: Name) {
-        let current = &mut self.current_scope;
-        current.push(scope);
-    }
-
-    pub fn pop_scope(&mut self) -> Option<Name> {
-        self.current_scope.pop()
-    }
-
-    pub fn get_scope_abs<'a>(&'a self, path: ScopePath) -> &'a Scope {
-        let mut scope = &self.top_scope;
-        for name in path {
-            let next_scope = &scope.subscopes[&name];
-            scope = next_scope;
-        }
-        scope
-    }
-
-    pub fn get_scope_abs_mut<'a>(&'a mut self, path: ScopePath) -> &'a mut Scope {
-        let mut scope = &mut self.top_scope;
-        for name in path {
-            let next_scope = scope.subscopes.get_mut(&name).expect("Not found scope");
-            scope = next_scope;
-        }
-        scope
-    }
-
-    pub fn current_scope<'a>(&'a self) -> &'a Scope {
-        let current = &self.current_scope.clone();
-        self.get_scope_abs(current.clone())
-    }
-
-    pub fn current_scope_mut<'a>(&'a mut self) -> &'a mut Scope {
-        let current = &self.current_scope.clone();
-        self.get_scope_abs_mut(current.clone())
-    }
-
-    pub fn add_fun(&mut self, name: Name, args: Vec<Type>, ret_t: Type) {
-        let scope = self.current_scope_mut();
-        let spec = FunSpec::new(args, ret_t);
-        let funs = &mut scope.funs;
-        funs.insert(name, spec);
-    }
-
-    pub fn visible_scopes<'a>(&'a self) -> impl Iterator<Item=&'a Scope> {
-        // TODO actually all scopes
-        std::iter::once(self.current_scope())
-    }
-
-    pub fn get_fun<'a>(&'a self, name: Name) -> Option<&'a FunSpec> {
-        self.visible_scopes().find_map(|s| s.funs.get(&name))
-    }
-
-    pub fn location(&self) -> CodeTableRef {
-        let file = self.current_file;
-        let node = self.current_node;
-        CodeTableRef::new(file, node)
-    }
-
-    pub fn node_ref(&self, node_id: cst::NodeId) -> CodeTableRef {
-        let file = self.current_file;
-        CodeTableRef::new(file, node_id)
-    }
-
-    pub fn unify(&mut self, t0: &Type, t1: &Type) {
-        let errs = self.type_table.unify(t0, t1);
-        if !errs.is_empty() {
-            for (t1, t2) in errs {
-                println!("{} ~ {}", t1, t2);
-            }
-            panic!("TYPE ERRORS")
-        }
-    }
-
-    pub fn unify_here(&mut self, t: &Type) {
-        let tref = self.location();
-        self.unify(&Type::Ref(tref), t);
-    }
-
-    pub fn type_table(&mut self) -> &mut TypeTable {
-        &mut self.type_table
-    }
-
-    pub fn save_vars<F, Res>(&mut self, f: F) -> Res
-    where F: FnOnce(&mut Self) -> Res
-    {
-        let old_vars = self.local_vars.clone();
-        let res = f(self);
-        self.local_vars = old_vars;
-        res
-    }
-
-    pub fn with_vars<F, Res>(&mut self, vars: LocalVars, f: F) -> Res
-    where F: FnOnce(&mut Self) -> Res
-    {
-        self.save_vars(|self_in| {
-            self_in.local_vars.extend(vars);
-            f(self_in)
-        })
-    }
-
-    pub fn get_var(&self, name: &Name) -> Option<CodeTableRef> {
-        self.local_vars.get(name).map(|c| *c)
-    }
-
-    pub fn set_var(&mut self, name: Name, node_id: cst::NodeId) {
-        let loc = self.node_ref(node_id);
-        self.local_vars.insert(name, loc);
     }
 }

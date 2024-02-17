@@ -1,4 +1,12 @@
+use std::collections::HashSet;
 use crate::code_table::{CodeTableRef};
+
+pub enum Variance {
+    Covariant,
+    Contravariant,
+    Bivariant,
+    Invariant,
+}
 
 pub type TypeRef = CodeTableRef;
 
@@ -237,6 +245,26 @@ impl Type {
             _ => unimplemented!()
         }
     }
+
+    // pub fn type_vars(&self, table: &TypeTable) -> HashSet<Name> {
+    //     let mut res = HashSet::new();
+
+    //     fn go(t: &Type, res: HashSet<ast::Name>) {
+    //         match t {
+    //             Type::Ref(_) => (),
+    //             Type::Var(name) => res.insert(name),
+    //             Type::Fun{args, ret} => {
+    //                 for a in args {
+    //                     go(&a)
+    //                 }
+    //                 go(ret_t)
+    //             }
+    //         }
+    //     }
+
+    //     go(self);
+    //     res
+    // }
 }
 
 

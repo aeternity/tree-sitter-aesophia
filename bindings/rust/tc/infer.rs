@@ -1,7 +1,9 @@
 use crate::ast::ast;
 use crate::tc::*;
 use type_env::*;
+use scope::*;
 use utype::*;
+use crate::code_table::HasCodeRef;
 
 trait Infer<Env: HasTEnv> {
     fn infer(&self, env: &mut Env) -> Type;
@@ -20,7 +22,7 @@ impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for ast::Node<T> {
 
 fn infer_node<Env: HasTEnv, T: Infer<Env>>(node: &ast::Node<T>, env: &mut Env) -> TypeRef {
     in_node(env, node.id, |env_in| {
-        let u = env_in.t_env().location();
+        let u = env_in.t_env().code_ref();
         node.node.check(env_in, &Type::Ref(u));
         u
     })
@@ -31,7 +33,7 @@ fn infer_nodes<Env: HasTEnv, T: Infer<Env>>(xs: &ast::Nodes<T>, env: &mut Env) -
 }
 
 fn type_ref_here<Env: HasTEnv>(env: &Env) -> TypeRef {
-    env.t_env().location()
+    env.t_env().code_ref()
 }
 
 fn type_here<Env: HasTEnv>(env: &Env) -> Type {
@@ -47,7 +49,6 @@ impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for Box<T> {
 
 impl Infer<TEnv> for ast::Literal {
     fn infer(&self, _env: &mut TEnv) -> Type {
-        println!("INFER LIT {}", self);
         match self {
             ast::Literal::Int{..} => Type::int(),
             ast::Literal::Bool{..} => Type::bool(),
@@ -62,10 +63,12 @@ impl Infer<TEnv> for ast::Expr {
         match self {
             Literal{val: lit} => lit.infer(env.t_env_mut()),
             Lambda {args,body} => {
-                let mut vars = LocalVars::new();
-                let t_args = args.node.iter().map(|arg| infer_node(arg, &mut (env.t_env_mut(), &mut vars))).collect();
+                let t_args = args.node
+                    .iter()
+                    .map(|arg| infer_node(arg, env))
+                    .collect();
 
-                let t_body = env.with_vars(vars, |env_in| infer_node(body, env_in));
+                let t_body = env.with_local_vars(|env_in| infer_node(body, env_in));
                 Type::Fun{
                     args: t_args,
                     ret: t_body,
@@ -113,7 +116,7 @@ impl Infer<TEnv> for ast::Expr {
             Var {var} => {
                 match env.get_var(&var.name.node) {
                     None => panic!("UNDEFINED VAR {}", var.name.node),
-                    Some(u) => Type::Ref(u)
+                    Some(spec) => Type::Ref(spec.code_ref())
                 }
             },
             Block {stmts,value} => todo!(),
@@ -137,22 +140,18 @@ impl Infer<TEnv> for ast::ExprCond {
     }
 }
 
-impl Infer<(&mut TEnv, &mut LocalVars)> for ast::Pattern {
-    fn infer(&self, env: &mut (&mut TEnv, &mut LocalVars)) -> Type {
+impl Infer<TEnv> for ast::Pattern {
+    fn infer(&self, env: &mut TEnv) -> Type {
         use ast::Pattern::*;
-        let l_env = &mut env.0;
-        let vars = &mut env.1;
         match self {
             Var {name} => {
-                match vars.get(&name.node) {
-                    Some(u) => panic!("DUPL VAR IN PATTERN {} at {}", name, u),
-                    None => {
-                        vars.insert(name.node.clone(), l_env.node_ref(name.id));
-                        Type::Ref(l_env.t_env().node_ref(name.id))
-                    }
-                }
+                let loc = env.code_ref();
+                let t = Type::Ref(loc);
+                let spec = VarSpec::new(loc, t.clone());
+                env.add_var(name.node.clone(), spec);
+                t
             },
-            Lit {value} => value.infer(l_env),
+            Lit {value} => value.infer(env),
             List {elems} => todo!(),
             Tuple {elems} => {
                 let t_elems = infer_nodes(elems, env);
@@ -167,7 +166,7 @@ impl Infer<(&mut TEnv, &mut LocalVars)> for ast::Pattern {
                 t_name
             }
             Typed {pat,t} => {
-                let ut = t.infer(l_env);
+                let ut = t.infer(env);
                 pat.check(env, &ut);
                 ut
             }
@@ -211,24 +210,27 @@ impl Infer<TEnv> for ast::Type {
 
 impl Infer<TEnv> for ast::FunDef {
     fn infer(&self, env: &mut TEnv) -> Type {
-        let t_sig = match &self.signature {
-            None => type_here(env),
-            Some(sig) => sig.infer(env)
-        };
+        let name = self.name.node.clone();
+        env.in_local_scope(name, |env_in| {
+            let t_sig = match &self.signature {
+                None => type_here(env_in),
+                Some(sig) => sig.infer(env_in)
+            };
 
-        for clause in &self.clauses {
-            clause.check(env, &t_sig);
-        }
+            for clause in &self.clauses {
+                clause.check(env_in, &t_sig);
+            }
 
-        t_sig
+            t_sig
+        })
     }
 }
 
 impl Infer<TEnv> for ast::FunClause {
     fn infer(&self, env: &mut TEnv) -> Type {
-        let mut vars =  LocalVars::new();
-        let t_args = self.args.node.iter().map(|arg| infer_node(arg, &mut (env, &mut vars))).collect();
-        let t_body = env.with_vars(vars, |env_in| infer_node(&self.body, env_in));
+        let t_args = self.args.node
+            .iter().map(|arg| infer_node(arg, env)).collect();
+        let t_body = env.with_local_vars(|env_in| infer_node(&self.body, env_in));
         match &self.ret_type {
             None => (),
             Some(ret_t) => {
@@ -243,93 +245,119 @@ impl Infer<TEnv> for ast::FunClause {
     }
 }
 
+// fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) -> () {
+//     env.in_scope(scope, |env| {
+
+//     })
+// }
+
+fn check_module(module: &ast::Module, env: &mut TEnv) -> () {
+
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ast::ast;
 
-    fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(e: &str, t: &str) {
+    fn check_in<T: crate::cst_ast::CstNode + Infer<TEnv>>(env: &mut TEnv, e: &str, t: &str) {
         let e: ast::Node<T> = crate::ast::parse_str(e).expect("Parse error: item");
         let t: ast::Node<ast::Type> = crate::ast::parse_str(t).expect("Parse error: type");
 
-        let table = TypeTable::new(vec!["item".to_string(), "type".to_string()]);
-        let mut env = TEnv::new(table);
-
-        let t = type_env::in_location(&mut env, 1, 0, |env_in| infer_node(&t, env_in.t_env_mut()));
+        let t = type_env::in_location(env, 1, 0, |env_in| infer_node(&t, env_in.t_env_mut()));
 
         println!("\nDEDUCTED TYPE: {}\n", env.t_env_mut().type_table().render_ast(t));
 
-        let te = type_env::in_location(&mut env, 0, 0, |env_in| infer_node(&e, env_in));
+        let te = type_env::in_location(env, 0, 0, |env_in| infer_node(&e, env_in));
 
         println!("\nINFERRED TYPE: {}\n", env.t_env_mut().type_table().render_ast(te));
 
         env.t_env_mut().unify(&Type::Ref(te), &Type::Ref(t));
     }
 
+    fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(local: bool, e: &str, t: &str) {
+        let table = TypeTable::new(vec!["item".to_string(), "type".to_string()]);
+        let mut env = TEnv::new(table);
+
+        if local {
+            env.in_local_scope("local".to_string(), |env_in| check_in::<T>(env_in, e, t))
+        } else {
+            check_in::<T>(&mut env, e, t)
+        }
+    }
+
+    fn check_local<T: crate::cst_ast::CstNode + Infer<TEnv>>(e: &str, t: &str) {
+        check_item::<T>(true, e, t)
+    }
+
+    fn check_global<T: crate::cst_ast::CstNode + Infer<TEnv>>(e: &str, t: &str) {
+        check_item::<T>(false, e, t)
+    }
+
 
     #[test]
     fn check_literals() {
-        check_item::<ast::Expr>("2137\n", "int");
-        check_item::<ast::Expr>("0\n", "int");
-        // check_item::<ast::Expr>("-100000\n", "int"); // FIXME (parser goes crazy)
-        check_item::<ast::Expr>("true\n", "bool");
-        check_item::<ast::Expr>("false\n", "bool");
+        check_local::<ast::Expr>("2137\n", "int");
+        check_local::<ast::Expr>("0\n", "int");
+        // check_local::<ast::Expr>("-100000\n", "int"); // FIXME (parser goes crazy)
+        check_local::<ast::Expr>("true\n", "bool");
+        check_local::<ast::Expr>("false\n", "bool");
     }
 
     #[test]
     fn check_tuples() {
-        check_item::<ast::Expr>("(21, 37)\n", "int * int");
-        check_item::<ast::Expr>("(21, true, 37, false)\n", "int * bool * int * bool");
+        check_local::<ast::Expr>("(21, 37)\n", "int * int");
+        check_local::<ast::Expr>("(21, true, 37, false)\n", "int * bool * int * bool");
 
         // Nested
-        check_item::<ast::Expr>("((21, true), (37, false))\n", "(int * bool) * (int * bool)");
-        check_item::<ast::Expr>("((21, true), (false, 37))\n", "(int * bool) * (bool * int)");
-        check_item::<ast::Expr>("((21, 37), (false, true))\n", "(int * int) * (bool * bool)");
-        check_item::<ast::Expr>("(21, (true, 37, false))\n", "int * (bool * int * bool)");
-        check_item::<ast::Expr>("((21, true, 37), false)\n", "(int * bool * int) * bool");
+        check_local::<ast::Expr>("((21, true), (37, false))\n", "(int * bool) * (int * bool)");
+        check_local::<ast::Expr>("((21, true), (false, 37))\n", "(int * bool) * (bool * int)");
+        check_local::<ast::Expr>("((21, 37), (false, true))\n", "(int * int) * (bool * bool)");
+        check_local::<ast::Expr>("(21, (true, 37, false))\n", "int * (bool * int * bool)");
+        check_local::<ast::Expr>("((21, true, 37), false)\n", "(int * bool * int) * bool");
 
         // *THE* edge case
-        check_item::<ast::Expr>("()", "unit");
+        check_local::<ast::Expr>("()", "unit");
     }
 
     #[test]
     fn check_lambdas() {
-        check_item::<ast::Expr>("() => 2137", "() => int");
-        check_item::<ast::Expr>("(x) => 2137", "(int) => int");
-        check_item::<ast::Expr>("(x, y) => 2137", "(int, int) => int");
+        check_local::<ast::Expr>("() => 2137", "() => int");
+        check_local::<ast::Expr>("(x) => 2137", "(int) => int");
+        check_local::<ast::Expr>("(x, y) => 2137", "(int, int) => int");
 
         // Applications
-        check_item::<ast::Expr>("(() => 2137)()", "int");
-        check_item::<ast::Expr>("((x) => 21)(37)", "int");
-        check_item::<ast::Expr>("((x, y) => 21)(3, 7)", "int");
+        check_local::<ast::Expr>("(() => 2137)()", "int");
+        check_local::<ast::Expr>("((x) => 21)(37)", "int");
+        check_local::<ast::Expr>("((x, y) => 21)(3, 7)", "int");
 
         // Poly-mono
-        check_item::<ast::Expr>("(x) => x", "(int) => int");
-        check_item::<ast::Expr>("(x, y) => (y, x)", "(int, int) => (int * int)");
-        check_item::<ast::Expr>("(x, y) => (y, x)", "(int, bool) => (bool * int)");
+        check_local::<ast::Expr>("(x) => x", "(int) => int");
+        check_local::<ast::Expr>("(x, y) => (y, x)", "(int, int) => (int * int)");
+        check_local::<ast::Expr>("(x, y) => (y, x)", "(int, bool) => (bool * int)");
 
         // Nested
-        check_item::<ast::Expr>("(f, x) => f(x)", "((int) => bool, int) => bool");
-        check_item::<ast::Expr>("(f) => (x) => f(x)", "((int) => bool) => (int) => bool");
+        check_local::<ast::Expr>("(f, x) => f(x)", "((int) => bool, int) => bool");
+        check_local::<ast::Expr>("(f) => (x) => f(x)", "((int) => bool) => (int) => bool");
 
         // Shadow
-        check_item::<ast::Expr>("((x, y) => (x, ((x) => x)(y)))(123, true)", "(int * bool)");
+        check_local::<ast::Expr>("((x, y) => (x, ((x) => x)(y)))(123, true)", "(int * bool)");
     }
 
     #[test]
     fn check_fun_def() {
-        check_item::<ast::FunDef>(
+        check_global::<ast::FunDef>(
             "function f() = 123",
             "() => int"
         );
 
         // TODO: POLYMORPHISM!!! This should fail!
-        // check_item::<ast::FunDef>(
+        // check_local::<ast::FunDef>(
         //     "function f(x) = 123",
         //     "(int) => int"
         // );
 
-        check_item::<ast::FunDef>(
+        check_global::<ast::FunDef>(
             r#"
 function
   f : () => int
@@ -337,7 +365,7 @@ function
                 "#,
             "() => int"
                 );
-        check_item::<ast::FunDef>(
+        check_global::<ast::FunDef>(
             r#"
 function
   f : (int) => int
