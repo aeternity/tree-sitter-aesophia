@@ -4,6 +4,7 @@ use crate::code_table::{CodeTableRef, HasCodeRef};
 use crate::ast::ast::{Name};
 use crate::tc::utype::*;
 
+/// Function specification for type checking
 #[derive(Clone)]
 pub struct FunSpec {
     location: CodeTableRef,
@@ -31,7 +32,7 @@ impl HasCodeRef for FunSpec {
     }
 }
 
-
+/// Type definition specification for type checking
 #[derive(Clone)]
 pub struct TypeSpec {
     location: CodeTableRef,
@@ -49,10 +50,12 @@ impl HasCodeRef for TypeSpec {
     }
 }
 
-
+/// Variable specification for type checking. Used for both local and
+/// global variables.
 #[derive(Clone)]
 pub struct VarSpec {
     location: CodeTableRef,
+    local: bool,
     t: Type
 }
 
@@ -63,8 +66,8 @@ impl HasCodeRef for VarSpec {
 }
 
 impl VarSpec {
-    pub fn new(location: CodeTableRef, t: Type) -> VarSpec {
-        VarSpec {location, t}
+    pub fn new(location: CodeTableRef, local: bool, t: Type) -> VarSpec {
+        VarSpec {location, local, t}
     }
 }
 
@@ -77,6 +80,8 @@ pub type TypedefEnv = HashMap<Name, TypeSpec>;
 pub type ScopeName = Name;
 pub type ScopePath = Vec<Name>;
 
+/// Header of a scope. Used for example to distinguish between
+/// contracts from namespaces.
 pub enum ScopeKind {
     Contract {
         payable: bool,
@@ -89,6 +94,7 @@ pub enum ScopeKind {
     TopLevel
 }
 
+/// Single scope instance. Can be for example a namespace or a contract.
 pub struct Scope {
     pub location: CodeTableRef,
     pub subscopes: HashMap<ScopeName, Scope>,
@@ -117,14 +123,19 @@ impl HasCodeRef for Scope {
     }
 }
 
+
+/// Accessor for `using` directives
 #[derive(Clone, Debug)]
 pub enum UsingSelect {
-    Include(Vec<Name>),
+    /// Blacklist imported names. Make empty to import everything.
     Exclude(Vec<Name>),
+    /// Whitelist imported names
+    Include(Vec<Name>),
+    /// Alias the scope
     Rename(Name),
-    All
 }
 
+/// Specification of a `using` directive in context.
 #[derive(Clone, Debug)]
 pub struct Using {
     pub scope: ScopePath,

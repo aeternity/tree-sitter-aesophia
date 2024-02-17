@@ -4,9 +4,14 @@ use crate::ast::ast::{Name};
 use crate::tc::utype::*;
 use crate::tc::scope::*;
 
+/// In-function scope. Certain operations (such as typechecking
+/// expressions) are only allowed when this special scope is defined.
 #[derive(Clone)]
 pub struct LocalScope {
+    /// Local variables. Do not confuse with "global" variables
+    /// defined outside the function.
     vars: VarEnv,
+    /// Currently visited function's name.
     function_name: Name,
 }
 
@@ -19,13 +24,23 @@ impl LocalScope {
     }
 }
 
+/// Type environment.
 pub struct TEnv {
+    /// The root of the scope tree.
     top_scope: Scope,
+    /// Path to the currently visited scope in the scope tree.
     current_scope: ScopePath,
+    /// If visiting a function, this defines the local
+    /// scope. Otherwise, is None.
     local_scope: Option<LocalScope>,
+    /// List of all currently open `using` directives for name lookup.
     usings: Vec<Using>,
+    /// Currently visited node id
     current_node: cst::NodeId,
+    /// Currently visited file id
     current_file: cst::FileId,
+    /// Type table is dynamically built during the inference. It maps
+    /// code references to assigned types, whenever it makes sense.
     type_table: CodeTable<Type>,
 }
 
@@ -48,7 +63,7 @@ impl TEnv {
 /// Scopes
 impl TEnv {
     /// Adds a new scope within the current scope.
-    fn create_scope(&mut self, name: Name, kind: ScopeKind) {
+    pub fn create_scope(&mut self, name: Name, kind: ScopeKind) {
         let loc = self.code_ref();
         let current = &mut self.current_scope_mut();
         match current.subscopes.get(&name) {
