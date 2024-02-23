@@ -61,7 +61,7 @@ impl Infer<TEnv> for ast::Expr {
     fn infer(&self, env: &mut TEnv) -> Type {
         use ast::Expr::*;
         match self {
-            Literal{val: lit} => lit.infer(env.t_env_mut()),
+            Literal{val: lit} => lit.infer(env),
             Lambda {args,body} => {
                 let t_args = args.node
                     .iter()
@@ -74,7 +74,11 @@ impl Infer<TEnv> for ast::Expr {
                     ret: t_body,
                 }
             }
-            Typed {expr,t} => todo!(),
+            Typed {expr,t} => {
+                let t_expr = expr.infer(env);
+                t.check(env, &t_expr);
+                t_expr
+            }
             BinOp {op,op_l,op_r} => todo!(),
             UnOp {op,op_r} => todo!(),
             App {fun,args} => {
@@ -302,6 +306,12 @@ mod tests {
         // check_local::<ast::Expr>("-100000\n", "int"); // FIXME (parser goes crazy)
         check_local::<ast::Expr>("true\n", "bool");
         check_local::<ast::Expr>("false\n", "bool");
+    }
+
+    #[test]
+    fn check_typed() {
+        check_local::<ast::Expr>("1 : int\n", "int");
+        // TODO: add more tests
     }
 
     #[test]
