@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-use crate::code_table::{CodeTableRef};
+use crate::code_table::CodeTableRef;
 
 pub enum Variance {
     Covariant,

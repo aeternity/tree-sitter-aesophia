@@ -1,6 +1,6 @@
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
-use crate::ast::ast::{Name};
+use crate::ast::ast::Name;
 use crate::tc::utype::*;
 use crate::tc::scope::*;
 
