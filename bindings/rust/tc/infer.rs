@@ -80,7 +80,19 @@ impl Infer<TEnv> for ast::Expr {
                 t_expr
             }
             BinOp {op,op_l,op_r} => todo!(),
-            UnOp {op,op_r} => todo!(),
+            UnOp {op,op_r} => {
+                let t_expected = match op.node {
+                    ast::UnOp::Neg => Type::int(),
+                    ast::UnOp::Not => Type::bool()
+                };
+                op_r.check(env, &t_expected);
+
+                let t_ref_op_r = infer_node(op_r, env);
+                Type::Fun {
+                    args: vec![t_ref_op_r],
+                    ret: t_ref_op_r
+                }
+            }
             App {fun,args} => {
                 let u_ret = type_ref_here(env);
                 let t_args = infer_nodes(&args.node, env);
@@ -312,6 +324,12 @@ mod tests {
     fn check_typed() {
         check_local::<ast::Expr>("1 : int\n", "int");
         // TODO: add more tests
+    }
+
+    #[test]
+    fn check_un_op() {
+        check_local::<ast::Expr>("-1\n", "(int) => int");
+        check_local::<ast::Expr>("!true\n", "(bool) => bool");
     }
 
     #[test]
