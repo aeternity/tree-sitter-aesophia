@@ -79,7 +79,27 @@ impl Infer<TEnv> for ast::Expr {
                 t.check(env, &t_expr);
                 t_expr
             }
-            BinOp {op,op_l,op_r} => todo!(),
+            BinOp {op,op_l,op_r} => {
+                use ast::BinOp::*;
+                let t_expected = match op.node {
+                    Add | Sub | Mul | Div | Mod | Pow => Type::int(),
+                    And | Or => Type::bool(),
+                    _ => todo!()
+                    //EQ | NE | LT | GT | LE | GE => todo(),
+                    //ast::BinOp::Cons => todo!(),
+                    //ast::BinOp::Concat => todo!(),
+                    //ast::BinOp::Pipe => todo!(),
+                };
+                op_l.check(env, &t_expected);
+                op_r.check(env, &t_expected);
+
+                let t_ref_op_l = infer_node(op_l, env);
+
+                Type::Fun {
+                    args: vec![t_ref_op_l, t_ref_op_l],
+                    ret: t_ref_op_l
+                }
+            }
             UnOp {op,op_r} => {
                 let t_expected = match op.node {
                     ast::UnOp::Neg => Type::int(),
@@ -324,6 +344,19 @@ mod tests {
     fn check_typed() {
         check_local::<ast::Expr>("1 : int\n", "int");
         // TODO: add more tests
+    }
+
+    #[test]
+    fn check_bin_op() {
+        check_local::<ast::Expr>("1 + 1\n", "(int, int) => int");
+        check_local::<ast::Expr>("2 - 2\n", "(int, int) => int");
+        check_local::<ast::Expr>("80 / 8\n", "(int, int) => int");
+        check_local::<ast::Expr>("10 * 10\n", "(int, int) => int");
+        check_local::<ast::Expr>("14 mod 7\n", "(int, int) => int");
+        check_local::<ast::Expr>("2 ^ 10\n", "(int, int) => int");
+
+        check_local::<ast::Expr>("true || false\n", "(bool, bool) => bool");
+        check_local::<ast::Expr>("false && false\n", "(bool, bool) => bool");
     }
 
     #[test]
