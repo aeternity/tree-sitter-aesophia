@@ -138,39 +138,12 @@ impl Display for Type {
         match self {
             Type::Var { name } => write!(f, "{name}"),
             Type::PolyVar { name } => write!(f, "'{name}"),
-            Type::Fun { args, ret } => {
-                let mut args = args.node.iter();
-                match args.next() {
-                    None => {
-                        write!(f, "()")?
-                    }
-                    Some(fst) => {
-                        write!(f, "({}", fst)?;
-                        for a in args {
-                            write!(f, ", {a}")?;
-                        }
-                    write!(f, ")")?;
-                    }
-                }
-
-                write!(f, " => {ret}")
-            }
-            Type::Tuple { elems  } => {
-                let mut elems = elems.iter();
-                match elems.next() {
-                    None => {
-                        write!(f, "()")
-                    }
-                    Some(fst) => {
-                        write!(f, "({}", fst)?;
-                        for e in elems {
-                            write!(f, ", {e}")?;
-                        }
-                        write!(f, ")")
-                    }
-                }
-            }
-            Type::App { fun: _, args: _ } => todo!(),
+            Type::Fun { args, ret } =>
+                write!(f, "({}) => {ret}", args.node.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", ")),
+            Type::Tuple { elems  } =>
+                write!(f, "({})", elems.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(" * ")),
+            Type::App { fun, args } =>
+                write!(f, "{fun}({})", args.node.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", ")),
         }
     }
 }
