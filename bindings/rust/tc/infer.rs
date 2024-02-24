@@ -312,8 +312,9 @@ mod tests {
     }
 
     fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(local: bool, e: &str, t: &str) {
-        let table = TypeTable::new(vec!["item".to_string(), "type".to_string()]);
+        let table = TypeTable::new(vec!["builtins".to_string(), "item".to_string(), "type".to_string()]);
         let mut env = TEnv::new(table);
+        env.init_builtins();
 
         if local {
             env.in_local_scope("local".to_string(), |env_in| check_in::<T>(env_in, e, t))

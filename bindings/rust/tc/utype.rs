@@ -151,6 +151,10 @@ impl Type {
         Type::Var("bool".to_string())
     }
 
+    pub fn list() -> Self {
+        Type::Var("list".to_string())
+    }
+
     pub fn deref(&self, table: &mut TypeTable) -> Type {
         match self {
             Type::Ref(u) => table.find(*u),

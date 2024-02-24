@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
 use crate::ast::ast::Name;
@@ -42,6 +44,9 @@ pub struct TEnv {
     /// Type table is dynamically built during the inference. It maps
     /// code references to assigned types, whenever it makes sense.
     type_table: CodeTable<Type>,
+    /// Mapping between the names of builtin types and their type
+    /// reference in the builtins table.
+    builtins: HashMap<String, TypeRef>,
 }
 
 /// Constructors
@@ -56,6 +61,7 @@ impl TEnv {
             current_file: loc.file_id(),
             type_table: table,
             local_scope: None,
+            builtins: HashMap::new(),
         }
     }
 }
@@ -240,6 +246,36 @@ impl TEnv {
                 res
             }
         }
+    }
+}
+
+/// Builtins
+impl TEnv {
+    // TODO: List all builtins
+    pub fn init_builtins(&mut self) {
+        if let Some(idx) = self.type_table.filenames.iter().position(|x| *x == "builtins") {
+            self.builtins.insert("int".to_string(), CodeTableRef::new(idx, 0));
+            self.builtins.insert("bool".to_string(), CodeTableRef::new(idx, 1));
+            self.builtins.insert("list".to_string(), CodeTableRef::new(idx, 2));
+
+            self.type_table.set(self.builtin_int_ref(), Type::int());
+            self.type_table.set(self.builtin_bool_ref(), Type::bool());
+            self.type_table.set(self.builtin_list_ref(), Type::list());
+        } else {
+            panic!("The builtins table was not found")
+        }
+    }
+
+    pub fn builtin_int_ref(&self) -> TypeRef {
+        *self.builtins.get("int").expect("int is not set as a builtin type")
+    }
+
+    pub fn builtin_bool_ref(&self) -> TypeRef {
+        *self.builtins.get("bool").expect("bool is not set as a builtin type")
+    }
+
+    pub fn builtin_list_ref(&self) -> TypeRef {
+        *self.builtins.get("list").expect("list is not set as a builtin type")
     }
 }
 
