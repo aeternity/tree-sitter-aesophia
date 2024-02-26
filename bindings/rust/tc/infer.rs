@@ -122,8 +122,20 @@ impl Infer<TEnv> for ast::Expr {
 
                         Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
                     }
+                    Concat => {
+                        let t_op_l = op_l.infer(env);
+                        if let Type::App { name, args: _ } = t_op_l.deref(env.type_table()) {
+                            env.unify(&Type::Ref(name), &Type::Ref(env.builtin_list_ref()));
+                            op_r.check(env, &t_op_l);
+
+                            let t_ref_op = infer_node(op_l, env);
+
+                            Type::Fun { args: vec![t_ref_op, t_ref_op], ret: t_ref_op }
+                        } else {
+                            panic!("TYPE ERROR: Both operands of operator '::' must be lists")
+                        }
+                    }
                     _ => todo!()
-                    //ast::BinOp::Concat => todo!(),
                     //ast::BinOp::Pipe => todo!(),
                 }
             }
@@ -413,6 +425,9 @@ mod tests {
         check_local::<ast::Expr>("1::[1]\n", "(int, list(int)) => list(int)");
         check_local::<ast::Expr>("1::[1, 2, 3]\n", "(int, list(int)) => list(int)");
         check_local::<ast::Expr>("false::[true, false]\n", "(bool, list(bool)) => list(bool)");
+
+        check_local::<ast::Expr>("[1] ++ [1]\n", "(list(int), list(int)) => list(int)");
+        check_local::<ast::Expr>("['c'] ++ ['d']\n", "(list(char), list(char)) => list(char)");
     }
 
     #[test]
