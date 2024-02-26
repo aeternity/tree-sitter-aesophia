@@ -27,29 +27,10 @@ impl std::fmt::Display for Type {
             Type::Record(name) => write!(f, "{}", name),
             Type::Variant(name) => write!(f, "{}", name),
             Type::Fun{args, ret} => {
-                if args.is_empty() {
-                    write!(f, "()")?;
-                } else {
-                    write!(f, "(")?;
-                    write!(f, "{}", args[0])?;
-                    for a in &args[1..] {
-                        write!(f, ", {}", a)?;
-                    }
-                    write!(f, ")")?;
-                }
-                write!(f, " => {}", ret)
+                write!(f, "({}) => {ret}", args.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(", "))
             }
             Type::Tuple{elems} => {
-                if elems.is_empty() {
-                    write!(f, "()")
-                } else {
-                    write!(f, "(")?;
-                    write!(f, "{}", elems[0])?;
-                    for elem in &elems[1..] {
-                        write!(f, " * {}", elem)?;
-                    }
-                    write!(f, ")")
-                }
+                write!(f, "({})", elems.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(" * "))
             }
         }
     }
