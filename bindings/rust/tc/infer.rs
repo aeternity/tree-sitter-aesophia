@@ -52,6 +52,8 @@ impl Infer<TEnv> for ast::Literal {
         match self {
             ast::Literal::Int{..} => Type::int(),
             ast::Literal::Bool{..} => Type::bool(),
+            ast::Literal::Char {..} => Type::char(),
+            ast::Literal::String {..} => Type::string(),
             _ => todo!()
         }
     }
@@ -104,6 +106,14 @@ impl Infer<TEnv> for ast::Expr {
                             ret: t_ref_op_l
                         }
                     }
+                    EQ | NE | LT | GT | LE | GE => {
+                        let t_op_l = op_l.infer(env);
+                        op_r.check(env, &t_op_l);
+
+                        let t_ref_op = infer_node(op_l, env);
+
+                        Type::Fun { args: vec![t_ref_op, t_ref_op], ret: env.builtin_bool_ref() }
+                    }
                     Cons => {
                         let t_ref_elem = infer_node(op_l, env);
                         let t_ref_list = infer_node(op_r, env);
@@ -113,7 +123,6 @@ impl Infer<TEnv> for ast::Expr {
                         Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
                     }
                     _ => todo!()
-                    //EQ | NE | LT | GT | LE | GE => todo(),
                     //ast::BinOp::Concat => todo!(),
                     //ast::BinOp::Pipe => todo!(),
                 }
@@ -393,6 +402,13 @@ mod tests {
 
         check_local::<ast::Expr>("true || false\n", "(bool, bool) => bool");
         check_local::<ast::Expr>("false && false\n", "(bool, bool) => bool");
+
+        check_local::<ast::Expr>("1 >= 2\n", "(int, int) => bool");
+        check_local::<ast::Expr>("1 =< 2\n", "(int, int) => bool");
+        check_local::<ast::Expr>("false != true\n", "(bool, bool) => bool");
+        check_local::<ast::Expr>("'c' < 'a'\n", "(char, char) => bool");
+        check_local::<ast::Expr>("'c' > 'a'\n", "(char, char) => bool");
+        check_local::<ast::Expr>("\"str\" == \"str\"\n", "(string, string) => bool");
 
         check_local::<ast::Expr>("1::[1]\n", "(int, list(int)) => list(int)");
         check_local::<ast::Expr>("1::[1, 2, 3]\n", "(int, list(int)) => list(int)");

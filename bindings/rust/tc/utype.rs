@@ -146,6 +146,14 @@ impl Type {
         Type::Var("bool".to_string())
     }
 
+    pub fn char() -> Self {
+        Type::Var("char".to_string())
+    }
+
+    pub fn string() -> Self {
+        Type::Var("string".to_string())
+    }
+
     pub fn list() -> Self {
         Type::Var("list".to_string())
     }
