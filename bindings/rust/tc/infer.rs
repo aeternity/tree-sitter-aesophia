@@ -149,7 +149,7 @@ impl Infer<TEnv> for ast::Expr {
                     ret: u_ret,
                 };
 
-                let t_fun = fun.check(env, &t_fun_exp);
+                fun.check(env, &t_fun_exp);
 
                 Type::Ref(u_ret)
             }
