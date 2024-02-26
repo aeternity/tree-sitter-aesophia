@@ -135,8 +135,20 @@ impl Infer<TEnv> for ast::Expr {
                             panic!("TYPE ERROR: Both operands of operator '::' must be lists")
                         }
                     }
-                    _ => todo!()
-                    //ast::BinOp::Pipe => todo!(),
+                    Pipe => {
+                        if let Type::Fun { args, ret } = op_r.infer(env).deref(env.type_table()) {
+                            if args.len() != 1 {
+                                panic!("TYPE ERROR: Right operand of `|>` is not a single argument function");
+                            }
+                            let t_ref_arg = args[0];
+                            let t_ref_fun = infer_node(op_r, env);
+                            op_l.check(env, &Type::Ref(t_ref_arg));
+
+                            Type::Fun { args: vec![t_ref_arg, t_ref_fun], ret }
+                        } else {
+                            panic!("TYPE ERROR: Right operand of `|>` is not a function")
+                        }
+                    }
                 }
             }
             UnOp {op,op_r} => {
@@ -428,6 +440,9 @@ mod tests {
 
         check_local::<ast::Expr>("[1] ++ [1]\n", "(list(int), list(int)) => list(int)");
         check_local::<ast::Expr>("['c'] ++ ['d']\n", "(list(char), list(char)) => list(char)");
+
+        // TODO: This test should be fixed after fixing inference for lambdas
+        //check_local::<ast::Expr>("1 |> ((x) => x + 1)\n", "(int, (int) => (int, int) => int) => (int, int) => int");
     }
 
     #[test]

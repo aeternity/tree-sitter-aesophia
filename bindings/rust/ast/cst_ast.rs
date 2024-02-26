@@ -689,6 +689,7 @@ impl CstNode for ast::BinOp {
             "||" => Or,
             "::" => Cons,
             "++" => Concat,
+            "|>" => Pipe,
             e => panic!("Unknown binary op: {}", e),
         };
         Some(mk_node(node, op))
