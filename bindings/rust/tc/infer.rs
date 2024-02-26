@@ -81,23 +81,41 @@ impl Infer<TEnv> for ast::Expr {
             }
             BinOp {op,op_l,op_r} => {
                 use ast::BinOp::*;
-                let t_expected = match op.node {
-                    Add | Sub | Mul | Div | Mod | Pow => Type::int(),
-                    And | Or => Type::bool(),
+                match op.node {
+                    Add | Sub | Mul | Div | Mod | Pow => {
+                        op_l.check(env, &Type::int());
+                        op_r.check(env, &Type::int());
+
+                        let t_ref_op_l = infer_node(op_l, env);
+
+                        Type::Fun {
+                            args: vec![t_ref_op_l, t_ref_op_l],
+                            ret: t_ref_op_l
+                        }
+                    }
+                    And | Or => {
+                        op_l.check(env, &Type::bool());
+                        op_r.check(env, &Type::bool());
+
+                        let t_ref_op_l = infer_node(op_l, env);
+
+                        Type::Fun {
+                            args: vec![t_ref_op_l, t_ref_op_l],
+                            ret: t_ref_op_l
+                        }
+                    }
+                    Cons => {
+                        let t_ref_elem = infer_node(op_l, env);
+                        let t_ref_list = infer_node(op_r, env);
+
+                        op_r.check(env, &Type::App { name: env.builtin_list_ref(), args: vec![t_ref_elem] });
+
+                        Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
+                    }
                     _ => todo!()
                     //EQ | NE | LT | GT | LE | GE => todo(),
-                    //ast::BinOp::Cons => todo!(),
                     //ast::BinOp::Concat => todo!(),
                     //ast::BinOp::Pipe => todo!(),
-                };
-                op_l.check(env, &t_expected);
-                op_r.check(env, &t_expected);
-
-                let t_ref_op_l = infer_node(op_l, env);
-
-                Type::Fun {
-                    args: vec![t_ref_op_l, t_ref_op_l],
-                    ret: t_ref_op_l
                 }
             }
             UnOp {op,op_r} => {
@@ -132,7 +150,16 @@ impl Infer<TEnv> for ast::Expr {
                 let t_elems = elems.iter().map(|e| infer_node(e, env)).collect();
                 Type::Tuple{elems: t_elems}
             }
-            List {elems} => todo!(),
+            List {elems} if elems.is_empty() => todo!(),
+            List {elems} => {
+                let elem0 = elems.first().expect("elems must not be empty");
+                let t_elem0 = elem0.infer(env);
+                elems.iter().for_each(|e| e.check(env, &t_elem0));
+
+                let t_ref_list = env.builtin_list_ref();
+                let t_ref_elem0 = infer_node(elem0, env);
+                Type::App { name: t_ref_list, args: vec![t_ref_elem0] }
+            }
             ListRange {start,end} => todo!(),
             ListComp {yield_expr,filters} => todo!(),
             Record {fields} => todo!(),
@@ -238,8 +265,16 @@ impl Infer<TEnv> for ast::Type {
                     elems: infer_nodes(elems, env)
                 }
             },
-            App {fun,args} => todo!(), // TODO type-app utype
-            _ => todo!()
+            App {fun, args} => {
+                fun.infer(env);
+                for a in &args.node {
+                    a.infer(env);
+                }
+                Type::App {
+                    name: infer_node(fun, env),
+                    args: infer_nodes(&args.node, env)
+                }
+            }
         }
     }
 }
@@ -358,6 +393,10 @@ mod tests {
 
         check_local::<ast::Expr>("true || false\n", "(bool, bool) => bool");
         check_local::<ast::Expr>("false && false\n", "(bool, bool) => bool");
+
+        check_local::<ast::Expr>("1::[1]\n", "(int, list(int)) => list(int)");
+        check_local::<ast::Expr>("1::[1, 2, 3]\n", "(int, list(int)) => list(int)");
+        check_local::<ast::Expr>("false::[true, false]\n", "(bool, list(bool)) => list(bool)");
     }
 
     #[test]
@@ -380,6 +419,17 @@ mod tests {
 
         // *THE* edge case
         check_local::<ast::Expr>("()", "unit");
+    }
+
+    #[test]
+    fn check_lists() {
+        check_local::<ast::Expr>("[1]\n", "list(int)");
+        check_local::<ast::Expr>("[1, 2]\n", "list(int)");
+        check_local::<ast::Expr>("[true, false]\n", "list(bool)");
+        check_local::<ast::Expr>("[[1], [2, 3]]\n", "list(list(int))");
+
+        // TODO: What is the type of an empty list?
+        //check_local::<ast::Expr>("[]\n", "list()");
     }
 
     #[test]

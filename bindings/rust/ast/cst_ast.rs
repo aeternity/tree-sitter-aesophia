@@ -821,10 +821,10 @@ impl CstNode for ast::Type {
         let t = match node.kind() {
             "type_application" => {
                 let fun = parse_field(tc, env, &<ast::Type as CstNode>::parse, "fun");
-                let args = parse_fields(tc, env, &<ast::Type as CstNode>::parse, "params");
+                let args = parse_fields_in_field(tc, env, &<ast::Type as CstNode>::parse, "params", "param");
                 Type::App {
                     fun: fun?.rec(),
-                    args: mk_node(node, args),
+                    args: args?,
                 }
             }
             "type_function" => {

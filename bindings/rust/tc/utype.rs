@@ -16,6 +16,7 @@ pub enum Type {
     Record(String),
     Variant(String),
     Fun { args: Vec<TypeRef>, ret: TypeRef },
+    App { name: TypeRef, args: Vec<TypeRef> },
     Tuple { elems: Vec<TypeRef> },
 }
 
@@ -26,6 +27,9 @@ impl std::fmt::Display for Type {
             Type::Var(var) => write!(f, "{}", var),
             Type::Record(name) => write!(f, "{}", name),
             Type::Variant(name) => write!(f, "{}", name),
+            Type::App { name, args } => {
+                write!(f, "{name}({})", args.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(", "))
+            }
             Type::Fun{args, ret} => {
                 write!(f, "({}) => {ret}", args.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(", "))
             }
@@ -113,6 +117,16 @@ impl TypeTable {
                 };
                 Node::new(u.node_id(), t)
             },
+            Type::App { name, args } => {
+                let t = ast::Type::App {
+                    fun: self.render_ast(name).rec(),
+                    args: Node::new(
+                        u.node_id(),
+                        args.into_iter().map(|a| self.render_ast(a)).collect()
+                    )
+                };
+                Node::new(u.node_id(), t)
+            }
             _ => unimplemented!()
         }
     }
@@ -185,6 +199,19 @@ impl Type {
                 Type::Ref(*ret0).mgu(table, errs, &Type::Ref(*ret1));
             }
 
+            (Type::App { name: name0, args: args0 }, Type::App { name: name1, args: args1 }) => {
+                if args0.len() != args1.len() {
+                    println!("ARGS LENGTH MISMATCH {} ~ {}", args0.len(), args1.len());
+                    errs.push((t0.clone(), t1.clone()))
+                } else {
+                    Type::Ref(*name0).mgu(table, errs, &Type::Ref(*name1));
+
+                    for (a0, a1) in args0.into_iter().zip(args1) {
+                        Type::Ref(*a0).mgu(table, errs, &Type::Ref(*a1));
+                    }
+                }
+            }
+
             (Type::Tuple{elems: elems0}, Type::Tuple{elems: elems1}) => {
                 // If the lengths do not match we report an error, and
                 // not proceed, because it is seems more probable that
@@ -220,6 +247,10 @@ impl Type {
             Type::Var(_) => false,
             Type::Fun{args, ret} => {
                 std::iter::once(ret).chain(args.into_iter())
+                    .any(|t| Type::Ref(*t).occurs_check(table, u))
+            }
+            Type::App { name, args } => {
+                std::iter::once(name).chain(args.into_iter())
                     .any(|t| Type::Ref(*t).occurs_check(table, u))
             }
             Type::Tuple{elems} => {
