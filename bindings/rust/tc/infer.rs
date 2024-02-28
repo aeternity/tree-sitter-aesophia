@@ -193,7 +193,13 @@ impl Infer<TEnv> for ast::Expr {
                 let t_ref_elem0 = infer_node(elem0, env);
                 Type::App { name: t_ref_list, args: vec![t_ref_elem0] }
             }
-            ListRange {start,end} => todo!(),
+            ListRange {start, end} => {
+                let t_start = start.infer(env);
+                end.check(env, &t_start);
+                end.check(env, &Type::int());
+
+                Type::Fun { args: vec![env.builtin_int_ref(), env.builtin_int_ref()], ret: env.builtin_list_of_int_ref() }
+            }
             ListComp {yield_expr,filters} => todo!(),
             Record {fields} => todo!(),
             RecordUpdate {record,updates} => todo!(),
@@ -473,6 +479,9 @@ mod tests {
         check_local::<ast::Expr>("[1, 2]\n", "list(int)");
         check_local::<ast::Expr>("[true, false]\n", "list(bool)");
         check_local::<ast::Expr>("[[1], [2, 3]]\n", "list(list(int))");
+
+        // List range
+        check_local::<ast::Expr>("[1..4]\n", "(int, int) => list(int)");
 
         // TODO: What is the type of an empty list?
         //check_local::<ast::Expr>("[]\n", "list()");

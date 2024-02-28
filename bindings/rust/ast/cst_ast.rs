@@ -458,6 +458,11 @@ impl CstNode for ast::Expr {
                 let elems = parse_fields(tc, env, &<ast::Expr as CstNode>::parse, "elem");
                 Expr::List { elems }
             }
+            "expr_list_range" => {
+                let start = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "start")?.rec();
+                let end = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "end")?.rec();
+                Expr::ListRange { start, end }
+            }
             "expr_lambda" => {
                 let node_args = parse_fields_in_field(
                     tc,
