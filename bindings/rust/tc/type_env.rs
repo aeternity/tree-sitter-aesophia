@@ -47,6 +47,8 @@ pub struct TEnv {
     /// Mapping between the names of builtin types and their type
     /// reference in the builtins table.
     builtins: HashMap<String, TypeRef>,
+    /// The number of currently used fresh type refs
+    fresh_typeref_count: usize,
 }
 
 /// Constructors
@@ -62,6 +64,7 @@ impl TEnv {
             type_table: table,
             local_scope: None,
             builtins: HashMap::new(),
+            fresh_typeref_count: 0,
         }
     }
 }
@@ -282,6 +285,19 @@ impl TEnv {
 
     pub fn builtin_list_of_int_ref(&self) -> TypeRef {
         *self.builtins.get("list_of_int").expect("list_of_int is not set as a builtin type")
+    }
+}
+
+/// Fresh type refs
+impl TEnv {
+    pub fn fresh_typeref(&mut self) -> TypeRef {
+        if let Some(idx) = self.type_table.filenames.iter().position(|x| *x == "fresh_typerefs") {
+            let t_ref = CodeTableRef::new(idx, self.fresh_typeref_count);
+            self.fresh_typeref_count += 1;
+            t_ref
+        } else {
+            panic!("The fresh_typerefs table was not found")
+        }
     }
 }
 

@@ -183,7 +183,9 @@ impl Infer<TEnv> for ast::Expr {
                 let t_elems = elems.iter().map(|e| infer_node(e, env)).collect();
                 Type::Tuple{elems: t_elems}
             }
-            List {elems} if elems.is_empty() => todo!(),
+            List {elems} if elems.is_empty() => {
+                Type::App { name: env.builtin_list_ref(), args: vec![env.fresh_typeref()] }
+            }
             List {elems} => {
                 let elem0 = elems.first().expect("elems must not be empty");
                 let t_elem0 = elem0.infer(env);
@@ -386,7 +388,7 @@ mod tests {
     }
 
     fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(local: bool, e: &str, t: &str) {
-        let table = TypeTable::new(vec!["builtins".to_string(), "item".to_string(), "type".to_string()]);
+        let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
         let mut env = TEnv::new(table);
         env.init_builtins();
 
@@ -484,7 +486,7 @@ mod tests {
         check_local::<ast::Expr>("[1..4]\n", "(int, int) => list(int)");
 
         // TODO: What is the type of an empty list?
-        //check_local::<ast::Expr>("[]\n", "list()");
+        check_local::<ast::Expr>("[]\n", "list('a)");
     }
 
     #[test]
