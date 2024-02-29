@@ -41,6 +41,97 @@ fn type_here<Env: HasTEnv>(env: &Env) -> Type {
     Type::Ref(u)
 }
 
+fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &Vec<ast::Node<T>>) -> Type {
+    if elems.is_empty() {
+        Type::App { name: env.builtin_list_ref(), args: vec![env.fresh_typeref()] }
+    } else {
+        let elem0 = elems.first().expect("elems must not be empty");
+        let t_elem0 = elem0.infer(env);
+        elems.iter().for_each(|e| e.check(env, &t_elem0));
+
+        let t_ref_list = env.builtin_list_ref();
+        let t_ref_elem0 = infer_node(elem0, env);
+        Type::App { name: t_ref_list, args: vec![t_ref_elem0] }
+    }
+}
+
+fn infer_typed<T: Infer<TEnv>>(env: &mut TEnv, typed: &ast::Node<T>, type_node: &ast::Node<ast::Type>) -> Type {
+    let t_typed = typed.infer(env);
+    type_node.check(env, &t_typed);
+    t_typed
+}
+
+fn infer_binop<T: Infer<TEnv>>(env: &mut TEnv, op: &ast::Node<ast::BinOp>, op_l: &ast::Node<T>, op_r: &ast::Node<T>) -> Type {
+    use ast::BinOp::*;
+    match op.node {
+        Add | Sub | Mul | Div | Mod | Pow => {
+            op_l.check(env, &Type::int());
+            op_r.check(env, &Type::int());
+
+            let t_ref_op_l = infer_node(op_l, env);
+
+            Type::Fun {
+                args: vec![t_ref_op_l, t_ref_op_l],
+                ret: t_ref_op_l
+            }
+        }
+        And | Or => {
+            op_l.check(env, &Type::bool());
+            op_r.check(env, &Type::bool());
+
+            let t_ref_op_l = infer_node(op_l, env);
+
+            Type::Fun {
+                args: vec![t_ref_op_l, t_ref_op_l],
+                ret: t_ref_op_l
+            }
+        }
+        EQ | NE | LT | GT | LE | GE => {
+            let t_op_l = op_l.infer(env);
+            op_r.check(env, &t_op_l);
+
+            let t_ref_op = infer_node(op_l, env);
+
+            Type::Fun { args: vec![t_ref_op, t_ref_op], ret: env.builtin_bool_ref() }
+        }
+        Cons => {
+            let t_ref_elem = infer_node(op_l, env);
+            let t_ref_list = infer_node(op_r, env);
+
+            op_r.check(env, &Type::App { name: env.builtin_list_ref(), args: vec![t_ref_elem] });
+
+            Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
+        }
+        Concat => {
+            let t_op_l = op_l.infer(env);
+            if let Type::App { name, args: _ } = t_op_l.deref(env.type_table()) {
+                env.unify(&Type::Ref(name), &Type::Ref(env.builtin_list_ref()));
+                op_r.check(env, &t_op_l);
+
+                let t_ref_op = infer_node(op_l, env);
+
+                Type::Fun { args: vec![t_ref_op, t_ref_op], ret: t_ref_op }
+            } else {
+                panic!("TYPE ERROR: Both operands of operator '::' must be lists")
+            }
+        }
+        Pipe => {
+            if let Type::Fun { args, ret } = op_r.infer(env).deref(env.type_table()) {
+                if args.len() != 1 {
+                    panic!("TYPE ERROR: Right operand of `|>` is not a single argument function");
+                }
+                let t_ref_arg = args[0];
+                let t_ref_fun = infer_node(op_r, env);
+                op_l.check(env, &Type::Ref(t_ref_arg));
+
+                Type::Fun { args: vec![t_ref_arg, t_ref_fun], ret }
+            } else {
+                panic!("TYPE ERROR: Right operand of `|>` is not a function")
+            }
+        }
+    }
+}
+
 impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for Box<T> {
     fn infer(&self, env: &mut Env) -> Type {
         (**self).infer(env)
@@ -76,81 +167,8 @@ impl Infer<TEnv> for ast::Expr {
                     ret: t_body,
                 }
             }
-            Typed {expr,t} => {
-                let t_expr = expr.infer(env);
-                t.check(env, &t_expr);
-                t_expr
-            }
-            BinOp {op,op_l,op_r} => {
-                use ast::BinOp::*;
-                match op.node {
-                    Add | Sub | Mul | Div | Mod | Pow => {
-                        op_l.check(env, &Type::int());
-                        op_r.check(env, &Type::int());
-
-                        let t_ref_op_l = infer_node(op_l, env);
-
-                        Type::Fun {
-                            args: vec![t_ref_op_l, t_ref_op_l],
-                            ret: t_ref_op_l
-                        }
-                    }
-                    And | Or => {
-                        op_l.check(env, &Type::bool());
-                        op_r.check(env, &Type::bool());
-
-                        let t_ref_op_l = infer_node(op_l, env);
-
-                        Type::Fun {
-                            args: vec![t_ref_op_l, t_ref_op_l],
-                            ret: t_ref_op_l
-                        }
-                    }
-                    EQ | NE | LT | GT | LE | GE => {
-                        let t_op_l = op_l.infer(env);
-                        op_r.check(env, &t_op_l);
-
-                        let t_ref_op = infer_node(op_l, env);
-
-                        Type::Fun { args: vec![t_ref_op, t_ref_op], ret: env.builtin_bool_ref() }
-                    }
-                    Cons => {
-                        let t_ref_elem = infer_node(op_l, env);
-                        let t_ref_list = infer_node(op_r, env);
-
-                        op_r.check(env, &Type::App { name: env.builtin_list_ref(), args: vec![t_ref_elem] });
-
-                        Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
-                    }
-                    Concat => {
-                        let t_op_l = op_l.infer(env);
-                        if let Type::App { name, args: _ } = t_op_l.deref(env.type_table()) {
-                            env.unify(&Type::Ref(name), &Type::Ref(env.builtin_list_ref()));
-                            op_r.check(env, &t_op_l);
-
-                            let t_ref_op = infer_node(op_l, env);
-
-                            Type::Fun { args: vec![t_ref_op, t_ref_op], ret: t_ref_op }
-                        } else {
-                            panic!("TYPE ERROR: Both operands of operator '::' must be lists")
-                        }
-                    }
-                    Pipe => {
-                        if let Type::Fun { args, ret } = op_r.infer(env).deref(env.type_table()) {
-                            if args.len() != 1 {
-                                panic!("TYPE ERROR: Right operand of `|>` is not a single argument function");
-                            }
-                            let t_ref_arg = args[0];
-                            let t_ref_fun = infer_node(op_r, env);
-                            op_l.check(env, &Type::Ref(t_ref_arg));
-
-                            Type::Fun { args: vec![t_ref_arg, t_ref_fun], ret }
-                        } else {
-                            panic!("TYPE ERROR: Right operand of `|>` is not a function")
-                        }
-                    }
-                }
-            }
+            Typed {expr,t} => infer_typed(env, expr, t),
+            BinOp {op,op_l,op_r} => infer_binop(env, op, op_l, op_r),
             UnOp {op,op_r} => {
                 let t_expected = match op.node {
                     ast::UnOp::Neg => Type::int(),
@@ -183,18 +201,7 @@ impl Infer<TEnv> for ast::Expr {
                 let t_elems = elems.iter().map(|e| infer_node(e, env)).collect();
                 Type::Tuple{elems: t_elems}
             }
-            List {elems} if elems.is_empty() => {
-                Type::App { name: env.builtin_list_ref(), args: vec![env.fresh_typeref()] }
-            }
-            List {elems} => {
-                let elem0 = elems.first().expect("elems must not be empty");
-                let t_elem0 = elem0.infer(env);
-                elems.iter().for_each(|e| e.check(env, &t_elem0));
-
-                let t_ref_list = env.builtin_list_ref();
-                let t_ref_elem0 = infer_node(elem0, env);
-                Type::App { name: t_ref_list, args: vec![t_ref_elem0] }
-            }
+            List { elems } => infer_list(env, elems),
             ListRange {start, end} => {
                 let t_start = start.infer(env);
                 end.check(env, &t_start);
@@ -256,24 +263,20 @@ impl Infer<TEnv> for ast::Pattern {
                 t
             },
             Lit {value} => value.infer(env),
-            List {elems} => todo!(),
+            List {elems} => infer_list(env, elems),
             Tuple {elems} => {
                 let t_elems = infer_nodes(elems, env);
                 Type::Tuple{elems: t_elems}
             },
             Record {fields} => todo!(),
-            Op {op_l,op_r,op} => todo!(),
+            Op {op_l, op_r, op} => infer_binop(env, op, op_l, op_r),
             Let {name,pat} => {
                 let t_name = Var{name: name.clone()}.infer(env);
                 let t_pat = pat.infer(env);
                 env.t_env_mut().unify(&t_name, &t_pat);
                 t_name
             }
-            Typed {pat,t} => {
-                let ut = t.infer(env);
-                pat.check(env, &ut);
-                ut
-            }
+            Typed {pat,t} => infer_typed(env, pat, t),
             App {fun,args} => todo!(),
             Wildcard => type_here(env)
         }
