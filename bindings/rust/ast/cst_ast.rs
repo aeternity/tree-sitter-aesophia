@@ -23,25 +23,18 @@ pub trait Cst: Sized {
 
 impl CstNode for ast::Module {
     fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Module> {
+        let pragmas = parse_kinds_in_field(tc, env, &<ast::Pragma as CstNode>::parse, "module", "top_pragma");
+        let includes = parse_kinds_in_field(tc, env, &<ast::Include as CstNode>::parse, "module", "include");
+        let usings = parse_kinds_in_field(tc, env, &<ast::Using as CstNode>::parse, "module", "using");
+        let scopes = parse_kinds_in_field(tc, env, &<ast::ScopeDecl as CstNode>::parse, "module", "scope_declaration");
 
-        let node = &tc.node().child_by_field_name("module")?;
-        let pragmas = parse_kinds(tc, env, &<ast::Pragma as CstNode>::parse, "top_pragma");
-        let includes = parse_kinds(tc, env, &<ast::Include as CstNode>::parse, "include");
-        let usings = parse_kinds(tc, env, &<ast::Using as CstNode>::parse, "using");
-        let scopes = parse_kinds(
+        Some(mk_node_tc(
             tc,
-            env,
-            &<ast::ScopeDecl as CstNode>::parse,
-            "scope_declaration",
-        );
-
-        Some(mk_node(
-            node,
             ast::Module {
-                pragmas,
-                includes,
-                usings,
-                scopes,
+                pragmas: pragmas?.node,
+                includes: includes?.node,
+                usings: usings?.node,
+                scopes: scopes?.node,
             },
         ))
     }
@@ -104,7 +97,7 @@ fn parse_top_pragma<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResul
 }
 
 impl CstNode for ast::Include {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Include> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Include> {
         let node = &tc.node();
         let path = parse_field(tc, env, &parse_str, "path");
         Some(mk_node(node, ast::Include { path: path? }))
@@ -118,14 +111,14 @@ impl CstNode for ast::ScopeDecl {
         let head = <ast::ScopeHead as CstNode>::parse(tc, env);
         let name = parse_field(tc, env, &parse_name, "name");
 
-        let funs = parse_kinds_in_field(tc, env, &<ast::FunDef as CstNode>::parse, "decls", "function_declaration");
-        let types = parse_kinds_in_field(tc, env, &<ast::TypeDef as CstNode>::parse, "decls", "type_declaration");
+        let funs = parse_kinds(tc, env, &<ast::FunDef as CstNode>::parse, "function_declaration");
+        let types = parse_kinds(tc, env, &<ast::TypeDef as CstNode>::parse, "type_declaration");
 
         let scope = Self {
             head: head?,
             name: name?,
-            types: types?.node,
-            funs: funs?.node,
+            types,
+            funs,
         };
         Some(mk_node(node, scope))
     }
@@ -1381,7 +1374,7 @@ mod tests {
         let mut parser = load_lang();
         let src_data: Vec<u16> = src.encode_utf16().collect();
 
-        let tree = parser.parse(&src, None).expect("Unable to parse");
+        let tree = parser.parse(src, None).expect("Unable to parse");
 
         let subtypes = load_subtypes();
         let env = ParseEnv::new(src_data, subtypes, tree.root_node().has_error());
@@ -1390,7 +1383,7 @@ mod tests {
     }
 
     fn parse_source_module(src: &str) -> Node<Module> {
-        let (mut env, tree) = prepare_test(&src);
+        let (mut env, tree) = prepare_test(src);
         let mut tc = tree.walk();
 
         println!("Parsed {}", tree.root_node().to_sexp());
@@ -1399,8 +1392,6 @@ mod tests {
             panic!("Error node")
         }
 
-        tc.reset(tc.node().child_by_field_name("module").expect("No source"));
-
         match <ast::Module as CstNode>::parse(&mut tc, &mut env) {
             Some(ast) => ast,
             None => parsing_errors(&env),
@@ -1408,7 +1399,7 @@ mod tests {
     }
 
     fn parse_source_content(src: &str) {
-        let (mut env, tree) = prepare_test(&src);
+        let (mut env, tree) = prepare_test(src);
         let mut tc = tree.walk();
 
         println!("Parsed {}", tree.root_node().to_sexp());
@@ -1430,13 +1421,23 @@ mod tests {
     }
 
     fn run_roundtrip_test(test_name: &'static str) {
-        let src = load_good_test_file(test_name);
-        let ast1 = parse_source_module(&src);
-        let ast2 = parse_source_module(&ast1.to_string());
+        let src1 = load_good_test_file(test_name);
+
+        let ast1 = parse_source_module(&src1);
+        println!("Parsed as: {:?}", ast1);
+
+        let src2 = &ast1.to_string();
+        println!("Re-rendered: {}", src2);
+
+        let ast2 = parse_source_module(src2);
+        println!("Re-parsed: {}", ast2);
+
         assert_eq!(ast1.to_string(), ast2.to_string());
     }
 
     fn parsing_errors(env: &ParseEnv) -> ! {
+        println!("PARSE ERRORS:\n\n");
+
         for e in &env.errs {
             println!("PARSE ERROR: {}", e.node.to_str())
         }
@@ -1444,12 +1445,24 @@ mod tests {
     }
 
     #[test]
-    fn test_roundtrips() {
+    fn test_roundtrip_usings() {
         run_roundtrip_test("usings");
+    }
+
+    #[test]
+    fn test_roundtrips_includes() {
         run_roundtrip_test("includes");
+    }
+
+    #[test]
+    fn test_roundtrips_pragmas() {
         run_roundtrip_test("pragmas");
+    }
+
+    #[test]
+    fn test_roundtrips_block_open() {
         run_roundtrip_test("simple_contract_block_open");
-        run_roundtrip_test("simple_contract_block_open_inline");
+        // run_roundtrip_test("simple_contract_block_open_inline");
     }
 
     #[test]

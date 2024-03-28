@@ -78,11 +78,10 @@ impl Display for ScopeDecl {
             ScopeHead::Namespace { } => todo!(),
         }
 
-        // TODO
-        // for type_decl in &self.types {
-        //     writeln!(f)?;
-        //     writeln!(f, "{}{type_decl}", " ".repeat(INDENT_SPACES))?;
-        // }
+        for type_decl in &self.types {
+            writeln!(f)?;
+            writeln!(f, "{}{type_decl}", " ".repeat(INDENT_SPACES))?;
+        }
 
         for fun_decl in &self.funs {
             writeln!(f)?;
@@ -155,6 +154,31 @@ impl Display for FunDecl {
     }
 }
 
+impl Display for TypeDef {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Alias { name, params, def } => {
+                write!(f, "type {}", name.node)?;
+
+                if !params.node.is_empty() {
+                    write!(f, "({})",
+                           params.node.iter()
+                           .map(|p| p.to_string())
+                           .collect::<Vec<String>>()
+                           .join(", "))?;
+                }
+
+                write!(f, " = {}", def.node)
+            },
+            Self::Record { name, params, fields } => {
+                todo!()
+            }
+            Self::Variant { name, params, constructors } => {
+                todo!()
+            }
+        }
+    }
+}
 impl Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
