@@ -391,14 +391,21 @@ mod tests {
     fn parse_check_module(src: &str) {
         let module: ast::Node<ast::Module> =
             crate::ast::parse_str(src).expect("Parse error: module");
-        // panic!("{}", module);
+
+
+        let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
+        let mut env = TEnv::new(table);
+        env.init_builtins();
+
+        check_module(&module.node, &mut env);
+
     }
 
     #[test]
     fn contract_test() {
         let src = r#"
             contract C =
-              function f() = 123
+              function f() = 123 + 321
             "#;
         parse_check_module(src);
     }

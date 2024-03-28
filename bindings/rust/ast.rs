@@ -54,6 +54,9 @@ pub fn parse_str<T: cst_ast::CstNode>(src: &str) -> cst_parse::ParseResultN<T> {
 
     if !dispatch.is_empty() {
         tc.reset(tc.node().child_by_field_name("content").expect("No source"))
+    } else {
+        println!("NO DISPATCH: PARSING MODULE NODE"); // FIXME
+        tc.reset(tc.node().child_by_field_name("module").expect("No source"))
     }
 
     let src_data: Vec<u16> = src.encode_utf16().collect();

@@ -33,6 +33,7 @@ impl CstNode for ast::Module {
             &<ast::ScopeDecl as CstNode>::parse,
             "scope_declaration",
         );
+
         Some(mk_node(
             node,
             ast::Module {
@@ -1310,6 +1311,7 @@ pub fn parse_any(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResult<()> {
         },
     }
 }
+
 
 #[cfg(test)]
 mod tests {
