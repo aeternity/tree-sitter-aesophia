@@ -1,4 +1,4 @@
-use crate::ast::ast;
+use crate::ast::ast::{self, InContractDecl};
 use crate::tc::*;
 use type_env::*;
 use scope::*;
@@ -41,7 +41,7 @@ fn type_here<Env: HasTEnv>(env: &Env) -> Type {
     Type::Ref(u)
 }
 
-fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &Vec<ast::Node<T>>) -> Type {
+fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &[ast::Node<T>]) -> Type {
     let t_ref_list = builtin_list_ref();
     if let Some(elem0) = elems.first() {
         let t_ref_elem0 = infer_node(elem0, env);
@@ -357,20 +357,51 @@ impl Infer<TEnv> for ast::FunClause {
     }
 }
 
-// fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) -> () {
-//     env.in_scope(scope, |env| {
+impl Infer<TEnv> for ast::InContractDecl {
+    fn infer(&self, env: &mut TEnv) -> Type {
+        let ast::InContractDecl::FunDef(fun_def) = self;
+        fun_def.infer(env)
+    }
+}
 
-//     })
-// }
+pub fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) -> () {
+    match scope {
+        ast::ScopeDecl::Contract {name, decls, ..} => {
+            env.in_scope(name.node.clone(), |env_in| {
+                for decl in decls {
+                    decl.infer(env_in);
+                }
+            })
+        }
+        _ => todo!()
+    }
+}
 
-fn check_module(module: &ast::Module, env: &mut TEnv) -> () {
-
+pub fn check_module(module: &ast::Module, env: &mut TEnv) -> () {
+    for scope in module.scopes.iter() {
+        check_scope(&scope.node, env);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ast::ast;
+
+    fn parse_check_module(src: &str) {
+        let module: ast::Node<ast::Module> =
+            crate::ast::parse_str(src).expect("Parse error: module");
+        // panic!("{}", module);
+    }
+
+    #[test]
+    fn contract_test() {
+        let src = r#"
+            contract C =
+              function f() = 123
+            "#;
+        parse_check_module(src);
+    }
 
     fn check_in<T: crate::cst_ast::CstNode + Infer<TEnv>>(env: &mut TEnv, e: &str, t: &str) {
         let e: ast::Node<T> = crate::ast::parse_str(e).expect("Parse error: item");

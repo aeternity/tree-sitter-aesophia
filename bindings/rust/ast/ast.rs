@@ -142,7 +142,7 @@ pub enum ScopeDecl {
 }
 
 #[derive(Clone, Debug)]
-pub enum InContractDecl {
+pub enum InContractDecl { // TODO: Wouldn't it be nicer if functions, typedefs etc were kept in separate lists?
     FunDef(FunDef),
     // TypeDef(TypeDef),
     // ScopeDecl(ScopeDecl),
