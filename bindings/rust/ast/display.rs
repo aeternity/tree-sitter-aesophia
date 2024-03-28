@@ -149,7 +149,7 @@ impl Display for FunDecl {
 
         write!(f, " : ")?;
 
-        write!(f, "{}", self.signature);
+        write!(f, "{}", self.signature)?;
 
         Ok(())
     }
