@@ -14,15 +14,15 @@ pub trait CstNode: Sized {
         None
     }
 
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<Self>;
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<Self>;
 }
 
 pub trait Cst: Sized {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResult<Self>;
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResult<Self>;
 }
 
 impl CstNode for ast::Module {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Module> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Module> {
         let pragmas = parse_kinds_in_field(tc, env, &<ast::Pragma as CstNode>::parse, "module", "top_pragma");
         let includes = parse_kinds_in_field(tc, env, &<ast::Include as CstNode>::parse, "module", "include");
         let usings = parse_kinds_in_field(tc, env, &<ast::Using as CstNode>::parse, "module", "using");
@@ -41,7 +41,7 @@ impl CstNode for ast::Module {
 }
 
 impl CstNode for ast::Using {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Using> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Using> {
         let node = &tc.node();
         let scope = parse_field(tc, env, &parse_name, "scope");
         let alias = parse_field(tc, env, &parse_name, "alias");
@@ -58,7 +58,7 @@ impl CstNode for ast::Using {
 }
 
 impl CstNode for ast::UsingSelect {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::UsingSelect> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::UsingSelect> {
         let node = &tc.node();
         let select = match node.kind() {
             "using_for" => {
@@ -76,12 +76,12 @@ impl CstNode for ast::UsingSelect {
 }
 
 impl CstNode for ast::Pragma {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Pragma> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Pragma> {
         parse_field(tc, env, &parse_top_pragma, "pragma")
     }
 }
 
-fn parse_top_pragma<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Pragma> {
+fn parse_top_pragma(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Pragma> {
     let node = &tc.node();
     match node.kind() {
         "pragma_compiler_vsn" => {
@@ -105,7 +105,7 @@ impl CstNode for ast::Include {
 }
 
 impl CstNode for ast::ScopeDecl {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<Self> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<Self> {
         let node = &tc.node();
 
         let head = <ast::ScopeHead as CstNode>::parse(tc, env);
@@ -126,7 +126,7 @@ impl CstNode for ast::ScopeDecl {
 
 
 impl CstNode for ast::ScopeHead {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<Self> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<Self> {
         let node = &tc.node();
 
         let modifiers = parse_fields(tc, env, &parse_name, "modifier");
@@ -219,7 +219,7 @@ impl CstNode for ast::FunDef {
         Some("function_declaration".to_string())
     }
 
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::FunDef> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::FunDef> {
         let node = &tc.node();
         let modifiers = parse_fields(tc, env, &parse_name, "modifier");
         let head = parse_field(tc, env, &parse_name, "head");
@@ -320,16 +320,16 @@ fn parse_function_clause(
     Some((name?, fun))
 }
 
-// fn parse_decl_in_contract_interface<'a>(
-//     tc: &mut TsCursor<'a>,
+// fn parse_decl_in_contract_interface(
+//     tc: &mut TsCursor,
 //     env: &mut ParseEnv,
 // ) -> ParseResultN<ast::InInterfaceDecl> {
 //     use ast::InInterfaceDecl;
 //     let node = &tc.node();
 // }
 
-// fn parse_decl_in_namespace<'a>(
-//     tc: &mut TsCursor<'a>,
+// fn parse_decl_in_namespace(
+//     tc: &mut TsCursor,
 //     env: &mut ParseEnv,
 // ) -> ParseResultN<ast::InNamespaceDecl> {
 //     use ast::InNamespaceDecl;
@@ -337,7 +337,7 @@ fn parse_function_clause(
 // }
 
 impl CstNode for ast::TypeDef {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::TypeDef> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::TypeDef> {
         use ast::TypeDef;
         let node = &tc.node();
         let td = match node.kind() {
@@ -390,7 +390,7 @@ impl CstNode for ast::TypeDef {
 }
 
 impl CstNode for ast::FieldDecl {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::FieldDecl> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::FieldDecl> {
         let node = &tc.node();
         let name = parse_field(tc, env, &parse_name, "name");
         let typ = parse_field(tc, env, &<ast::Type as CstNode>::parse, "type");
@@ -405,7 +405,7 @@ impl CstNode for ast::FieldDecl {
 }
 
 impl CstNode for ast::Constructor {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Constructor> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Constructor> {
         let node = &tc.node();
         let name = parse_field(tc, env, &parse_name, "name");
         let params =
@@ -425,7 +425,7 @@ impl CstNode for ast::Expr {
         Some("expression".to_string())
     }
 
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Expr> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Expr> {
         use ast::Expr;
         let node = &tc.node();
         let expr = match node.kind() {
@@ -640,7 +640,7 @@ impl CstNode for ast::Expr {
 }
 
 impl CstNode for ast::Case {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Case> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Case> {
         let node = &tc.node();
         let pattern = parse_field(tc, env, &<ast::Pattern as CstNode>::parse, "pattern");
         let branches = parse_fields(tc, env, &<ast::CaseBranch as CstNode>::parse, "branch");
@@ -655,7 +655,7 @@ impl CstNode for ast::Case {
 }
 
 impl CstNode for ast::CaseBranch {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::CaseBranch> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::CaseBranch> {
         let node = &tc.node();
         let guards = parse_fields(tc, env, &<ast::Expr as CstNode>::parse, "guard");
         let body = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "body");
@@ -670,7 +670,7 @@ impl CstNode for ast::CaseBranch {
 }
 
 impl CstNode for ast::BinOp {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::BinOp> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::BinOp> {
         use ast::BinOp::*;
         let node = &tc.node();
         let content = node_content(node, env)?;
@@ -699,7 +699,7 @@ impl CstNode for ast::BinOp {
 }
 
 impl CstNode for ast::UnOp {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::UnOp> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::UnOp> {
         use ast::UnOp::*;
         let node = &tc.node();
         let content = node_content(node, env)?;
@@ -713,7 +713,7 @@ impl CstNode for ast::UnOp {
 }
 
 impl CstNode for ast::ExprArg {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::ExprArg> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::ExprArg> {
         let node = &tc.node();
         let arg = match node.kind() {
             "expr_named_argument" => {
@@ -738,8 +738,8 @@ impl CstNode for ast::ExprArg {
 }
 
 impl CstNode for ast::RecordFieldAssign {
-    fn parse<'a>(
-        tc: &mut TsCursor<'a>,
+    fn parse(
+        tc: &mut TsCursor,
         env: &mut ParseEnv,
     ) -> ParseResultN<ast::RecordFieldAssign> {
         let node = &tc.node();
@@ -756,8 +756,8 @@ impl CstNode for ast::RecordFieldAssign {
 }
 
 impl CstNode for ast::RecordFieldUpdate {
-    fn parse<'a>(
-        tc: &mut TsCursor<'a>,
+    fn parse(
+        tc: &mut TsCursor,
         env: &mut ParseEnv,
     ) -> ParseResultN<ast::RecordFieldUpdate> {
         let node = &tc.node();
@@ -776,7 +776,7 @@ impl CstNode for ast::RecordFieldUpdate {
 }
 
 impl CstNode for ast::MapFieldAssign {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::MapFieldAssign> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::MapFieldAssign> {
         let node = &tc.node();
         let key = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "key");
         let value = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "value");
@@ -791,7 +791,7 @@ impl CstNode for ast::MapFieldAssign {
 }
 
 impl CstNode for ast::MapFieldUpdate {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::MapFieldUpdate> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::MapFieldUpdate> {
         let node = &tc.node();
         let key = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "key");
         let old_value = parse_field(tc, env, &parse_name, "old_value");
@@ -807,7 +807,7 @@ impl CstNode for ast::MapFieldUpdate {
     }
 }
 
-fn parse_name<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Name> {
+fn parse_name(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Name> {
     let node = &tc.node();
     Some(mk_node(node, node_content(node, env)?))
 }
@@ -817,7 +817,7 @@ impl CstNode for ast::Type {
         Some("type".to_string())
     }
 
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Type> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Type> {
         use ast::Type;
         env.check_error(tc)?;
         let node = &tc.node();
@@ -862,7 +862,7 @@ impl CstNode for ast::Type {
     }
 }
 
-fn parse_fun_domain<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Nodes<ast::Type>> {
+fn parse_fun_domain(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Nodes<ast::Type>> {
     env.check_error(tc)?;
     let node = &tc.node();
     let args = match node.kind() {
@@ -879,7 +879,7 @@ fn parse_fun_domain<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResul
 }
 
 impl CstNode for ast::Pattern {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Pattern> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Pattern> {
         use ast::Pattern;
         env.check_error(tc)?;
         let node = &tc.node();
@@ -959,8 +959,8 @@ impl CstNode for ast::Pattern {
 }
 
 impl CstNode for ast::PatternRecordField {
-    fn parse<'a>(
-        tc: &mut TsCursor<'a>,
+    fn parse(
+        tc: &mut TsCursor,
         env: &mut ParseEnv,
     ) -> ParseResultN<ast::PatternRecordField> {
         let node = &tc.node();
@@ -976,8 +976,8 @@ impl CstNode for ast::PatternRecordField {
     }
 }
 
-fn parse_stmts<'a>(
-    tc: &mut TsCursor<'a>,
+fn parse_stmts(
+    tc: &mut TsCursor,
     env: &mut ParseEnv,
 ) -> ParseResult<ast::Nodes<ast::Statement>> {
     use ast::Statement;
@@ -1036,7 +1036,7 @@ enum SplitStmt {
 }
 
 impl CstNode for SplitStmt {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<SplitStmt> {
+    fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<SplitStmt> {
         use ast::Statement;
         env.check_error(tc)?;
         let node = &tc.node();
@@ -1105,7 +1105,7 @@ fn parse_char(tc: &TsCursor, env: &mut ParseEnv) -> ParseResult<char> {
     Some(c)
 }
 
-fn parse_str<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResult<String> {
+fn parse_str(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResult<String> {
     let node = &tc.node();
     let token = node_content(node, env)?;
     let mut chars = token[1..].chars();
@@ -1424,13 +1424,13 @@ mod tests {
         let src1 = load_good_test_file(test_name);
 
         let ast1 = parse_source_module(&src1);
-        println!("Parsed as: {:?}", ast1);
+        println!("Roundtrip: parsed as: {:?}", ast1);
 
         let src2 = &ast1.to_string();
-        println!("Re-rendered: {}", src2);
+        println!("Roundtrip: re-rendered: {}", src2);
 
         let ast2 = parse_source_module(src2);
-        println!("Re-parsed: {}", ast2);
+        println!("Roundtrip: re-parsed: {}", ast2);
 
         assert_eq!(ast1.to_string(), ast2.to_string());
     }
