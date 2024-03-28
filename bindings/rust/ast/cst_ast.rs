@@ -23,7 +23,8 @@ pub trait Cst: Sized {
 
 impl CstNode for ast::Module {
     fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::Module> {
-        let node = &tc.node();
+
+        let node = &tc.node().child_by_field_name("module")?;
         let pragmas = parse_kinds(tc, env, &<ast::Pragma as CstNode>::parse, "top_pragma");
         let includes = parse_kinds(tc, env, &<ast::Include as CstNode>::parse, "include");
         let usings = parse_kinds(tc, env, &<ast::Using as CstNode>::parse, "using");
