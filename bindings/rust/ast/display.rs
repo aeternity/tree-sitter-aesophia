@@ -64,33 +64,32 @@ impl Display for Include {
 
 impl Display for ScopeDecl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ScopeDecl::Contract { name, main, implements: _, decls, payable } => {
-                if *payable {
+        match self.head.node {
+            ScopeHead::Contract {main, implements: _, payable, .. } => {
+                if payable {
                     write!(f, "payable ")?;
                 }
-                if *main {
+                if main {
                     write!(f, "main ")?;
                 }
-                write!(f, "contract {} =", name)?;
-                for decl in decls {
-                    writeln!(f)?;
-                    writeln!(f, "{}{decl}", " ".repeat(INDENT_SPACES))?;
-                }
-            }
-            ScopeDecl::ContractInterface { name: _, extends: _, payable: _, decls: _ } => todo!(),
-            ScopeDecl::Namespace { name: _, decls: _ } => todo!(),
+                write!(f, "contract {} =", self.name)?;
+            },
+            ScopeHead::Interface { extends: _, payable: _, ..} => todo!(),
+            ScopeHead::Namespace { } => todo!(),
+        }
+
+        // TODO
+        // for type_decl in &self.types {
+        //     writeln!(f)?;
+        //     writeln!(f, "{}{type_decl}", " ".repeat(INDENT_SPACES))?;
+        // }
+
+        for fun_decl in &self.funs {
+            writeln!(f)?;
+            writeln!(f, "{}{fun_decl}", " ".repeat(INDENT_SPACES))?;
         }
 
         Ok(())
-    }
-}
-
-impl Display for InContractDecl {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            InContractDecl::FunDef(fun_def) => write!(f, "{fun_def}")
-        }
     }
 }
 
@@ -128,6 +127,29 @@ impl Display for FunDef {
         writeln!(f, " =")?;
 
         write!(f, "{}", &self.clauses[0].node.body)?;
+
+        Ok(())
+    }
+}
+
+impl Display for FunDecl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.stateful {
+            write!(f, "stateful ")?;
+        }
+        if self.payable {
+            write!(f, "payable ")?;
+        }
+
+        writeln!(f, "entrypoint")?;
+
+        write!(f, "{}", " ".repeat(INDENT_SPACES * 2))?;
+
+        write!(f, "{}", self.name)?;
+
+        write!(f, " : ")?;
+
+        write!(f, "{}", self.signature);
 
         Ok(())
     }

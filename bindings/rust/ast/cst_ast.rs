@@ -112,12 +112,32 @@ impl CstNode for ast::Include {
 }
 
 impl CstNode for ast::ScopeDecl {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::ScopeDecl> {
-        use ast::ScopeDecl;
+    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<Self> {
+        let node = &tc.node();
+
+        let head = <ast::ScopeHead as CstNode>::parse(tc, env);
+        let name = parse_field(tc, env, &parse_name, "name");
+
+        let funs = parse_kinds_in_field(tc, env, &<ast::FunDef as CstNode>::parse, "decls", "function_declaration");
+        let types = parse_kinds_in_field(tc, env, &<ast::TypeDef as CstNode>::parse, "decls", "type_declaration");
+
+        let scope = Self {
+            head: head?,
+            name: name?,
+            types: types?.node,
+            funs: funs?.node,
+        };
+        Some(mk_node(node, scope))
+    }
+}
+
+
+impl CstNode for ast::ScopeHead {
+    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<Self> {
         let node = &tc.node();
 
         let modifiers = parse_fields(tc, env, &parse_name, "modifier");
-        let head = parse_field(tc, env, &parse_name, "head");
+        let head_type = parse_field(tc, env, &parse_name, "head");
         let is_interface = node.child_by_field_name("interface").is_some();
         let name = parse_field(tc, env, &parse_name, "name");
         let impls = parse_fields(tc, env, &parse_qual, "implements");
@@ -129,20 +149,16 @@ impl CstNode for ast::ScopeDecl {
             is_main,
         } = parse_modifiers(env, &modifiers);
 
-        let sdecl = match head?.node.as_str() {
+        let scope_head = match head_type?.node.as_str() {
             "contract" if !is_interface => {
                 if is_private || is_stateful {
                     env.err(node, ParseError::InvalidModifier);
                 }
 
-                let decls = parse_fields(tc, env, &<ast::InContractDecl as CstNode>::parse, "decl");
-
-                ScopeDecl::Contract {
-                    name: name?,
+                Self::Contract {
                     main: is_main,
                     payable: is_payable,
                     implements: impls,
-                    decls,
                 }
             }
             "contract" if is_interface => {
@@ -150,7 +166,10 @@ impl CstNode for ast::ScopeDecl {
                     env.err(node, ParseError::InvalidModifier);
                 }
 
-                unimplemented!("contract interface")
+                Self::Interface {
+                    payable: is_payable,
+                    extends: impls,
+                }
             }
             "namespace" => {
                 if is_payable || is_private || is_stateful || is_main || is_interface {
@@ -161,16 +180,15 @@ impl CstNode for ast::ScopeDecl {
                     env.err(node, ParseError::NamespaceImpl)
                 }
 
-                unimplemented!("namespace")
+                Self::Namespace{}
             }
             e => {
                 panic!("Unknown scope header: {}", e)
             }
         };
-        Some(mk_node(node, sdecl))
+        Some(mk_node(node, scope_head))
     }
 }
-
 struct Modifiers {
     is_payable: bool,
     is_stateful: bool,
@@ -200,22 +218,6 @@ fn parse_modifiers(_env: &mut ParseEnv, modifiers: &Vec<ast::Node<String>>) -> M
         is_stateful,
         is_private,
         is_main,
-    }
-}
-
-impl CstNode for ast::InContractDecl {
-    fn parse<'a>(tc: &mut TsCursor<'a>, env: &mut ParseEnv) -> ParseResultN<ast::InContractDecl> {
-        use ast::InContractDecl::*;
-        let node = &tc.node();
-        match node.kind() {
-            "function_declaration" => {
-                let decl = <ast::FunDef as CstNode>::parse(tc, env)?;
-                Some(decl.map(FunDef))
-            }
-            _ => {
-                unimplemented!("fun decl in ct")
-            }
-        }
     }
 }
 

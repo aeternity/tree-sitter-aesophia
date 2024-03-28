@@ -121,52 +121,32 @@ pub struct Include {
 }
 
 #[derive(Clone, Debug)]
-pub enum ScopeDecl {
+pub struct ScopeDecl {
+    pub head: NodeOne<ScopeHead>,
+    pub name: NodeOne<Name>,
+
+    pub types: Nodes<TypeDef>,
+    pub funs: Nodes<FunDef>,
+}
+
+#[derive(Clone, Debug)]
+pub enum ScopeHead {
     Contract {
-        name: NodeOne<Name>,
         main: bool,
-        implements: Nodes<QName>,
-        decls: Nodes<InContractDecl>,
         payable: bool,
+        implements: Nodes<QName>,
     },
-    ContractInterface{
-        name: NodeOne<Name>,
+    Interface {
         extends: Nodes<QName>,
         payable: bool,
-        decls: Nodes<InInterfaceDecl>,
     },
-    Namespace{
-        name: NodeOne<Name>,
-        decls: Nodes<InNamespaceDecl>,
-    },
-}
-
-#[derive(Clone, Debug)]
-pub enum InContractDecl { // TODO: Wouldn't it be nicer if functions, typedefs etc were kept in separate lists?
-    FunDef(FunDef),
-    // TypeDef(TypeDef),
-    // ScopeDecl(ScopeDecl),
-}
-
-#[derive(Clone, Debug)]
-pub enum InInterfaceDecl {
-    FunDecl(FunSig),
-    // TypeDef(TypeDef),
-    // ScopeDecl(ScopeDecl),
-}
-
-#[derive(Clone, Debug)]
-pub enum InNamespaceDecl {
-    FunDef(FunDef),
-    // TypeDef(TypeDef),
-    // ScopeDecl(ScopeDecl),
+    Namespace {},
 }
 
 #[derive(Clone, Debug)]
 pub struct FunSig {
     pub signature: NodeOne<Type>,
 }
-
 #[derive(Clone, Debug)]
 pub struct FunDef {
     pub stateful: bool,
@@ -182,6 +162,14 @@ pub struct FunClause {
     pub args: NodeMany<Pattern>,
     pub ret_type: NodeOpt<Type>,
     pub body: NodeOne<Expr>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FunDecl {
+    pub stateful: bool,
+    pub payable: bool,
+    pub name: NodeOne<Name>,
+    pub signature: NodeOne<Type>,
 }
 
 #[derive(Clone, Debug)]

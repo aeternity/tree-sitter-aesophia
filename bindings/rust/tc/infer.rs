@@ -1,4 +1,4 @@
-use crate::ast::ast::{self, InContractDecl};
+use crate::ast::ast::{self};
 use crate::tc::*;
 use type_env::*;
 use scope::*;
@@ -357,19 +357,13 @@ impl Infer<TEnv> for ast::FunClause {
     }
 }
 
-impl Infer<TEnv> for ast::InContractDecl {
-    fn infer(&self, env: &mut TEnv) -> Type {
-        let ast::InContractDecl::FunDef(fun_def) = self;
-        fun_def.infer(env)
-    }
-}
 
 pub fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) -> () {
     match scope {
-        ast::ScopeDecl::Contract {name, decls, ..} => {
+        ast::ScopeDecl {name, funs, ..} => {
             env.in_scope(name.node.clone(), |env_in| {
-                for decl in decls {
-                    decl.infer(env_in);
+                for fun in funs {
+                    fun.infer(env_in);
                 }
             })
         }

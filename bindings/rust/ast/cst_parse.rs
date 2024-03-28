@@ -140,6 +140,11 @@ pub fn mk_node<T: Clone>(node: &TsNode, value: T) -> ast::Node<T> {
     }
 }
 
+/// Wraps an item with an AST node based on a tree-sitter node
+pub fn mk_node_tc<T: Clone>(tc: &TsCursor, value: T) -> ast::Node<T> {
+    mk_node(&tc.node(), value)
+}
+
 
 /// Extracts raw string content of a tree-sitter node.
 pub fn node_content(node: &TsNode, env: &mut ParseEnv) -> ParseResult<String> {
@@ -314,7 +319,7 @@ where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>
 {
     parse_field(tc, env, &|tc, env| {
         let children = parse_fields(tc, env, parse, name_in);
-        Some(mk_node(&tc.node(), children))
+        Some(mk_node_tc(tc, children))
     }, name)
 }
 
@@ -334,6 +339,22 @@ where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
 {
     parse_field(tc, env, &|tc, env| {
         let children = parse_children(tc, env, parse, filter);
-        Some(mk_node(&tc.node(), children))
+        Some(mk_node_tc(tc, children))
+    }, name)
+}
+
+/// Within the field parses all children on the given kind using the given parser.
+pub fn parse_kinds_in_field<'a, T: Clone, P>(
+    tc: &mut TsCursor<'a>,
+    env: &mut ParseEnv,
+    parse: &P,
+    name: &str,
+    kind: &str,
+) -> ParseResult<ast::NodeMany<T>>
+where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
+{
+    parse_field(tc, env, &|tc, env| {
+        let children = parse_kinds(tc, env, parse, kind);
+        Some(mk_node_tc(tc, children))
     }, name)
 }
