@@ -209,6 +209,7 @@ impl Type {
 
             (Type::App { name: name0, args: args0 }, Type::App { name: name1, args: args1 }) => {
                 if args0.len() != args1.len() {
+                    // TODO: Add debug logger
                     println!("ARGS LENGTH MISMATCH {} ~ {}", args0.len(), args1.len());
                     errs.push((t0.clone(), t1.clone()))
                 } else {
