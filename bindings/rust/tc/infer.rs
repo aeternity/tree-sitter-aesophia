@@ -202,8 +202,7 @@ impl Infer<TEnv> for ast::Expr {
             }
             List { elems } => infer_list(env, elems),
             ListRange {start, end} => {
-                let t_start = start.infer(env);
-                end.check(env, &t_start);
+                start.check(env, &Type::int());
                 end.check(env, &Type::int());
 
                 Type::Fun { args: vec![env.builtin_int_ref(), env.builtin_int_ref()], ret: env.builtin_list_of_int_ref() }
