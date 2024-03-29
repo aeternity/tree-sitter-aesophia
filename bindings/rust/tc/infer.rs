@@ -44,10 +44,9 @@ fn type_here<Env: HasTEnv>(env: &Env) -> Type {
 fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &Vec<ast::Node<T>>) -> Type {
     let t_ref_list = env.builtin_list_ref();
     if let Some(elem0) = elems.first() {
-        let t_elem0 = elem0.infer(env);
-        elems.iter().for_each(|e| e.check(env, &t_elem0));
-
         let t_ref_elem0 = infer_node(elem0, env);
+        elems.iter().for_each(|e| e.check(env, &Type::Ref(t_ref_elem0)));
+
         Type::App { name: t_ref_list, args: vec![t_ref_elem0] }
     } else {
         Type::App { name: t_ref_list, args: vec![env.fresh_typeref()] }
