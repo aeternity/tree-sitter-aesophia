@@ -256,19 +256,17 @@ impl TEnv {
 impl TEnv {
     // TODO: List all builtins
     pub fn init_builtins(&mut self) {
-        if let Some(idx) = self.type_table.filenames.iter().position(|x| *x == "builtins") {
-            self.builtins.insert("int".to_string(), CodeTableRef::new(idx, 0));
-            self.builtins.insert("bool".to_string(), CodeTableRef::new(idx, 1));
-            self.builtins.insert("list".to_string(), CodeTableRef::new(idx, 2));
-            self.builtins.insert("list_of_int".to_string(), CodeTableRef::new(idx, 3));
+        let idx= self.type_table.filenames.iter().position(|x| *x == "builtins").expect("The builtins table was not found");
 
-            self.type_table.set(self.builtin_int_ref(), Type::int());
-            self.type_table.set(self.builtin_bool_ref(), Type::bool());
-            self.type_table.set(self.builtin_list_ref(), Type::list());
-            self.type_table.set(self.builtin_list_of_int_ref(), Type::App { name: self.builtin_list_ref(), args: vec![self.builtin_int_ref()] });
-        } else {
-            panic!("The builtins table was not found")
-        }
+        self.builtins.insert("int".to_string(), CodeTableRef::new(idx, 0));
+        self.builtins.insert("bool".to_string(), CodeTableRef::new(idx, 1));
+        self.builtins.insert("list".to_string(), CodeTableRef::new(idx, 2));
+        self.builtins.insert("list_of_int".to_string(), CodeTableRef::new(idx, 3));
+
+        self.type_table.set(self.builtin_int_ref(), Type::int());
+        self.type_table.set(self.builtin_bool_ref(), Type::bool());
+        self.type_table.set(self.builtin_list_ref(), Type::list());
+        self.type_table.set(self.builtin_list_of_int_ref(), Type::App { name: self.builtin_list_ref(), args: vec![self.builtin_int_ref()] });
     }
 
     pub fn builtin_int_ref(&self) -> TypeRef {
