@@ -42,7 +42,7 @@ fn type_here<Env: HasTEnv>(env: &Env) -> Type {
 }
 
 fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &Vec<ast::Node<T>>) -> Type {
-    let t_ref_list = env.builtin_list_ref();
+    let t_ref_list = builtin_list_ref();
     if let Some(elem0) = elems.first() {
         let t_ref_elem0 = infer_node(elem0, env);
         elems.iter().for_each(|e| e.check(env, &Type::Ref(t_ref_elem0)));
@@ -90,20 +90,20 @@ fn infer_binop<T: Infer<TEnv>>(env: &mut TEnv, op: &ast::Node<ast::BinOp>, op_l:
 
             let t_ref_op = infer_node(op_l, env);
 
-            Type::Fun { args: vec![t_ref_op, t_ref_op], ret: env.builtin_bool_ref() }
+            Type::Fun { args: vec![t_ref_op, t_ref_op], ret: builtin_bool_ref() }
         }
         Cons => {
             let t_ref_elem = infer_node(op_l, env);
             let t_ref_list = infer_node(op_r, env);
 
-            op_r.check(env, &Type::App { name: env.builtin_list_ref(), args: vec![t_ref_elem] });
+            op_r.check(env, &Type::App { name: builtin_list_ref(), args: vec![t_ref_elem] });
 
             Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
         }
         Concat => {
             let t_op_l = op_l.infer(env);
             if let Type::App { name, args: _ } = t_op_l.deref(env.type_table()) {
-                env.unify(&Type::Ref(name), &Type::Ref(env.builtin_list_ref()));
+                env.unify(&Type::Ref(name), &Type::Ref(builtin_list_ref()));
                 op_r.check(env, &t_op_l);
 
                 let t_ref_op = infer_node(op_l, env);
@@ -204,7 +204,7 @@ impl Infer<TEnv> for ast::Expr {
                 start.check(env, &Type::int());
                 end.check(env, &Type::int());
 
-                Type::Fun { args: vec![env.builtin_int_ref(), env.builtin_int_ref()], ret: env.builtin_list_of_int_ref() }
+                Type::Fun { args: vec![builtin_int_ref(), builtin_int_ref()], ret: builtin_list_of_int_ref() }
             }
             ListComp {yield_expr,filters} => todo!(),
             Record {fields} => todo!(),
@@ -390,7 +390,6 @@ mod tests {
     fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(local: bool, e: &str, t: &str) {
         let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
         let mut env = TEnv::new(table);
-        env.init_builtins();
 
         if local {
             env.in_local_scope("local".to_string(), |env_in| check_in::<T>(env_in, e, t))

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
 use crate::ast::ast::Name;
@@ -44,17 +42,20 @@ pub struct TEnv {
     /// Type table is dynamically built during the inference. It maps
     /// code references to assigned types, whenever it makes sense.
     type_table: CodeTable<Type>,
-    /// Mapping between the names of builtin types and their type
-    /// reference in the builtins table.
-    builtins: HashMap<String, TypeRef>,
     /// The number of currently used fresh type refs
     fresh_typeref_count: usize,
 }
 
 /// Constructors
 impl TEnv {
-    pub fn new(table: TypeTable) -> Self {
+    pub fn new(mut table: TypeTable) -> Self {
         let loc = CodeTableRef::new(0, 0);
+
+        table.set(builtin_int_ref(), Type::int());
+        table.set(builtin_bool_ref(), Type::bool());
+        table.set(builtin_list_ref(), Type::list());
+        table.set(builtin_list_of_int_ref(), Type::App { name: builtin_list_ref(), args: vec![builtin_int_ref()] });
+
         Self {
             top_scope: Scope::new(loc, ScopeKind::TopLevel),
             current_scope: vec![],
@@ -63,10 +64,25 @@ impl TEnv {
             current_file: loc.file_id(),
             type_table: table,
             local_scope: None,
-            builtins: HashMap::new(),
             fresh_typeref_count: 0,
         }
     }
+}
+
+pub fn builtin_int_ref() -> TypeRef {
+    CodeTableRef::new(0, 0)
+}
+
+pub fn builtin_bool_ref() -> TypeRef {
+    CodeTableRef::new(0, 1)
+}
+
+pub fn builtin_list_ref() -> TypeRef {
+    CodeTableRef::new(0, 2)
+}
+
+pub fn builtin_list_of_int_ref() -> TypeRef {
+    CodeTableRef::new(0, 3)
 }
 
 /// Scopes
@@ -249,40 +265,6 @@ impl TEnv {
                 res
             }
         }
-    }
-}
-
-/// Builtins
-impl TEnv {
-    // TODO: List all builtins
-    pub fn init_builtins(&mut self) {
-        let idx= self.type_table.filenames.iter().position(|x| *x == "builtins").expect("The builtins table was not found");
-
-        self.builtins.insert("int".to_string(), CodeTableRef::new(idx, 0));
-        self.builtins.insert("bool".to_string(), CodeTableRef::new(idx, 1));
-        self.builtins.insert("list".to_string(), CodeTableRef::new(idx, 2));
-        self.builtins.insert("list_of_int".to_string(), CodeTableRef::new(idx, 3));
-
-        self.type_table.set(self.builtin_int_ref(), Type::int());
-        self.type_table.set(self.builtin_bool_ref(), Type::bool());
-        self.type_table.set(self.builtin_list_ref(), Type::list());
-        self.type_table.set(self.builtin_list_of_int_ref(), Type::App { name: self.builtin_list_ref(), args: vec![self.builtin_int_ref()] });
-    }
-
-    pub fn builtin_int_ref(&self) -> TypeRef {
-        *self.builtins.get("int").expect("int is not set as a builtin type")
-    }
-
-    pub fn builtin_bool_ref(&self) -> TypeRef {
-        *self.builtins.get("bool").expect("bool is not set as a builtin type")
-    }
-
-    pub fn builtin_list_ref(&self) -> TypeRef {
-        *self.builtins.get("list").expect("list is not set as a builtin type")
-    }
-
-    pub fn builtin_list_of_int_ref(&self) -> TypeRef {
-        *self.builtins.get("list_of_int").expect("list_of_int is not set as a builtin type")
     }
 }
 
