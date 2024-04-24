@@ -458,6 +458,11 @@ impl CstNode for ast::Expr {
                 let elems = parse_fields(tc, env, &<ast::Expr as CstNode>::parse, "elem");
                 Expr::List { elems }
             }
+            "expr_list_range" => {
+                let start = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "start")?.rec();
+                let end = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "end")?.rec();
+                Expr::ListRange { start, end }
+            }
             "expr_lambda" => {
                 let node_args = parse_fields_in_field(
                     tc,
@@ -689,6 +694,7 @@ impl CstNode for ast::BinOp {
             "||" => Or,
             "::" => Cons,
             "++" => Concat,
+            "|>" => Pipe,
             e => panic!("Unknown binary op: {}", e),
         };
         Some(mk_node(node, op))
@@ -821,10 +827,10 @@ impl CstNode for ast::Type {
         let t = match node.kind() {
             "type_application" => {
                 let fun = parse_field(tc, env, &<ast::Type as CstNode>::parse, "fun");
-                let args = parse_fields(tc, env, &<ast::Type as CstNode>::parse, "params");
+                let args = parse_fields_in_field(tc, env, &<ast::Type as CstNode>::parse, "params", "param");
                 Type::App {
                     fun: fun?.rec(),
-                    args: mk_node(node, args),
+                    args: args?,
                 }
             }
             "type_function" => {

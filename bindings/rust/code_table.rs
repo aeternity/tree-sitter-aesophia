@@ -6,13 +6,13 @@ pub type TreeTableRef = cst::NodeId;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TreeTable<T> {
-    pub data: HashMap<TreeTableRef, T>
+    pub data: HashMap<TreeTableRef, T>,
 }
 
 impl<T: Clone> TreeTable<T> {
     pub fn new() -> TreeTable<T> {
         TreeTable {
-            data: HashMap::new()
+            data: HashMap::new(),
         }
     }
 
@@ -33,7 +33,7 @@ pub struct CodeTableRef {
 
 impl CodeTableRef {
     pub fn new(file_id: cst::FileId, node_id: TreeTableRef) -> Self {
-        CodeTableRef{file_id, node_id}
+        CodeTableRef { file_id, node_id }
     }
 
     pub fn file_id(&self) -> cst::FileId {
@@ -51,11 +51,9 @@ impl std::fmt::Display for CodeTableRef {
     }
 }
 
-
 pub trait HasCodeRef {
     fn code_ref(&self) -> CodeTableRef;
 }
-
 
 #[derive(Debug)]
 pub struct CodeTable<T> {
@@ -71,10 +69,7 @@ impl<T: Clone> CodeTable<T> {
             tables.push(TreeTable::new());
             filenames.push(name);
         }
-        CodeTable {
-            tables,
-            filenames,
-        }
+        CodeTable { tables, filenames }
     }
 
     pub fn set(&mut self, idx: CodeTableRef, v: T) {

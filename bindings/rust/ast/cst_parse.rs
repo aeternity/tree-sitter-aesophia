@@ -3,9 +3,6 @@
 use crate::ast::ast;
 use crate::cst::*;
 
-use tree_sitter;
-
-
 /// Errors related to lexing
 #[derive(Clone, Debug)]
 pub enum TokenError {
@@ -329,7 +326,7 @@ pub fn parse_children_in_field<'a, T: Clone, P, F>(
     env: &mut ParseEnv,
     parse: &P,
     name: &str,
-    mut filter: F,
+    filter: F,
 ) -> ParseResult<ast::NodeMany<T>>
 where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
       F: FnMut(&TsCursor<'a>) -> bool + Copy,

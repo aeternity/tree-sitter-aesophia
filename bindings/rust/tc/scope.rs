@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::code_table::{CodeTableRef, HasCodeRef};
-use crate::ast::ast::{Name};
+use crate::ast::ast::Name;
 use crate::tc::utype::*;
 
 /// Function specification for type checking

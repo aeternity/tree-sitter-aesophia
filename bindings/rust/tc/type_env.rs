@@ -1,6 +1,6 @@
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
-use crate::ast::ast::{Name};
+use crate::ast::ast::Name;
 use crate::tc::utype::*;
 use crate::tc::scope::*;
 
@@ -42,12 +42,20 @@ pub struct TEnv {
     /// Type table is dynamically built during the inference. It maps
     /// code references to assigned types, whenever it makes sense.
     type_table: CodeTable<Type>,
+    /// The number of currently used fresh type refs
+    fresh_typeref_count: usize,
 }
 
 /// Constructors
 impl TEnv {
-    pub fn new(table: TypeTable) -> Self {
+    pub fn new(mut table: TypeTable) -> Self {
         let loc = CodeTableRef::new(0, 0);
+
+        table.set(builtin_int_ref(), Type::int());
+        table.set(builtin_bool_ref(), Type::bool());
+        table.set(builtin_list_ref(), Type::list());
+        table.set(builtin_list_of_int_ref(), Type::App { name: builtin_list_ref(), args: vec![builtin_int_ref()] });
+
         Self {
             top_scope: Scope::new(loc, ScopeKind::TopLevel),
             current_scope: vec![],
@@ -56,8 +64,25 @@ impl TEnv {
             current_file: loc.file_id(),
             type_table: table,
             local_scope: None,
+            fresh_typeref_count: 0,
         }
     }
+}
+
+pub fn builtin_int_ref() -> TypeRef {
+    CodeTableRef::new(0, 0)
+}
+
+pub fn builtin_bool_ref() -> TypeRef {
+    CodeTableRef::new(0, 1)
+}
+
+pub fn builtin_list_ref() -> TypeRef {
+    CodeTableRef::new(0, 2)
+}
+
+pub fn builtin_list_of_int_ref() -> TypeRef {
+    CodeTableRef::new(0, 3)
 }
 
 /// Scopes
@@ -239,6 +264,19 @@ impl TEnv {
                 self.local_scope = Some(ls);
                 res
             }
+        }
+    }
+}
+
+/// Fresh type refs
+impl TEnv {
+    pub fn fresh_typeref(&mut self) -> TypeRef {
+        if let Some(idx) = self.type_table.filenames.iter().position(|x| *x == "fresh_typerefs") {
+            let t_ref = CodeTableRef::new(idx, self.fresh_typeref_count);
+            self.fresh_typeref_count += 1;
+            t_ref
+        } else {
+            panic!("The fresh_typerefs table was not found")
         }
     }
 }

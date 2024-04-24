@@ -41,6 +41,95 @@ fn type_here<Env: HasTEnv>(env: &Env) -> Type {
     Type::Ref(u)
 }
 
+fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &Vec<ast::Node<T>>) -> Type {
+    let t_ref_list = builtin_list_ref();
+    if let Some(elem0) = elems.first() {
+        let t_ref_elem0 = infer_node(elem0, env);
+        elems.iter().for_each(|e| e.check(env, &Type::Ref(t_ref_elem0)));
+
+        Type::App { name: t_ref_list, args: vec![t_ref_elem0] }
+    } else {
+        Type::App { name: t_ref_list, args: vec![env.fresh_typeref()] }
+    }
+}
+
+fn infer_typed<T: Infer<TEnv>>(env: &mut TEnv, typed: &ast::Node<T>, type_node: &ast::Node<ast::Type>) -> Type {
+    let t_typed = typed.infer(env);
+    type_node.check(env, &t_typed);
+    t_typed
+}
+
+fn infer_binop<T: Infer<TEnv>>(env: &mut TEnv, op: &ast::Node<ast::BinOp>, op_l: &ast::Node<T>, op_r: &ast::Node<T>) -> Type {
+    use ast::BinOp::*;
+    match op.node {
+        Add | Sub | Mul | Div | Mod | Pow => {
+            op_l.check(env, &Type::int());
+            op_r.check(env, &Type::int());
+
+            let t_ref_op_l = infer_node(op_l, env);
+
+            Type::Fun {
+                args: vec![t_ref_op_l, t_ref_op_l],
+                ret: t_ref_op_l
+            }
+        }
+        And | Or => {
+            op_l.check(env, &Type::bool());
+            op_r.check(env, &Type::bool());
+
+            let t_ref_op_l = infer_node(op_l, env);
+
+            Type::Fun {
+                args: vec![t_ref_op_l, t_ref_op_l],
+                ret: t_ref_op_l
+            }
+        }
+        EQ | NE | LT | GT | LE | GE => {
+            let t_op_l = op_l.infer(env);
+            op_r.check(env, &t_op_l);
+
+            let t_ref_op = infer_node(op_l, env);
+
+            Type::Fun { args: vec![t_ref_op, t_ref_op], ret: builtin_bool_ref() }
+        }
+        Cons => {
+            let t_ref_elem = infer_node(op_l, env);
+            let t_ref_list = infer_node(op_r, env);
+
+            op_r.check(env, &Type::App { name: builtin_list_ref(), args: vec![t_ref_elem] });
+
+            Type::Fun { args: vec![t_ref_elem, t_ref_list], ret: t_ref_list }
+        }
+        Concat => {
+            let t_op_l = op_l.infer(env);
+            if let Type::App { name, args: _ } = t_op_l.deref(env.type_table()) {
+                env.unify(&Type::Ref(name), &Type::Ref(builtin_list_ref()));
+                op_r.check(env, &t_op_l);
+
+                let t_ref_op = infer_node(op_l, env);
+
+                Type::Fun { args: vec![t_ref_op, t_ref_op], ret: t_ref_op }
+            } else {
+                panic!("TYPE ERROR: Both operands of operator '::' must be lists")
+            }
+        }
+        Pipe => {
+            if let Type::Fun { args, ret } = op_r.infer(env).deref(env.type_table()) {
+                if args.len() != 1 {
+                    panic!("TYPE ERROR: Right operand of `|>` is not a single argument function");
+                }
+                let t_ref_arg = args[0];
+                let t_ref_fun = infer_node(op_r, env);
+                op_l.check(env, &Type::Ref(t_ref_arg));
+
+                Type::Fun { args: vec![t_ref_arg, t_ref_fun], ret }
+            } else {
+                panic!("TYPE ERROR: Right operand of `|>` is not a function")
+            }
+        }
+    }
+}
+
 impl<Env: HasTEnv, T: Infer<Env>> Infer<Env> for Box<T> {
     fn infer(&self, env: &mut Env) -> Type {
         (**self).infer(env)
@@ -52,6 +141,8 @@ impl Infer<TEnv> for ast::Literal {
         match self {
             ast::Literal::Int{..} => Type::int(),
             ast::Literal::Bool{..} => Type::bool(),
+            ast::Literal::Char {..} => Type::char(),
+            ast::Literal::String {..} => Type::string(),
             _ => todo!()
         }
     }
@@ -61,7 +152,7 @@ impl Infer<TEnv> for ast::Expr {
     fn infer(&self, env: &mut TEnv) -> Type {
         use ast::Expr::*;
         match self {
-            Literal{val: lit} => lit.infer(env.t_env_mut()),
+            Literal{val: lit} => lit.infer(env),
             Lambda {args,body} => {
                 let t_args = args.node
                     .iter()
@@ -74,9 +165,21 @@ impl Infer<TEnv> for ast::Expr {
                     ret: t_body,
                 }
             }
-            Typed {expr,t} => todo!(),
-            BinOp {op,op_l,op_r} => todo!(),
-            UnOp {op,op_r} => todo!(),
+            Typed {expr,t} => infer_typed(env, expr, t),
+            BinOp {op,op_l,op_r} => infer_binop(env, op, op_l, op_r),
+            UnOp {op,op_r} => {
+                let t_expected = match op.node {
+                    ast::UnOp::Neg => Type::int(),
+                    ast::UnOp::Not => Type::bool()
+                };
+                op_r.check(env, &t_expected);
+
+                let t_ref_op_r = infer_node(op_r, env);
+                Type::Fun {
+                    args: vec![t_ref_op_r],
+                    ret: t_ref_op_r
+                }
+            }
             App {fun,args} => {
                 let u_ret = type_ref_here(env);
                 let t_args = infer_nodes(&args.node, env);
@@ -86,7 +189,7 @@ impl Infer<TEnv> for ast::Expr {
                     ret: u_ret,
                 };
 
-                let t_fun = fun.check(env, &t_fun_exp);
+                fun.check(env, &t_fun_exp);
 
                 Type::Ref(u_ret)
             }
@@ -96,8 +199,13 @@ impl Infer<TEnv> for ast::Expr {
                 let t_elems = elems.iter().map(|e| infer_node(e, env)).collect();
                 Type::Tuple{elems: t_elems}
             }
-            List {elems} => todo!(),
-            ListRange {start,end} => todo!(),
+            List { elems } => infer_list(env, elems),
+            ListRange {start, end} => {
+                start.check(env, &Type::int());
+                end.check(env, &Type::int());
+
+                Type::Fun { args: vec![builtin_int_ref(), builtin_int_ref()], ret: builtin_list_of_int_ref() }
+            }
             ListComp {yield_expr,filters} => todo!(),
             Record {fields} => todo!(),
             RecordUpdate {record,updates} => todo!(),
@@ -152,24 +260,20 @@ impl Infer<TEnv> for ast::Pattern {
                 t
             },
             Lit {value} => value.infer(env),
-            List {elems} => todo!(),
+            List {elems} => infer_list(env, elems),
             Tuple {elems} => {
                 let t_elems = infer_nodes(elems, env);
                 Type::Tuple{elems: t_elems}
             },
             Record {fields} => todo!(),
-            Op {op_l,op_r,op} => todo!(),
+            Op {op_l, op_r, op} => infer_binop(env, op, op_l, op_r),
             Let {name,pat} => {
                 let t_name = Var{name: name.clone()}.infer(env);
                 let t_pat = pat.infer(env);
                 env.t_env_mut().unify(&t_name, &t_pat);
                 t_name
             }
-            Typed {pat,t} => {
-                let ut = t.infer(env);
-                pat.check(env, &ut);
-                ut
-            }
+            Typed {pat,t} => infer_typed(env, pat, t),
             App {fun,args} => todo!(),
             Wildcard => type_here(env)
         }
@@ -202,8 +306,16 @@ impl Infer<TEnv> for ast::Type {
                     elems: infer_nodes(elems, env)
                 }
             },
-            App {fun,args} => todo!(), // TODO type-app utype
-            _ => todo!()
+            App {fun, args} => {
+                fun.infer(env);
+                for a in &args.node {
+                    a.infer(env);
+                }
+                Type::App {
+                    name: infer_node(fun, env),
+                    args: infer_nodes(&args.node, env)
+                }
+            }
         }
     }
 }
@@ -276,7 +388,7 @@ mod tests {
     }
 
     fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(local: bool, e: &str, t: &str) {
-        let table = TypeTable::new(vec!["item".to_string(), "type".to_string()]);
+        let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
         let mut env = TEnv::new(table);
 
         if local {
@@ -305,6 +417,48 @@ mod tests {
     }
 
     #[test]
+    fn check_typed() {
+        check_local::<ast::Expr>("1 : int\n", "int");
+        // TODO: add more tests
+    }
+
+    #[test]
+    fn check_bin_op() {
+        check_local::<ast::Expr>("1 + 1\n", "(int, int) => int");
+        check_local::<ast::Expr>("2 - 2\n", "(int, int) => int");
+        check_local::<ast::Expr>("80 / 8\n", "(int, int) => int");
+        check_local::<ast::Expr>("10 * 10\n", "(int, int) => int");
+        check_local::<ast::Expr>("14 mod 7\n", "(int, int) => int");
+        check_local::<ast::Expr>("2 ^ 10\n", "(int, int) => int");
+
+        check_local::<ast::Expr>("true || false\n", "(bool, bool) => bool");
+        check_local::<ast::Expr>("false && false\n", "(bool, bool) => bool");
+
+        check_local::<ast::Expr>("1 >= 2\n", "(int, int) => bool");
+        check_local::<ast::Expr>("1 =< 2\n", "(int, int) => bool");
+        check_local::<ast::Expr>("false != true\n", "(bool, bool) => bool");
+        check_local::<ast::Expr>("'c' < 'a'\n", "(char, char) => bool");
+        check_local::<ast::Expr>("'c' > 'a'\n", "(char, char) => bool");
+        check_local::<ast::Expr>("\"str\" == \"str\"\n", "(string, string) => bool");
+
+        check_local::<ast::Expr>("1::[1]\n", "(int, list(int)) => list(int)");
+        check_local::<ast::Expr>("1::[1, 2, 3]\n", "(int, list(int)) => list(int)");
+        check_local::<ast::Expr>("false::[true, false]\n", "(bool, list(bool)) => list(bool)");
+
+        check_local::<ast::Expr>("[1] ++ [1]\n", "(list(int), list(int)) => list(int)");
+        check_local::<ast::Expr>("['c'] ++ ['d']\n", "(list(char), list(char)) => list(char)");
+
+        // TODO: This test should be fixed after fixing inference for lambdas
+        //check_local::<ast::Expr>("1 |> ((x) => x + 1)\n", "(int, (int) => (int, int) => int) => (int, int) => int");
+    }
+
+    #[test]
+    fn check_un_op() {
+        check_local::<ast::Expr>("-1\n", "(int) => int");
+        check_local::<ast::Expr>("!true\n", "(bool) => bool");
+    }
+
+    #[test]
     fn check_tuples() {
         check_local::<ast::Expr>("(21, 37)\n", "int * int");
         check_local::<ast::Expr>("(21, true, 37, false)\n", "int * bool * int * bool");
@@ -318,6 +472,20 @@ mod tests {
 
         // *THE* edge case
         check_local::<ast::Expr>("()", "unit");
+    }
+
+    #[test]
+    fn check_lists() {
+        check_local::<ast::Expr>("[1]\n", "list(int)");
+        check_local::<ast::Expr>("[1, 2]\n", "list(int)");
+        check_local::<ast::Expr>("[true, false]\n", "list(bool)");
+        check_local::<ast::Expr>("[[1], [2, 3]]\n", "list(list(int))");
+
+        // List range
+        check_local::<ast::Expr>("[1..4]\n", "(int, int) => list(int)");
+
+        // TODO: What is the type of an empty list?
+        check_local::<ast::Expr>("[]\n", "list('a)");
     }
 
     #[test]
