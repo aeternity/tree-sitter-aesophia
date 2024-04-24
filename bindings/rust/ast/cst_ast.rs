@@ -1462,7 +1462,7 @@ mod tests {
     #[test]
     fn test_roundtrips_block_open() {
         run_roundtrip_test("simple_contract_block_open");
-        // run_roundtrip_test("simple_contract_block_open_inline");
+        run_roundtrip_test("simple_contract_block_open_inline");
     }
 
     #[test]
