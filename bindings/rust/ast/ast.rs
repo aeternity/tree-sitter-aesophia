@@ -126,7 +126,7 @@ pub struct ScopeDecl {
     pub name: NodeOne<Name>,
 
     pub types: Nodes<TypeDef>,
-    pub funs: Nodes<FunDef>,
+    pub funs: Nodes<FunDef>, // We allow some illegal items here to be thrown as type errors
 }
 
 #[derive(Clone, Debug)]
