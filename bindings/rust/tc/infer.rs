@@ -392,7 +392,6 @@ mod tests {
         env.init_builtins();
 
         check_module(&module.node, &mut env);
-
     }
 
     #[test]
