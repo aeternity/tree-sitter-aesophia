@@ -1,6 +1,6 @@
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
-use crate::ast::ast::Name;
+use crate::ast::ast::{Name, ScopeHead};
 use crate::tc::utype::*;
 use crate::tc::scope::*;
 
@@ -57,7 +57,7 @@ impl TEnv {
         table.set(builtin_list_of_int_ref(), Type::App { name: builtin_list_ref(), args: vec![builtin_int_ref()] });
 
         Self {
-            top_scope: Scope::new(loc, ScopeKind::TopLevel),
+            top_scope: Scope::new_top(loc),
             current_scope: vec![],
             usings: vec![],
             current_node: loc.node_id(),
@@ -88,13 +88,13 @@ pub fn builtin_list_of_int_ref() -> TypeRef {
 /// Scopes
 impl TEnv {
     /// Adds a new scope within the current scope.
-    pub fn create_scope(&mut self, name: Name, kind: ScopeKind) {
+    pub fn create_scope(&mut self, name: Name, head: ScopeHead) {
         let loc = self.code_ref();
         let current = &mut self.current_scope_mut();
         match current.subscopes.get(&name) {
             Some(_) => panic!("Duplicate scope"),
             None => {
-                let scope = Scope::new(loc, kind);
+                let scope = Scope::new(loc, head);
                 current.subscopes.insert(name, scope);
             }
         }
@@ -170,7 +170,7 @@ impl TEnv {
         res
     }
 
-    /// Executes a function in the given scope by relative path. Does
+    /// Executes a function in the given local scope by relative path. Does
     /// not work if local scope is already open.
     pub fn in_local_scope<F, R>(&mut self, name: Name, fun: F) -> R
     where F: FnOnce(&mut Self) -> R {

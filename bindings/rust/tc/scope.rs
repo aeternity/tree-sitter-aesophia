@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::code_table::{CodeTableRef, HasCodeRef};
-use crate::ast::ast::Name;
+use crate::ast::ast::{Name, ScopeHead};
 use crate::tc::utype::*;
 
 /// Function specification for type checking
@@ -80,19 +80,6 @@ pub type TypedefEnv = HashMap<Name, TypeSpec>;
 pub type ScopeName = Name;
 pub type ScopePath = Vec<Name>;
 
-/// Header of a scope. Used for example to distinguish between
-/// contracts from namespaces.
-pub enum ScopeKind {
-    Contract {
-        payable: bool,
-        main: bool,
-    },
-    ContractInterface {
-        payable: bool,
-    },
-    Namespace,
-    TopLevel
-}
 
 /// Single scope instance. Can be for example a namespace or a contract.
 pub struct Scope {
@@ -101,18 +88,29 @@ pub struct Scope {
     pub funs: FunEnv,
     pub types: TypedefEnv,
     pub vars: VarEnv,
-    pub kind: ScopeKind,
+    pub head: Option<ScopeHead>,
 }
 
 impl Scope {
-    pub fn new(location: CodeTableRef, kind: ScopeKind) -> Self {
+    pub fn new(location: CodeTableRef, head: ScopeHead) -> Self {
         Self {
             location,
             subscopes: HashMap::new(),
             funs: HashMap::new(),
             types: HashMap::new(),
             vars: HashMap::new(),
-            kind,
+            head: Some(head),
+        }
+    }
+
+    pub fn new_top(location: CodeTableRef) -> Self {
+        Self {
+            location,
+            subscopes: HashMap::new(),
+            funs: HashMap::new(),
+            types: HashMap::new(),
+            vars: HashMap::new(),
+            head: None,
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::ast::ast;
+use crate::ast::ast::{self};
 use crate::tc::*;
 use type_env::*;
 use scope::*;
@@ -41,7 +41,7 @@ fn type_here<Env: HasTEnv>(env: &Env) -> Type {
     Type::Ref(u)
 }
 
-fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &Vec<ast::Node<T>>) -> Type {
+fn infer_list<T: Infer<TEnv>>(env: &mut TEnv, elems: &[ast::Node<T>]) -> Type {
     let t_ref_list = builtin_list_ref();
     if let Some(elem0) = elems.first() {
         let t_ref_elem0 = infer_node(elem0, env);
@@ -357,20 +357,46 @@ impl Infer<TEnv> for ast::FunClause {
     }
 }
 
-// fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) -> () {
-//     env.in_scope(scope, |env| {
 
-//     })
-// }
+pub fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) {
+    env.in_scope(scope.name.node.clone(), |env_in| {
+        for fun in scope.funs.iter() {
+            fun.infer(env_in);
+        }
+    })
+}
 
-fn check_module(module: &ast::Module, env: &mut TEnv) -> () {
-
+pub fn check_module(module: &ast::Module, env: &mut TEnv) {
+    for scope in module.scopes.iter() {
+        check_scope(&scope.node, env);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ast::ast;
+
+    fn parse_check_module(src: &str) {
+        let module: ast::Node<ast::Module> =
+            crate::ast::parse_str(src).expect("Parse error: module");
+
+
+        let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
+        let mut env = TEnv::new(table);
+        env.init_builtins();
+
+        check_module(&module.node, &mut env);
+    }
+
+    #[test]
+    fn contract_test() {
+        let src = r#"
+            contract C =
+              function f() = 123 + 321
+            "#;
+        parse_check_module(src);
+    }
 
     fn check_in<T: crate::cst_ast::CstNode + Infer<TEnv>>(env: &mut TEnv, e: &str, t: &str) {
         let e: ast::Node<T> = crate::ast::parse_str(e).expect("Parse error: item");
