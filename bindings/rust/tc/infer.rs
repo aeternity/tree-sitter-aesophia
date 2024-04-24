@@ -358,20 +358,15 @@ impl Infer<TEnv> for ast::FunClause {
 }
 
 
-pub fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) -> () {
-    match scope {
-        ast::ScopeDecl {name, funs, ..} => {
-            env.in_scope(name.node.clone(), |env_in| {
-                for fun in funs {
-                    fun.infer(env_in);
-                }
-            })
+pub fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) {
+    env.in_scope(scope.name.node.clone(), |env_in| {
+        for fun in scope.funs.iter() {
+            fun.infer(env_in);
         }
-        _ => todo!()
-    }
+    })
 }
 
-pub fn check_module(module: &ast::Module, env: &mut TEnv) -> () {
+pub fn check_module(module: &ast::Module, env: &mut TEnv) {
     for scope in module.scopes.iter() {
         check_scope(&scope.node, env);
     }
