@@ -29,6 +29,7 @@ impl CstNode for ast::Module {
         let scopes = parse_kinds_in_field(tc, env, &<ast::ScopeDecl as CstNode>::parse, "module", "scope_declaration");
 
         Some(mk_node_tc(
+            env,
             tc,
             ast::Module {
                 pragmas: pragmas?.node,
@@ -46,12 +47,15 @@ impl CstNode for ast::Using {
         let scope = parse_field(tc, env, &parse_name, "scope");
         let alias = parse_field(tc, env, &parse_name, "alias");
         let select = parse_field(tc, env, &<ast::UsingSelect as CstNode>::parse, "select");
+
+        let using_select_node = mk_node(env, node, ast::UsingSelect::All);
         Some(mk_node(
+            env,
             node,
             ast::Using {
                 scope: scope?,
                 alias,
-                select: select.unwrap_or(mk_node(node, ast::UsingSelect::All)),
+                select: select.unwrap_or(using_select_node),
             },
         ))
     }
@@ -71,7 +75,7 @@ impl CstNode for ast::UsingSelect {
             }
             e => panic!("Unknown using select: {}", e),
         };
-        Some(mk_node(node, select))
+        Some(mk_node(env, node, select))
     }
 }
 
@@ -88,6 +92,7 @@ fn parse_top_pragma(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::
             let op = parse_field(tc, env, &<ast::BinOp as CstNode>::parse, "op");
             let vsn = parse_fields_in_field(tc, env, &parse_name, "version", "subver");
             Some(mk_node(
+                env,
                 node,
                 ast::Pragma::CompilerVsn { op: op?, vsn: vsn? },
             ))
@@ -100,7 +105,7 @@ impl CstNode for ast::Include {
     fn parse(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Include> {
         let node = &tc.node();
         let path = parse_field(tc, env, &parse_str, "path");
-        Some(mk_node(node, ast::Include { path: path? }))
+        Some(mk_node(env, node, ast::Include { path: path? }))
     }
 }
 
@@ -120,7 +125,7 @@ impl CstNode for ast::ScopeDecl {
             types,
             funs,
         };
-        Some(mk_node(node, scope))
+        Some(mk_node(env, node, scope))
     }
 }
 
@@ -179,7 +184,7 @@ impl CstNode for ast::ScopeHead {
                 panic!("Unknown scope header: {}", e)
             }
         };
-        Some(mk_node(node, scope_head))
+        Some(mk_node(env, node, scope_head))
     }
 }
 struct Modifiers {
@@ -274,6 +279,7 @@ impl CstNode for ast::FunDef {
         }
 
         Some(mk_node(
+            env,
             node,
             ast::FunDef {
                 stateful: is_stateful,
@@ -303,6 +309,7 @@ fn parse_function_clause(
             let typ = parse_field(tc, env, &<ast::Type as CstNode>::parse, "type");
             let body = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "body");
             either::Left(mk_node(
+                env,
                 node,
                 ast::FunClause {
                     args: args?,
@@ -313,7 +320,7 @@ fn parse_function_clause(
         }
         "function_signature" => {
             let typ = parse_field(tc, env, &<ast::Type as CstNode>::parse, "type");
-            either::Right(mk_node(node, ast::FunSig { signature: typ? }))
+            either::Right(mk_node(env, node, ast::FunSig { signature: typ? }))
         }
         _ => panic!("bad fun clause"),
     };
@@ -385,7 +392,7 @@ impl CstNode for ast::TypeDef {
             bad => panic!("Bad type def {}", bad),
         };
 
-        Some(mk_node(node, td))
+        Some(mk_node(env, node, td))
     }
 }
 
@@ -395,6 +402,7 @@ impl CstNode for ast::FieldDecl {
         let name = parse_field(tc, env, &parse_name, "name");
         let typ = parse_field(tc, env, &<ast::Type as CstNode>::parse, "type");
         Some(mk_node(
+            env,
             node,
             ast::FieldDecl {
                 name: name?,
@@ -411,6 +419,7 @@ impl CstNode for ast::Constructor {
         let params =
             parse_fields_in_field(tc, env, &<ast::Type as CstNode>::parse, "params", "param");
         Some(mk_node(
+            env,
             node,
             ast::Constructor {
                 name: name?,
@@ -432,7 +441,7 @@ impl CstNode for ast::Expr {
             "identifier" => {
                 let name = parse_name(tc, env);
                 let qname = QName {
-                    path: mk_node(node, vec![]),
+                    path: mk_node(env, node, vec![]),
                     name: name?,
                 };
 
@@ -600,6 +609,7 @@ impl CstNode for ast::Expr {
                     .zip(thens.iter())
                     .map(|(c, t)| {
                         mk_node(
+                            env,
                             node,
                             ast::ExprCond {
                                 cond: c.to_owned(),
@@ -635,7 +645,7 @@ impl CstNode for ast::Expr {
             "expr_hole" => Expr::Hole,
             e => panic!("Unknown expression node: {}", e),
         };
-        Some(mk_node(node, expr))
+        Some(mk_node(env, node, expr))
     }
 }
 
@@ -645,6 +655,7 @@ impl CstNode for ast::Case {
         let pattern = parse_field(tc, env, &<ast::Pattern as CstNode>::parse, "pattern");
         let branches = parse_fields(tc, env, &<ast::CaseBranch as CstNode>::parse, "branch");
         Some(mk_node(
+            env,
             node,
             ast::Case {
                 pattern: pattern?,
@@ -659,10 +670,13 @@ impl CstNode for ast::CaseBranch {
         let node = &tc.node();
         let guards = parse_fields(tc, env, &<ast::Expr as CstNode>::parse, "guard");
         let body = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "body");
+
+        let guards_node = mk_node(env, node, guards);
         Some(mk_node(
+            env,
             node,
             ast::CaseBranch {
-                guards: mk_node(node, guards),
+                guards: guards_node,
                 body: body?,
             },
         ))
@@ -694,7 +708,7 @@ impl CstNode for ast::BinOp {
             "|>" => Pipe,
             e => panic!("Unknown binary op: {}", e),
         };
-        Some(mk_node(node, op))
+        Some(mk_node(env, node, op))
     }
 }
 
@@ -708,7 +722,7 @@ impl CstNode for ast::UnOp {
             "!" => Not,
             e => panic!("Unknown unary op: {}", e),
         };
-        Some(mk_node(node, op))
+        Some(mk_node(env, node, op))
     }
 }
 
@@ -733,7 +747,7 @@ impl CstNode for ast::ExprArg {
             }
             e => panic!("Unknown arg node: {}", e)
         };
-        Some(mk_node(node, arg))
+        Some(mk_node(env, node, arg))
     }
 }
 
@@ -746,6 +760,7 @@ impl CstNode for ast::RecordFieldAssign {
         let field = parse_field(tc, env, &parse_name, "field");
         let value = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "value");
         Some(mk_node(
+            env,
             node,
             ast::RecordFieldAssign {
                 field: field?,
@@ -765,6 +780,7 @@ impl CstNode for ast::RecordFieldUpdate {
         let old_value = parse_field(tc, env, &parse_name, "old_value");
         let path = parse_fields_in_field(tc, env, &parse_name, "path", "field");
         Some(mk_node(
+            env,
             node,
             ast::RecordFieldUpdate {
                 new_value: new_value?,
@@ -781,6 +797,7 @@ impl CstNode for ast::MapFieldAssign {
         let key = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "key");
         let value = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "value");
         Some(mk_node(
+            env,
             node,
             ast::MapFieldAssign {
                 key: key?,
@@ -797,6 +814,7 @@ impl CstNode for ast::MapFieldUpdate {
         let old_value = parse_field(tc, env, &parse_name, "old_value");
         let new_value = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "new_value");
         Some(mk_node(
+            env,
             node,
             ast::MapFieldUpdate {
                 key: key?,
@@ -809,7 +827,8 @@ impl CstNode for ast::MapFieldUpdate {
 
 fn parse_name(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Name> {
     let node = &tc.node();
-    Some(mk_node(node, node_content(node, env)?))
+    let node_content = node_content(node, env);
+    Some(mk_node(env, node, node_content?))
 }
 
 impl CstNode for ast::Type {
@@ -847,18 +866,18 @@ impl CstNode for ast::Type {
             "type_variable" => {
                 let name = node_content(node, env);
                 Type::Var {
-                    name: mk_node(node, name?),
+                    name: mk_node(env, node, name?),
                 }
             }
             "type_variable_poly" => {
                 let name = node_content(node, env);
                 Type::PolyVar {
-                    name: mk_node(node, name?),
+                    name: mk_node(env, node, name?),
                 }
             }
             e => panic!("Unknown type node: {}", e),
         };
-        Some(mk_node(node, t))
+        Some(mk_node(env, node, t))
     }
 }
 
@@ -875,7 +894,7 @@ fn parse_fun_domain(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::
         }
         e => panic!("Unknown type node: {}", e),
     };
-    Some(mk_node(node, args))
+    Some(mk_node(env, node, args))
 }
 
 impl CstNode for ast::Pattern {
@@ -948,13 +967,13 @@ impl CstNode for ast::Pattern {
             "identifier" => {
                 let name = node_content(node, env);
                 Pattern::Var {
-                    name: mk_node(node, name?),
+                    name: mk_node(env, node, name?),
                 }
             }
             "expr_wildcard" => Pattern::Wildcard,
             e => panic!("Unknown pattern node: {}", e),
         };
-        Some(mk_node(node, pat))
+        Some(mk_node(env, node, pat))
     }
 }
 
@@ -967,6 +986,7 @@ impl CstNode for ast::PatternRecordField {
         let path = parse_fields_in_field(tc, env, &parse_name, "fields", "field");
         let pattern = parse_field(tc, env, &<ast::Pattern as CstNode>::parse, "pattern");
         Some(mk_node(
+            env,
             node,
             ast::PatternRecordField {
                 path: path?,
@@ -1057,6 +1077,7 @@ impl CstNode for SplitStmt {
                 let cond = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "cond");
                 let then = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "then");
                 let conds = vec![mk_node(
+                    env,
                     node,
                     ast::ExprCond {
                         cond: cond?,
@@ -1069,6 +1090,7 @@ impl CstNode for SplitStmt {
                 let cond = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "cond");
                 let then = parse_field(tc, env, &<ast::Expr as CstNode>::parse, "then");
                 SplitStmt::PartElIf(mk_node(
+                    env,
                     node,
                     ast::ExprCond {
                         cond: cond?,
@@ -1082,7 +1104,7 @@ impl CstNode for SplitStmt {
             }
             e => panic!("Unknown statement node: {}", e),
         };
-        Some(mk_node(node, stmt))
+        Some(mk_node(env, node, stmt))
     }
 }
 
@@ -1221,10 +1243,13 @@ fn parse_qual(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::QName>
     let node = &tc.node();
     let path = parse_fields(tc, env, &parse_name, "path");
     let name = parse_field(tc, env, &parse_name, "name");
+
+    let path_node = mk_node(env, node, path); 
     Some(mk_node(
+        env,
         node,
         ast::QName {
-            path: mk_node(node, path),
+            path: path_node,
             name: name?,
         },
     ))
@@ -1267,7 +1292,7 @@ fn parse_literal(tc: &mut TsCursor, env: &mut ParseEnv) -> ParseResultN<ast::Lit
             panic!("Unknown literal node: {}", e)
         }
     };
-    Some(mk_node(node, lit))
+    Some(mk_node(env, node, lit))
 }
 
 fn parse_any_with<T, P>(tc: &mut TsCursor, env: &mut ParseEnv, parse: P) -> ParseResult<()>
@@ -1377,7 +1402,8 @@ mod tests {
         let tree = parser.parse(src, None).expect("Unable to parse");
 
         let subtypes = load_subtypes();
-        let env = ParseEnv::new(src_data, subtypes, tree.root_node().has_error());
+        let locations = LocInfoTable::new(vec![]);
+        let env = ParseEnv::new(src_data, locations, subtypes, tree.root_node().has_error());
 
         (env, tree)
     }

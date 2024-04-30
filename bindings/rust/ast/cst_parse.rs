@@ -1,7 +1,10 @@
 //! Fundamental tree-sitter parsing utilities.
 
 use crate::ast::ast;
+use crate::code_table::{CodeTable, CodeTableRef};
 use crate::cst::*;
+
+use self::loc_info::LocInfo;
 
 /// Errors related to lexing
 #[derive(Clone, Debug)]
@@ -76,11 +79,16 @@ pub type ParseErrors = ast::Nodes<ParseError>;
 
 pub type SubtypeMap = std::collections::HashMap<String, String>;
 
+pub type LocInfoTable = CodeTable<LocInfo>;
+
 /// Parsing environment for CST processing.
 #[derive(Debug)]
 pub struct ParseEnv {
     /// Source file reference
     pub src: Vec<u16>,
+
+    /// Map of node locations
+    pub locations: LocInfoTable,
 
     /// Map of node subtypes
     pub subtypes: SubtypeMap,
@@ -94,9 +102,10 @@ pub struct ParseEnv {
 }
 
 impl ParseEnv {
-    pub fn new(src: Vec<u16>, subtypes: SubtypeMap, has_ts_errors: bool) -> Self {
+    pub fn new(src: Vec<u16>, locations: LocInfoTable, subtypes: SubtypeMap, has_ts_errors: bool) -> Self {
         ParseEnv {
             src,
+            locations,
             errs: vec![],
             subtypes,
             has_ts_errors
@@ -105,7 +114,8 @@ impl ParseEnv {
 
     /// Add an error at node's location
     pub fn err(&mut self, node: &TsNode, err: ParseError) {
-        self.errs.push(mk_node(node, err));
+        let node = mk_node(self, node, err);
+        self.errs.push(node);
         self.has_ts_errors = true;
     }
 
@@ -133,7 +143,9 @@ pub type ParseResultN<T> = ParseResult<ast::Node<T>>;
 
 
 /// Wraps an item with an AST node based on a tree-sitter node
-pub fn mk_node<T: Clone>(node: &TsNode, value: T) -> ast::Node<T> {
+pub fn mk_node<T: Clone>(env: &mut ParseEnv, node: &TsNode, value: T) -> ast::Node<T> {
+    let idx = CodeTableRef::new(0, node.id());
+    env.locations.set(idx, LocInfo::from(node));
     ast::Node {
         node: value,
         id: node.id(),
@@ -141,8 +153,8 @@ pub fn mk_node<T: Clone>(node: &TsNode, value: T) -> ast::Node<T> {
 }
 
 /// Wraps an item with an AST node based on a tree-sitter node
-pub fn mk_node_tc<T: Clone>(tc: &TsCursor, value: T) -> ast::Node<T> {
-    mk_node(&tc.node(), value)
+pub fn mk_node_tc<T: Clone>(env: &mut ParseEnv, tc: &TsCursor, value: T) -> ast::Node<T> {
+    mk_node(env, &tc.node(), value)
 }
 
 
@@ -319,7 +331,7 @@ where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>
 {
     parse_field(tc, env, &|tc, env| {
         let children = parse_fields(tc, env, parse, name_in);
-        Some(mk_node_tc(tc, children))
+        Some(mk_node_tc(env, tc, children))
     }, name)
 }
 
@@ -339,7 +351,7 @@ where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
 {
     parse_field(tc, env, &|tc, env| {
         let children = parse_children(tc, env, parse, filter);
-        Some(mk_node_tc(tc, children))
+        Some(mk_node_tc(env, tc, children))
     }, name)
 }
 
@@ -355,6 +367,6 @@ where P: Fn(&mut TsCursor<'a>, &mut ParseEnv) -> ParseResultN<T>,
 {
     parse_field(tc, env, &|tc, env| {
         let children = parse_kinds(tc, env, parse, kind);
-        Some(mk_node_tc(tc, children))
+        Some(mk_node_tc(env, tc, children))
     }, name)
 }

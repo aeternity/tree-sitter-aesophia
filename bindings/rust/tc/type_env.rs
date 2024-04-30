@@ -1,6 +1,7 @@
 use crate::cst;
 use crate::code_table::{CodeTable, CodeTableRef, HasCodeRef};
 use crate::ast::ast::{Name, ScopeHead};
+use crate::cst_parse::LocInfoTable;
 use crate::tc::utype::*;
 use crate::tc::scope::*;
 
@@ -44,11 +45,12 @@ pub struct TEnv {
     type_table: CodeTable<Type>,
     /// The number of currently used fresh type refs
     fresh_typeref_count: usize,
+    locations: LocInfoTable,
 }
 
 /// Constructors
 impl TEnv {
-    pub fn new(mut table: TypeTable) -> Self {
+    pub fn new(mut table: TypeTable, locations: LocInfoTable) -> Self {
         let loc = CodeTableRef::new(0, 0);
 
         table.set(builtin_int_ref(), Type::int());
@@ -65,6 +67,7 @@ impl TEnv {
             type_table: table,
             local_scope: None,
             fresh_typeref_count: 0,
+            locations,
         }
     }
 }

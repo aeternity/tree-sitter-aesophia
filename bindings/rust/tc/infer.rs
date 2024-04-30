@@ -377,15 +377,15 @@ mod tests {
     use std::fs;
 
     use super::*;
-    use crate::ast::ast;
+    use crate::{ast::ast, cst_parse::LocInfoTable};
 
     fn parse_check_module(src: &str) {
-        let module: ast::Node<ast::Module> =
-            crate::ast::parse_str(src).expect("Parse error: module");
-
+        let parsed =  crate::ast::parse_str_base(src);
+        let module: ast::Node<ast::Module> = parsed.0.expect("Parse error: module");
+        let locations = parsed.1;
 
         let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
-        let mut env = TEnv::new(table);
+        let mut env = TEnv::new(table, locations);
 
         check_module(&module.node, &mut env);
     }
@@ -442,7 +442,7 @@ mod tests {
 
     fn check_item<T: crate::cst_ast::CstNode + Infer<TEnv>>(local: bool, e: &str, t: &str) {
         let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
-        let mut env = TEnv::new(table);
+        let mut env = TEnv::new(table, LocInfoTable::new(vec![]));
 
         if local {
             env.in_local_scope("local".to_string(), |env_in| check_in::<T>(env_in, e, t))

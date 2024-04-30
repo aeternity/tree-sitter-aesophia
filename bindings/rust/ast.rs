@@ -5,7 +5,7 @@ pub mod cst_ast;
 pub mod cst_parse;
 pub mod display;
 
-use crate::cst;
+use crate::{cst, cst_parse::LocInfoTable};
 
 pub fn load_subtypes() -> cst_parse::SubtypeMap {
     print!("Loading subtype map... ");
@@ -39,7 +39,7 @@ pub fn load_subtypes() -> cst_parse::SubtypeMap {
     subtypes
 }
 
-pub fn parse_str<T: cst_ast::CstNode>(src: &str) -> cst_parse::ParseResultN<T> {
+pub fn parse_str_base<T: cst_ast::CstNode>(src: &str) -> (cst_parse::ParseResultN<T>, LocInfoTable) {
     let dispatch = match <T as cst_ast::CstNode>::ts_dispatch() {
         None => String::new(),
         Some(disp) => "@ts.parse(".to_string() + &disp + ")\n"
@@ -58,7 +58,14 @@ pub fn parse_str<T: cst_ast::CstNode>(src: &str) -> cst_parse::ParseResultN<T> {
 
     let src_data: Vec<u16> = src.encode_utf16().collect();
     let subtypes = load_subtypes();
-    let mut env = cst_parse::ParseEnv::new(src_data, subtypes, tree.root_node().has_error());
+    let locations = LocInfoTable::new(vec![]);
+    let mut env = cst_parse::ParseEnv::new(src_data, locations, subtypes, tree.root_node().has_error());
 
-    <T as cst_ast::CstNode>::parse(&mut tc, &mut env)
+    let res = <T as cst_ast::CstNode>::parse(&mut tc, &mut env);
+
+    (res, env.locations)
+}
+
+pub fn parse_str<T: cst_ast::CstNode>(src: &str) -> cst_parse::ParseResultN<T> {
+    parse_str_base(src).0
 }
