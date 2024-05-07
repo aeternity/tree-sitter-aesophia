@@ -1,31 +1,53 @@
 {
   "name": "tree-sitter-aesophia",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Aesophia grammar for tree-sitter",
+  "repository": "github:tree-sitter/tree-sitter-aesophia",
+  "license": "MIT",
   "main": "bindings/node",
+  "types": "bindings/node",
+  "keywords": [
+    "incremental",
+    "parsing",
+    "tree-sitter",
+    "aesophia"
+  ],
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
+  ],
+  "dependencies": {
+    "node-addon-api": "^7.1.0",
+    "node-gyp-build": "^4.8.0"
+  },
+  "devDependencies": {
+    "prebuildify": "^6.0.0",
+    "tree-sitter-cli": "^0.22.5"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.21.0"
+  },
+  "peerDependenciesMeta": {
+    "tree-sitter": {
+      "optional": true
+    }
+  },
   "scripts": {
-    "build": "tree-sitter generate",
-    "build-wasm": "tree-sitter build-wasm",
-    "build-node": "node-gyp configure && node-gyp build",
+    "install": "node-gyp-build",
+    "prebuildify": "prebuildify --napi --strip",
+    "build": "tree-sitter generate --no-bindings",
+    "build-wasm": "tree-sitter build --wasm",
     "test": "tree-sitter test",
     "parse": "tree-sitter parse"
   },
-  "author": "Dincho Todorov, Radosław Rowicki",
-  "license": "ISC",
-  "dependencies": {
-    "nan": "^2.15.0"
-  },
-  "devDependencies": {
-    "node-gyp": "^8.4.0",
-    "tree-sitter-cli": "^0.20.0",
-    "tree-sitter-grammar-to-dot": "^0.0.2"
-  },
   "tree-sitter": [
     {
-      "scope": "source.sophia",
-      "file-types": [
-        "aes"
-      ]
+      "scope": "source.aesophia",
+      "injection-regex": "^aesophia$"
     }
   ]
 }

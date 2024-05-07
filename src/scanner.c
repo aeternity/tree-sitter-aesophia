@@ -1,631 +1,857 @@
-#include "tree_sitter/parser.h"
-#include <assert.h>
+/* Copyright (c) 2023 Leorize <leorize+oss@disroot.org>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
-/* #define DEBUG */
+#include "tree_sitter/parser.h"
+#include "tree_sitter/alloc.h"
 
-#define ever (;;)
-
-#define ACCEPT(SYMBOL)                 \
-    {                                  \
-        lexer->result_symbol = SYMBOL; \
-        goto _ACCEPT;                  \
-    }
-#define NOT_ACCEPT goto _NOT_ACCEPT
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#define VEC_RESIZE(vec, _cap)                                        \
-    void *tmp = realloc((vec).data, (_cap) * sizeof((vec).data[0])); \
-    assert(tmp != NULL);                                             \
-    (vec).data = tmp;                                                \
-    assert((vec).data != NULL);                                      \
-    (vec).cap = (_cap);
-
-#define VEC_GROW(vec, _cap)        \
-    if ((vec).cap < (_cap))        \
-    {                              \
-        VEC_RESIZE((vec), (_cap)); \
-    }
-
-#define VEC_PUSH(vec, el)                          \
-    if ((vec).cap == (vec).len)                    \
-    {                                              \
-        VEC_RESIZE((vec), MAX(16, (vec).len * 2)); \
-    }                                              \
-    (vec).data[(vec).len++] = (el);
-
-#define VEC_POP(vec) (vec).len--;
-
-#define VEC_BACK(vec) ((vec).data[(vec).len - 1])
-
-#define VEC_FREE(vec)           \
-    {                           \
-        if ((vec).data != NULL) \
-            free((vec).data);   \
-    }
-
-#define VEC_CLEAR(vec) (vec).len = 0;
-
-#define VEC_REVERSE(vec)                                           \
-    do                                                             \
-    {                                                              \
-        if ((vec).len > 1)                                         \
-        {                                                          \
-            for (size_t i = 0, j = (vec).len - 1; i < j; i++, j--) \
-            {                                                      \
-                uint8_t tmp = (vec).data[i];                       \
-                (vec).data[i] = (vec).data[j];                     \
-                (vec).data[j] = tmp;                               \
-            }                                                      \
-        }                                                          \
-    } while (0)
-
-enum TokenType
-{
-    BLOCK_OPEN_INLINE,
-    BLOCK_OPEN,
-    BLOCK_SEMI,
-    BLOCK_CLOSE,
-    BLOCK_COMMENT_CONTENT,
-    ERROR_STATE
-};
-
-typedef struct
-{
-    uint32_t len;
-    uint32_t cap;
-    uint16_t *data;
-} vec;
-
-typedef struct
-{
-    uint32_t indent_length;
-    vec indents;
-    vec runback;
-} Scanner;
-
-#ifdef DEBUG
-static void print_scanner(Scanner *scanner)
-{
-    printf("INDENTS:");
-    for (size_t i = 0; i < scanner->indents.len; ++i)
-    {
-        printf(" %d", scanner->indents.data[i]);
-    }
-    printf("\nRUNBACK:");
-    for (size_t i = 0; i < scanner->runback.len; ++i)
-    {
-        if (scanner->runback.data[i])
-        {
-            printf("C");
-        }
-        else
-        {
-            printf("S");
-        }
-    }
-    printf("\nINDENT: %d\n", scanner->indent_length);
-}
-
-static void print_symbols(const bool *valid_symbols)
-{
-    if (valid_symbols[ERROR_STATE])
-    {
-        printf("ERROR STATE\n");
-    }
-    else
-    {
-        printf("VALID SYMBOLS:\n");
-        printf("    BLOCK_OPEN_INLINE: %d\n", valid_symbols[BLOCK_OPEN_INLINE]);
-        printf("    BLOCK_OPEN: %d\n", valid_symbols[BLOCK_OPEN]);
-        printf("    BLOCK_SEMI: %d\n", valid_symbols[BLOCK_SEMI]);
-        printf("    BLOCK_CLOSE: %d\n", valid_symbols[BLOCK_CLOSE]);
-        printf("    BLOCK_COMMENT_CONTENT: %d\n", valid_symbols[BLOCK_COMMENT_CONTENT]);
-        printf("    ERROR_STAT: %d\n", valid_symbols[ERROR_STATE]);
-    }
-}
-
-static void print_symbol(int t)
-{
-    switch (t)
-    {
-    case BLOCK_OPEN_INLINE:
-        printf("BLOCK_OPEN_INLINE");
-        break;
-    case BLOCK_OPEN:
-        printf("BLOCK_OPEN");
-        break;
-    case BLOCK_SEMI:
-        printf("BLOCK_SEMI");
-        break;
-    case BLOCK_CLOSE:
-        printf("BLOCK_CLOSE");
-        break;
-    case BLOCK_COMMENT_CONTENT:
-        printf("BLOCK_COMMENT_CONTENT");
-        break;
-    case ERROR_STATE:
-        printf("ERROR_STAT");
-        break;
-    }
-}
+#ifdef __GNUC__
+#  define _nonnull_(...) __attribute__((nonnull(__VA_ARGS__)))
+#  define _returns_nonnull_ __attribute__((returns_nonnull))
+#  define _const_ __attribute__((const))
+#  define _pure_ __attribute__((pure))
 #else
-#define printf(...)
-#define print_symbol(...)
-#define print_symbols(...)
-#define print_scanner(...)
+#  define _nonnull_(...)
+#  define _returns_nonnull_
+#  define _const_
+#  define _pure_
 #endif
 
-static inline void advance(TSLexer *lexer)
+#ifdef TREE_SITTER_INTERNAL_BUILD
+#  define dprintf(...) fprintf(stderr, __VA_ARGS__)
+#  define dputs(msg) fputs(msg, stderr)
+#  define DBG(msg)                                                      \
+  if (debug_mode)                                                       \
+    (void)fprintf(stderr, "lex_aesophia: %s():%d: %s\n", __func__, __LINE__, msg)
+#  define DBG_F(fmt, ...)                                               \
+  if (debug_mode)                                                       \
+    (void)fprintf(                                                      \
+                          stderr, "lex_aesophia: %s():%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
+
+static bool debug_mode = false; /* NOLINT(*-global-variables) */
+#else
+#  define dprintf(...) ((void)0)
+#  define dputs(msg) ((void)0)
+#  define DBG(msg) ((void)0)
+#  define DBG_F(fmt, ...) ((void)0)
+static const bool debug_mode = false;
+#endif
+
+#define RUNTIME_ASSERT(cond)                                            \
+  if (!(cond)) {                                                        \
+    (void)fprintf(                                                      \
+                                                                        stderr, "lex_aesophia: %s():%d: Assertion `%s' failed.\n", __func__, \
+                                                                        __LINE__, #cond); \
+    abort();                                                            \
+  }
+
+#define MIN(left, right) ((left) > (right) ? (right) : (left))
+#define MAX(left, right) ((left) < (right) ? (right) : (left))
+
+typedef uint8_t indent_value;
+const indent_value INVALID_INDENT_VALUE = (indent_value)~0U;
+
+struct indent_vec {
+  int32_t len;
+  int32_t capacity;
+  indent_value* data;
+};
+
+#define INDENT_VEC_EMPTY                        \
+  {                                             \
+    .len = 0, .capacity = 0, .data = NULL       \
+      }
+
+_nonnull_(1) static void indent_vec_destroy(struct indent_vec* self)
 {
-    lexer->advance(lexer, false);
+  ts_free(self->data);
+  memset(self, 0, sizeof(*self));
 }
 
-static inline void skip(TSLexer *lexer)
+_nonnull_(1) _returns_nonnull_ static indent_value* indent_vec_at(
+                                                                  struct indent_vec* self, int32_t idx)
 {
-    lexer->advance(lexer, true);
+  RUNTIME_ASSERT(idx >= 0 && idx < self->len);
+  return &self->data[idx];
 }
 
-// Parse a nested block comment. Coursor is looking at the first '/'.  This is called only when
-// already in a block comment.
-static bool scan_block_comment(TSLexer *lexer)
+_nonnull_(1) static indent_value
+indent_vec_get(const struct indent_vec* self, int32_t idx)
 {
-    // Accept progress so far
-    lexer->mark_end(lexer);
+  return *indent_vec_at((struct indent_vec*)self, idx);
+}
 
-    // Check if we are indeed opening a new comment block
-    if (lexer->lookahead != '/')
-    {
-        printf("DID NOT OPEN /\n");
-        NOT_ACCEPT;
+_nonnull_(1) _returns_nonnull_ static indent_value* indent_vec_at_capacity(
+                                                                           struct indent_vec* self, int32_t idx)
+{
+  RUNTIME_ASSERT(idx >= 0 && idx < self->capacity);
+  return &self->data[idx];
+}
+
+_nonnull_(1) static int indent_vec_set_capacity(
+                                                struct indent_vec* self, int32_t size)
+{
+  if (size < 0) {
+    return -1;
+  }
+  if (size != self->capacity) {
+    indent_value* new_data = ts_realloc(self->data, size);
+    if (!new_data) {
+      return -1;
     }
-    advance(lexer);
-    if (lexer->lookahead != '*')
-    {
-        printf("DID NOT OPEN *\n");
-        NOT_ACCEPT;
+    self->data = new_data;
+    self->capacity = size;
+    self->len = MIN(self->len, size);
+    for (int i = self->len; i < size; i++) {
+      *indent_vec_at_capacity(self, i) = INVALID_INDENT_VALUE;
     }
-    advance(lexer);
+  }
+  return 0;
+}
 
-    // Eat the comment
-    while (true)
-    {
-
-        // Unclosed block comment
-        if (lexer->eof(lexer))
-        {
-            ACCEPT(BLOCK_COMMENT_CONTENT);
-        }
-
-        switch (lexer->lookahead)
-        {
-        case '/':
-            // A possibility of opening a more nested block comment. Try to include it.
-            scan_block_comment(lexer);
-            break;
-        case '*':
-            // A possibility of closing the block comment.
-            advance(lexer);
-            if (lexer->lookahead == '/')
-            {
-                advance(lexer);
-                ACCEPT(BLOCK_COMMENT_CONTENT);
-            }
-            break;
-        default:
-            advance(lexer);
-        }
+_nonnull_(1) static int indent_vec_set_len(
+                                           struct indent_vec* self, int32_t size)
+{
+  if (size < 0) {
+    return -1;
+  }
+  if (size > self->capacity) {
+    if (indent_vec_set_capacity(self, size) < 0) {
+      return -1;
     }
+  }
 
-_NOT_ACCEPT:
+  for (int i = self->len; i < size; i++) {
+    *indent_vec_at_capacity(self, i) = INVALID_INDENT_VALUE;
+  }
+  self->len = size;
+
+  return 0;
+}
+
+_nonnull_(1) static int indent_vec_push(
+                                        struct indent_vec* self, indent_value value)
+{
+  if (self->len >= self->capacity) {
+    int32_t new_capacity = self->len >= 2 ? self->len * 3 / 2 : self->len + 1;
+    if (indent_vec_set_capacity(self, new_capacity) < 0) {
+      return -1;
+    }
+  }
+
+  self->len++;
+  *indent_vec_at(self, self->len - 1) = value;
+
+  return 0;
+}
+
+_nonnull_(1) static void indent_vec_pop(struct indent_vec* self)
+{
+  indent_vec_set_len(self, MAX(0, self->len - 1));
+}
+
+_nonnull_(1) static indent_value indent_vec_back(const struct indent_vec* self)
+{
+  return indent_vec_get(self, self->len - 1);
+}
+
+_nonnull_(1, 2) static unsigned indent_vec_serialize(
+                                                     const struct indent_vec* self, uint8_t* buffer, unsigned buffer_len)
+{
+  size_t n_bytes = self->len * sizeof(*self->data);
+  if (n_bytes > buffer_len) {
+    DBG_F(
+          "warning: buffer is smaller than vector (%u < %zd), partially "
+          "serializing",
+          buffer_len, n_bytes);
+  }
+
+  // Prevents passing NULL pointer to memcpy
+  if (n_bytes == 0) {
+    return n_bytes;
+  }
+
+  unsigned serialize_len = MIN(buffer_len, n_bytes);
+  memcpy(buffer, self->data, n_bytes);
+  return serialize_len;
+}
+
+_nonnull_(1, 2) static void indent_vec_deserialize(
+                                                   struct indent_vec* self, const uint8_t* buffer, unsigned buffer_len)
+{
+  int32_t n_items = (int32_t)MIN(buffer_len / sizeof(*self->data), INT32_MAX);
+  if (indent_vec_set_len(self, n_items) < 0) {
+    DBG("cannot deserialize: set_len failed");
+    return;
+  }
+  if (n_items > 0) {
+    memcpy(self->data, buffer, n_items * sizeof(*self->data));
+  }
+}
+
+_nonnull_(1) static void indent_vec_debug(const struct indent_vec* self)
+{
+  if (debug_mode) {
+    DBG_F("current layout stack: [");
+    for (int32_t i = 0; i < self->len; i++) {
+      (void)dprintf(" %" PRIu8, indent_vec_get(self, i));
+    }
+    (void)dprintf(" ]\n");
+  }
+}
+
+enum token_type {
+  TOKEN_TYPE_START,  // hack to get the size of this enum
+  BLOCK_COMMENT_CONTENT = TOKEN_TYPE_START,
+  BLOCK_DOC_COMMENT_CONTENT,
+  COMMENT_CONTENT,
+  LONG_STRING_QUOTE,
+  LAYOUT_START,
+  LAYOUT_END,
+  LAYOUT_TERMINATOR,
+  LAYOUT_AT_LEVEL,
+  LAYOUT_NOT_AT_LEVEL,
+  LAYOUT_EMPTY,
+  INHIBIT_LAYOUT_END,
+  COMMA,
+  PIPE,
+  SYNCHRONIZE,
+  INVALID_LAYOUT,
+  UNARY_OP,
+  TOKEN_TYPE_LEN // hack to get the size of this enum
+};
+
+#ifdef TREE_SITTER_INTERNAL_BUILD
+const char* const TOKEN_TYPE_STR[TOKEN_TYPE_LEN] = {
+  "BLOCK_COMMENT_CONTENT",
+  "BLOCK_DOC_COMMENT_CONTENT",
+  "COMMENT_CONTENT",
+  "LONG_STRING_QUOTE",
+  "LAYOUT_START",
+  "LAYOUT_END",
+  "LAYOUT_TERMINATOR",
+  "LAYOUT_AT_LEVEL",
+  "LAYOUT_NOT_AT_LEVEL",
+  "LAYOUT_EMPTY",
+  "INHIBIT_LAYOUT_END",
+  "COMMA",
+  "PIPE",
+  "SYNCHRONIZE",
+  "INVALID_LAYOUT",
+  "UNARY_OP",
+};
+#endif
+
+struct valid_tokens {
+  uint32_t bits : TOKEN_TYPE_LEN;
+};
+
+#define TO_VT_BIT(value) 1U << (enum token_type)(value)
+#define VALID_TOKENS(bits_)                     \
+  {                                             \
+    .bits = (bits_)                             \
+      }
+
+_nonnull_(1) _pure_ static struct valid_tokens
+valid_tokens_from_array(const bool* valid_tokens)
+{
+  struct valid_tokens result = {0};
+  for (unsigned i = TOKEN_TYPE_START; i < TOKEN_TYPE_LEN; i++) {
+    result.bits |= (unsigned)valid_tokens[i] << i;
+  }
+  return result;
+}
+
+_const_ static bool valid_tokens_test(
+                                      struct valid_tokens self, enum token_type type)
+{
+  return (self.bits & TO_VT_BIT(type)) != 0;
+}
+
+_const_ static bool valid_tokens_any_valid(
+                                           struct valid_tokens left, struct valid_tokens right)
+{
+  return (left.bits & right.bits) != 0;
+}
+
+_const_ static bool valid_tokens_is_error(struct valid_tokens self)
+{
+  return self.bits == ~(~0U << (enum token_type)TOKEN_TYPE_LEN);
+}
+
+static void valid_tokens_debug(struct valid_tokens self)
+{
+  if (debug_mode) {
+    DBG_F("valid tokens: [");
+    for (int i = TOKEN_TYPE_START; i < TOKEN_TYPE_LEN; i++) {
+      if (valid_tokens_test(self, i)) {
+        (void)dprintf(" %s", TOKEN_TYPE_STR[i]);
+      }
+    }
+    (void)dputs(" ]\n");
+  }
+}
+
+#define FLAG_AFTER_NEWLINE 1U
+#define FLAG_LEN 1U
+
+typedef uint8_t flags_storage;
+
+struct state {
+  struct indent_vec layout_stack;
+};
+
+static struct state* state_new(void)
+{
+  struct state* result = ts_calloc(1, sizeof(struct state));
+  if (!result) {
+    return NULL;
+  }
+  return result;
+}
+
+static void state_destroy(struct state* self)
+{
+  if (self) {
+    indent_vec_destroy(&self->layout_stack);
+    ts_free(self);
+  }
+}
+
+_nonnull_(1) static void state_clear(struct state* self)
+{
+  indent_vec_set_len(&self->layout_stack, 0);
+}
+
+_nonnull_(1, 2) static unsigned state_serialize(
+                                                const struct state* self, uint8_t* buffer, unsigned buffer_len)
+{
+  unsigned serialize_len = 0;
+  serialize_len += indent_vec_serialize(
+                                        &self->layout_stack, &buffer[serialize_len], buffer_len - serialize_len);
+  DBG_F("serialized %u bytes\n", serialize_len);
+  return serialize_len;
+}
+
+_nonnull_(1) static void state_deserialize(
+                                           struct state* self, const uint8_t* buffer, unsigned buffer_len)
+{
+  if (!buffer && buffer_len > 0) {
+    DBG("error: no buffer but buffer length > 0");
+    return;
+  }
+
+  unsigned idx = 0;
+  state_clear(self);
+  indent_vec_deserialize(&self->layout_stack, &buffer[idx], buffer_len - idx);
+}
+
+_nonnull_(1) static void state_debug(struct state* self)
+{
+  indent_vec_debug(&self->layout_stack);
+}
+
+struct context {
+  TSLexer* _lexer;
+  struct state* state;
+  uint32_t advance_counter;
+  struct valid_tokens valid_tokens;
+  indent_value _current_indent;
+  flags_storage flags : FLAG_LEN;
+};
+
+_nonnull_(1) static void context_mark_end(struct context* self)
+{
+  self->_lexer->mark_end(self->_lexer);
+}
+
+_nonnull_(1) _pure_ static uint32_t context_lookahead(struct context* self)
+{
+  return self->_lexer->lookahead;
+}
+
+_nonnull_(1) _pure_ static bool context_eof(struct context* self)
+{
+  return self->_lexer->eof(self->_lexer);
+}
+
+_nonnull_(1) static uint32_t context_advance(struct context* self, bool skip)
+{
+  self->advance_counter += (int)!context_eof(self);
+  if (!context_eof(self)) {
+    self->flags &= ~FLAG_AFTER_NEWLINE;
+  }
+  self->_lexer->advance(self->_lexer, skip);
+  return self->_lexer->lookahead;
+}
+
+_nonnull_(1) static uint32_t context_consume(struct context* self, bool skip)
+{
+  uint32_t result = context_advance(self, skip);
+  context_mark_end(self);
+  return result;
+}
+
+_nonnull_(1) static bool context_finish(
+                                        struct context* self, enum token_type type)
+{
+  DBG_F("finished scanning token: %s\n", TOKEN_TYPE_STR[type]);
+  self->_lexer->result_symbol = (TSSymbol)type;
+  return true;
+}
+
+_nonnull_(1) static indent_value context_indent(struct context* self)
+{
+  if (self->flags & FLAG_AFTER_NEWLINE) {
+    return self->_current_indent;
+  }
+
+  return INVALID_INDENT_VALUE;
+}
+
+#define TRY_LEX_INNER(cnt, ctx, fn, ...)                                \
+  do {                                                                  \
+    const uint32_t last_count_##cnt = (ctx)->advance_counter;           \
+    if (fn((ctx), ##__VA_ARGS__)) {                                     \
+      return true;                                                      \
+    }                                                                   \
+    if ((ctx)->advance_counter != last_count_##cnt) return false;       \
+  } while (false)
+/// Try lexing with the given function.
+///
+/// If the function succeed, the lexer returns immediately.
+/// Otherwise, if no input were consumed, the lexer will continue.
+///
+/// The lexer will stop immediately if input was consumed and the given lexing
+/// function fails.
+///
+/// @param ctx - The context to monitor state with, and as input to `fn`.
+/// @param fn - The lexing function
+#define TRY_LEX(ctx, fn, ...) TRY_LEX_INNER(__COUNTER__, ctx, fn, ##__VA_ARGS__)
+#define LEX_FN(name, ...)                                               \
+  _nonnull_(1) static bool name(struct context* ctx, ##__VA_ARGS__)
+
+_const_ static bool is_digit(uint32_t chr) { return chr >= '0' && chr <= '9'; }
+
+_const_ static bool is_lower(uint32_t chr) { return chr >= 'a' && chr <= 'z'; }
+
+_const_ static bool is_upper(uint32_t chr) { return chr >= 'A' && chr <= 'Z'; }
+
+_const_ static bool is_keyword(uint32_t chr)
+{
+  return is_lower(chr) || is_upper(chr) || chr == '_';
+}
+
+_const_ static bool is_identifier(uint32_t chr)
+{
+  return is_keyword(chr) || is_digit(chr);
+}
+
+_const_ static uint32_t to_upper(uint32_t chr)
+{
+  const uint32_t lower_case_bit = 1U << 5U;
+  return is_lower(chr) ? chr & ~lower_case_bit : chr;
+}
+
+_nonnull_(1) static size_t scan_spaces(struct context* ctx, bool force_update)
+{
+  bool update_indent = force_update;
+  uint8_t indent = 0;
+  size_t spaces = 0;
+  while (true) {
+    // Need goto to break out of loop
+    // NOLINTBEGIN(*-avoid-goto)
+    switch (context_lookahead(ctx)) {
+    case ' ':
+      indent += (int)(indent != INVALID_INDENT_VALUE);
+      spaces++;
+      context_advance(ctx, true);
+      break;
+    case '\n':
+    case '\r':
+      update_indent = true;
+      indent = 0;
+      spaces++;
+      context_advance(ctx, true);
+      break;
+    case '\0':
+      if (context_eof(ctx)) {
+        update_indent = true;
+        indent = 0;
+      }
+      goto loop_end;
+    default:
+      goto loop_end;
+    }
+    // NOLINTEND(*-avoid-goto)
+  }
+ loop_end:
+  if (update_indent) {
+    DBG_F("updated current indentation: %" PRIu8 "\n", indent);
+    ctx->_current_indent = indent;
+    ctx->flags |= FLAG_AFTER_NEWLINE;
+  }
+
+  return spaces;
+}
+
+LEX_FN(lex_long_string_quote)
+{
+  if (context_lookahead(ctx) != '"' ||
+      !valid_tokens_test(ctx->valid_tokens, LONG_STRING_QUOTE)) {
     return false;
-_ACCEPT:
-    return true;
+  }
+
+  context_consume(ctx, false);
+  uint8_t count = 1;
+  while (context_lookahead(ctx) == '"' && count < 3) {
+    context_advance(ctx, false);
+    count++;
+  }
+
+  if (count < 3) {
+    context_mark_end(ctx);
+    return context_finish(ctx, LONG_STRING_QUOTE);
+  }
+
+  if (context_lookahead(ctx) == '"') {
+    return context_finish(ctx, LONG_STRING_QUOTE);
+  }
+
+  return false;
 }
 
-static void advance_to_line_end(TSLexer *lexer)
+static const struct valid_tokens COMMENT_TOKENS = VALID_TOKENS(
+                                                               TO_VT_BIT(BLOCK_COMMENT_CONTENT) | TO_VT_BIT(BLOCK_DOC_COMMENT_CONTENT) |
+                                                               TO_VT_BIT(COMMENT_CONTENT));
+
+LEX_FN(lex_comment_content)
 {
-    while (true)
-    {
-        if (lexer->lookahead == '\n' || lexer->eof(lexer))
-        {
-            break;
-        }
-        advance(lexer);
-    }
-}
-
-static bool scan(Scanner *scanner,
-                 TSLexer *lexer,
-                 const bool *valid_symbols)
-{
-
-    printf("\n**************************\n");
-    printf("INIT SCAN, column %d, staring at '%c' (%d) (eof=%d) (range start=%d)\n", lexer->get_column(lexer), lexer->lookahead, lexer->lookahead, lexer->eof(lexer), lexer->is_at_included_range_start(lexer));
-    print_scanner(scanner);
-    print_symbols(valid_symbols);
-    printf("\n");
-
-    if (valid_symbols[ERROR_STATE])
-    {
-        printf("FAIL DUE TO ERROR STATE\n");
-        NOT_ACCEPT;
-    }
-
-    // First handle eventual runback tokens, we saved on a previous scan op
-    if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 &&
-        valid_symbols[BLOCK_SEMI])
-    {
-        VEC_POP(scanner->runback);
-        printf("RUNBACK SEMI\n");
-        ACCEPT(BLOCK_SEMI);
-    }
-    if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
-        valid_symbols[BLOCK_CLOSE])
-    {
-        VEC_POP(scanner->runback);
-        printf("RUNBACK CLOSE");
-        ACCEPT(BLOCK_CLOSE);
-    }
-    VEC_CLEAR(scanner->runback);
-
-    // Check if we have newlines and how much indentation
-    bool has_line_end = false;
-    bool has_space = false;
-    bool can_call_mark_end = true;
-    lexer->mark_end(lexer);
-
-    // Skip to the first line with something meaningful
-    while (true)
-    {
-        if (lexer->lookahead == ' ' || lexer->lookahead == '\r')
-        {
-            // Skip all whitespaces
-            has_space = true;
-            skip(lexer);
-        }
-        else if (lexer->lookahead == '\t')
-        {
-            // No tabs
-            printf("FOUND TAB\n");
-            NOT_ACCEPT;
-        }
-        else if (lexer->lookahead == '\n')
-        {
-            // Calculate indent
-            skip(lexer);
-            has_line_end = true;
-            has_space = false;
-            while (true)
-            {
-                if (lexer->lookahead == ' ')
-                {
-                    has_space = true;
-                    skip(lexer);
-                }
-                else
-                {
-                    scanner->indent_length = lexer->get_column(lexer);
-                    break;
-                }
-            }
-        }
-        else if (!valid_symbols[BLOCK_COMMENT_CONTENT] &&
-                 lexer->lookahead == '/')
-        {
-            // Scan past line comments. As far as the special token
-            // types we're scanning for here are concerned line comments
-            // are like whitespace. There is nothing useful to be
-            // learned from, say, their indentation. So we advance past
-            // them here.
-            //
-            // The one thing we need to keep in mind is that we should
-            // not call `lexer->mark_end(lexer)` after this point, or
-            // the comment will be lost.
-            advance(lexer);
-
-            if (lexer->lookahead == '/' && has_line_end)
-            {
-                // The first thing in this line is a line comment. This should not affect indentation.
-                can_call_mark_end = false;
-                advance(lexer);
-                advance_to_line_end(lexer);
-            }
-            else
-            {
-                printf("NOT A LINE COMMENT\n");
-                NOT_ACCEPT;
-            }
-        }
-        else if (valid_symbols[BLOCK_COMMENT_CONTENT] &&
-                 lexer->lookahead == '*')
-        {
-            // Block comment end candidate
-            advance(lexer);
-            if (lexer->lookahead == '/')
-            {
-                ACCEPT(BLOCK_COMMENT_CONTENT);
-            }
-            else
-            {
-                printf("NOT A BLOCK COMMENT\n");
-                NOT_ACCEPT;
-            }
-        }
-        else if (lexer->eof(lexer))
-        {
-            if (valid_symbols[BLOCK_CLOSE])
-            {
-                ACCEPT(BLOCK_CLOSE);
-            }
-            if (valid_symbols[BLOCK_SEMI])
-            {
-                ACCEPT(BLOCK_SEMI);
-            }
-            if (valid_symbols[BLOCK_COMMENT_CONTENT])
-            {
-                ACCEPT(BLOCK_COMMENT_CONTENT);
-            }
-            break;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    printf("SCANNED: NL=%d, WS=%d, EOF=%d, indent=%d\n", has_line_end, has_space, lexer->eof(lexer), scanner->indent_length);
-    if (valid_symbols[BLOCK_COMMENT_CONTENT])
-    {
-        if (!can_call_mark_end)
-        {
-            printf("CAN'T CALL MARK END\n");
-            NOT_ACCEPT;
-        }
-        lexer->mark_end(lexer);
-        while (true)
-        {
-            if (lexer->lookahead == '\0')
-            {
-                break;
-            }
-            if (lexer->lookahead != '/' && lexer->lookahead != '*')
-            {
-                advance(lexer);
-            }
-            else if (lexer->lookahead == '*')
-            {
-                lexer->mark_end(lexer);
-                advance(lexer);
-                if (lexer->lookahead == '/')
-                {
-                    break;
-                }
-            }
-            else if (scan_block_comment(lexer))
-            {
-                lexer->mark_end(lexer);
-                advance(lexer);
-                if (lexer->lookahead == '*')
-                {
-                    break;
-                }
-            }
-        }
-
-        ACCEPT(BLOCK_COMMENT_CONTENT);
-    }
-
-    if (valid_symbols[BLOCK_OPEN_INLINE] &&
-        !lexer->eof(lexer) &&
-        !has_line_end &&
-        has_space)
-    {
-        VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-        lexer->mark_end(lexer);
-        ACCEPT(BLOCK_OPEN_INLINE);
-    }
-
-    if (has_line_end)
-    {
-        if (scanner->indent_length > VEC_BACK(scanner->indents) &&
-            valid_symbols[BLOCK_OPEN] && !lexer->eof(lexer))
-        {
-            VEC_PUSH(scanner->indents, lexer->get_column(lexer));
-            lexer->mark_end(lexer);
-            ACCEPT(BLOCK_OPEN);
-        }
-
-        while (scanner->indent_length <= VEC_BACK(scanner->indents))
-        {
-            if (scanner->indent_length == VEC_BACK(scanner->indents))
-            {
-                /* // Don't insert VIRTUAL_END_DECL when there is a line */
-                /* // comment incoming */
-                /* if (lexer->lookahead == '-') { */
-                /*   skip(lexer); */
-                /*   if (lexer->lookahead == '-') { */
-                /*     break; */
-                /*   } */
-                /* } */
-                /* // Don't insert VIRTUAL_END_DECL when there is a block */
-                /* // comment incoming */
-                /* if (lexer->lookahead == '{') { */
-                /*   skip(lexer); */
-                /*   if (lexer->lookahead == '-') { */
-                /*     break; */
-                /*   } */
-                /* } */
-                VEC_PUSH(scanner->runback, 0);
-                break;
-            }
-            if (scanner->indent_length < VEC_BACK(scanner->indents))
-            {
-                VEC_POP(scanner->indents);
-                VEC_PUSH(scanner->runback, 1);
-            }
-        }
-
-        // Our list is the wrong way around, reverse it
-        VEC_REVERSE(scanner->runback);
-        // Handle the first runback token if we have them, if there are more
-        // they will be handled on the next scan operation
-        if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 0 &&
-            valid_symbols[BLOCK_SEMI])
-        {
-            VEC_POP(scanner->runback);
-            ACCEPT(BLOCK_SEMI);
-        }
-        if (scanner->runback.len > 0 && VEC_BACK(scanner->runback) == 1 &&
-            valid_symbols[BLOCK_CLOSE])
-        {
-            VEC_POP(scanner->runback);
-            ACCEPT(BLOCK_CLOSE);
-        }
-        if (lexer->eof(lexer) && valid_symbols[BLOCK_CLOSE])
-        {
-            ACCEPT(BLOCK_CLOSE);
-        }
-    }
-
-_NOT_ACCEPT:
-    printf("NOT ACCEPT\n\n");
+  if (!valid_tokens_any_valid(ctx->valid_tokens, COMMENT_TOKENS) ||
+      valid_tokens_is_error(ctx->valid_tokens)) {
     return false;
-_ACCEPT:
-    printf("ACCEPT AT %d: ", lexer->get_column(lexer));
-    print_symbol(lexer->result_symbol);
-    printf("\n\n");
-    return true;
+  }
+
+  if (valid_tokens_test(ctx->valid_tokens, COMMENT_CONTENT)) {
+    while (!context_eof(ctx)) {
+      switch (context_lookahead(ctx)) {
+      case '\n':
+      case '\r':
+        goto exit_short_comment_loop;
+      default:
+        context_advance(ctx, false);
+      }
+    }
+
+  exit_short_comment_loop:
+    context_mark_end(ctx);
+    return context_finish(ctx, COMMENT_CONTENT);
+  }
+
+  uint32_t nesting = 0;
+  while (!context_eof(ctx)) {
+    if (context_lookahead(ctx) == '/' && context_advance(ctx, false) == '*') {
+      nesting++;
+      DBG_F("block comment nest level: %" PRIu32 "\n", nesting);
+    }
+    context_mark_end(ctx);
+    if (context_lookahead(ctx) == '*') {
+      if (context_advance(ctx, false) == '/') {
+        if (nesting > 0) {
+          DBG_F("block comment terminate nest level: %" PRIu32 "\n", nesting);
+          nesting--;
+        }
+        else if (valid_tokens_test(ctx->valid_tokens, BLOCK_DOC_COMMENT_CONTENT)) {
+          return context_finish(ctx, BLOCK_DOC_COMMENT_CONTENT);
+        }
+        else {
+          return context_finish(ctx, BLOCK_COMMENT_CONTENT);
+        }
+      }
+      continue;
+    }
+    context_advance(ctx, false);
+  }
+
+  return false;
 }
 
-// --------------------------------------------------------------------------------------------------------
-// API
-// --------------------------------------------------------------------------------------------------------
-
-/**
- * This function allocates the persistent state of the parser that is passed
- * into the other API functions.
- */
-void *tree_sitter_aesophia_external_scanner_create()
+LEX_FN(lex_init)
 {
-    Scanner *scanner = (Scanner *)calloc(1, sizeof(Scanner));
-    return scanner;
+  if (ctx->state->layout_stack.len > 0 ||
+      valid_tokens_is_error(ctx->valid_tokens) ||
+      valid_tokens_any_valid(ctx->valid_tokens, COMMENT_TOKENS)) {
+    return false;
+  }
+
+  scan_spaces(ctx, true);
+
+
+  if (context_lookahead(ctx) == '/') {
+    return false;
+  }
+
+  indent_value current_indent = context_indent(ctx);
+  if (current_indent == INVALID_INDENT_VALUE) {
+    DBG("no valid indentation found");
+    return false;
+  }
+  if (indent_vec_push(&ctx->state->layout_stack, current_indent) < 0) {
+    DBG("could not extend layout stack");
+    return false;
+  };
+  return context_finish(ctx, SYNCHRONIZE);
 }
 
-/**
- * Main logic entry point.
- * Since the state is a singular vector, it can just be cast and used directly.
- */
-bool tree_sitter_aesophia_external_scanner_scan(void *payload, TSLexer *lexer,
-                                                const bool *valid_symbols)
+const struct valid_tokens NO_LAYOUT_END_CTX =
+  VALID_TOKENS(TO_VT_BIT(INHIBIT_LAYOUT_END) | TO_VT_BIT(LONG_STRING_QUOTE));
+
+
+LEX_FN(lex_indent_query)
 {
-    Scanner *scanner = (Scanner *)payload;
-    return scan(scanner, lexer, valid_symbols);
+  if (valid_tokens_is_error(ctx->valid_tokens)) {
+    return false;
+  }
+
+  if (ctx->state->layout_stack.len == 0) {
+    return false;
+  }
+
+  if (context_lookahead(ctx) == '/') {
+    return false;
+  }
+
+  indent_value current_layout = indent_vec_back(&ctx->state->layout_stack);
+
+  indent_value current_indent = context_indent(ctx);
+
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_NOT_AT_LEVEL)
+      && current_indent > current_layout
+      && !(ctx->flags & FLAG_AFTER_NEWLINE)
+      ) {
+    return context_finish(ctx, LAYOUT_NOT_AT_LEVEL);
+  }
+
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_AT_LEVEL)
+      && current_indent == current_layout
+      && (ctx->flags & FLAG_AFTER_NEWLINE)
+      ) {
+    return context_finish(ctx, LAYOUT_AT_LEVEL);
+  }
+
+  return false;
 }
 
-/**
- * Copy the current state to another location for later reuse.
- * This is normally more complex, but since this parser's state constists solely
- * of a vector of integers, it can just be copied.
- */
-unsigned tree_sitter_aesophia_external_scanner_serialize(void *payload,
-                                                         char *buffer)
+// This function is big by design.
+//
+// NOLINTNEXTLINE(*-cognitive-complexity)
+LEX_FN(lex_indent)
 {
-    Scanner *scanner = (Scanner *)payload;
-    size_t size = 0;
+  if (ctx->state->layout_stack.len == 0) {
+    return false;
+  }
 
-    if (3 + scanner->indents.len + scanner->runback.len >=
-        TREE_SITTER_SERIALIZATION_BUFFER_SIZE)
-    {
-        return 0;
+  // TODO: this accidentally allows the div operator to be misindented.
+  // If should be checked if the characer after is indeed a comment start
+  if (context_lookahead(ctx) == '/') {
+    return false;
+  }
+
+  indent_value current_layout = indent_vec_back(&ctx->state->layout_stack);
+
+  indent_value current_indent = context_indent(ctx);
+
+  if (current_indent == INVALID_INDENT_VALUE) {
+    return false;
+  }
+
+
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_START)) {
+    if (current_indent > current_layout) {
+      if (indent_vec_push(&ctx->state->layout_stack, current_indent) < 0) {
+        DBG("could not extend layout stack");
+        return false;
+      }
+      return context_finish(ctx, LAYOUT_START);
+    }
+  }
+
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_EMPTY)) {
+    switch (0) {
+    default:
+      if (valid_tokens_is_error(ctx->valid_tokens)) {
+        break;
+      }
+      if (current_indent <= current_layout) {
+        return context_finish(ctx, LAYOUT_EMPTY);
+      }
+    }
+  }
+
+
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_TERMINATOR)) {
+    if (current_indent <= current_layout) {
+      return context_finish(ctx, LAYOUT_TERMINATOR);
+    }
+  }
+
+  // Implicit layout changes
+  if (!valid_tokens_any_valid(ctx->valid_tokens, NO_LAYOUT_END_CTX) ||
+      valid_tokens_is_error(ctx->valid_tokens) ||
+      // Allow EOF to force a layout_end, which would lead to better error
+      // recovery
+      context_eof(ctx)) {
+    // LAYOUT_END
+    if (current_indent < current_layout || context_eof(ctx)) {
+      if (ctx->state->layout_stack.len > 1) {
+        indent_vec_pop(&ctx->state->layout_stack);
+        return context_finish(ctx, LAYOUT_END);
+      }
     }
 
-    size_t runback_count = scanner->runback.len;
-    if (runback_count > UINT8_MAX)
-    {
-        runback_count = UINT8_MAX;
-    }
-    buffer[size++] = (char)runback_count;
+    // INVALID_LAYOUT
+    //
+    // XXX: Need more data to reliably distinguish
+    //
+    // if (current_indent > current_layout && !context_eof(ctx)) {
+    //   return context_finish(ctx, INVALID_LAYOUT);
+    // }
+  }
 
-    if (runback_count > 0)
-    {
-        memcpy(&buffer[size], scanner->runback.data, runback_count);
-    }
-    size += runback_count;
-
-    size_t indent_length_length = sizeof(scanner->indent_length);
-    buffer[size++] = (char)indent_length_length;
-    if (indent_length_length > 0)
-    {
-        memcpy(&buffer[size], &scanner->indent_length, indent_length_length);
-    }
-    size += indent_length_length;
-
-    size_t iter = 1;
-    for (; iter != scanner->indents.len &&
-           size < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
-         ++iter)
-    {
-        buffer[size++] = (char)scanner->indents.data[iter];
-    }
-
-    return size;
+  return false;
 }
 
-/**
- * Load another parser state into the currently active state.
- * `payload` is the state of the previous parser execution, while `buffer` is
- * the saved state of a different position (e.g. when doing incremental
- * parsing).
- */
-void tree_sitter_aesophia_external_scanner_deserialize(void *payload,
-                                                       const char *buffer,
-                                                       unsigned length)
+LEX_FN(lex_inline_layout)
 {
-    Scanner *scanner = (Scanner *)payload;
-    VEC_CLEAR(scanner->runback);
-    VEC_CLEAR(scanner->indents);
-    VEC_PUSH(scanner->indents, 0);
+  if (ctx->state->layout_stack.len == 0 || (ctx->flags & FLAG_AFTER_NEWLINE)) {
+    return false;
+  }
 
-    if (length == 0)
-    {
-        return;
+  switch (context_lookahead(ctx)) {
+  case ',':
+    if (valid_tokens_test(ctx->valid_tokens, COMMA)) {
+      return false;
     }
+    break;
+  case '|':
+    if (valid_tokens_test(ctx->valid_tokens, PIPE)) {
+      return false;
+    }
+    break;
+  case ')':
+  case ']':
+  case '}':
+    break;
+  case '.':
+    if (context_advance(ctx, false) == '}') {
+      break;
+    }
+    return false;
+  default:
+    return false;
+  }
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_TERMINATOR)) {
+    DBG("terminate via inline element");
+    return context_finish(ctx, LAYOUT_TERMINATOR);
+  }
 
-    size_t size = 0;
-    size_t runback_count = (unsigned char)buffer[size++];
-    VEC_GROW(scanner->runback, runback_count)
-    if (runback_count > 0)
-    {
-        memcpy(scanner->runback.data, &buffer[size], runback_count);
-        scanner->runback.len = runback_count;
-        size += runback_count;
-    }
+  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_END) &&
+      ctx->state->layout_stack.len > 1) {
+    DBG("end layout via inline element");
+    indent_vec_pop(&ctx->state->layout_stack);
+    return context_finish(ctx, LAYOUT_END);
+  }
 
-    size_t indent_length_length = (unsigned char)buffer[size++];
-    if (indent_length_length > 0)
-    {
-        memcpy(&scanner->indent_length, &buffer[size], indent_length_length);
-        size += indent_length_length;
-    }
-
-    for (; size < length; size++)
-    {
-        VEC_PUSH(scanner->indents, (unsigned char)buffer[size]);
-    }
-    assert(size == length);
+  return false;
 }
 
-/**
- * Destroy the state.
- */
-void tree_sitter_aesophia_external_scanner_destroy(void *payload)
+
+LEX_FN(lex_main)
 {
-    Scanner *scanner = (Scanner *)payload;
-    VEC_FREE(scanner->indents);
-    VEC_FREE(scanner->runback);
-    free(scanner);
+  TRY_LEX(ctx, lex_init);
+
+  TRY_LEX(ctx, lex_comment_content);
+  TRY_LEX(ctx, lex_long_string_quote);
+
+  size_t spaces = scan_spaces(ctx, false);
+
+  TRY_LEX(ctx, lex_indent_query);
+  TRY_LEX(ctx, lex_indent);
+  TRY_LEX(ctx, lex_inline_layout);
+
+  return false;
+}
+
+void* tree_sitter_aesophia_external_scanner_create(void)
+{
+#ifdef TREE_SITTER_INTERNAL_BUILD
+  debug_mode = getenv("TREE_SITTER_DEBUG");
+#endif
+
+  struct state* state = state_new();
+  if (!state) {
+    DBG("error: could not allocate a new state object!");
+  }
+  return state;
+}
+
+void tree_sitter_aesophia_external_scanner_destroy(void* payload)
+{
+  state_destroy((struct state*)payload);
+}
+
+unsigned tree_sitter_aesophia_external_scanner_serialize(
+                                                    void* payload, uint8_t* buffer)
+{
+  if (!payload || !buffer) {
+    DBG("error: no payload or buffer");
+    return 0;
+  }
+  return state_serialize(
+                         (struct state*)payload, buffer, TREE_SITTER_SERIALIZATION_BUFFER_SIZE);
+}
+
+void tree_sitter_aesophia_external_scanner_deserialize(
+                                                  void* payload, const uint8_t* buffer, unsigned length)
+{
+  if (!payload) {
+    DBG("no payload, skipping");
+    return;
+  }
+  state_deserialize((struct state*)payload, buffer, length);
+}
+
+bool tree_sitter_aesophia_external_scanner_scan(
+                                           void* payload, TSLexer* lexer, const bool* valid_tokens)
+{
+  if (!payload || !lexer || !valid_tokens) {
+    DBG("error: some parameters are not provided");
+    return false;
+  }
+
+  DBG("begin");
+  struct context ctx = {0};
+  ctx._lexer = lexer;
+  ctx.state = (struct state*)payload;
+  ctx.valid_tokens = valid_tokens_from_array(valid_tokens);
+
+  valid_tokens_debug(ctx.valid_tokens);
+  state_debug(ctx.state);
+  context_mark_end(&ctx);
+
+  bool found = lex_main(&ctx);
+
+  DBG(found ? "commit" : "end");
+  state_debug(ctx.state);
+  return found;
 }
