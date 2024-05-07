@@ -374,6 +374,8 @@ pub fn check_module(module: &ast::Module, env: &mut TEnv) {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
     use crate::ast::ast;
 
@@ -386,6 +388,32 @@ mod tests {
         let mut env = TEnv::new(table);
 
         check_module(&module.node, &mut env);
+    }
+
+    fn load_test_file(filename: &String) -> String {
+        println!("Loading test file: {}", filename);
+        match fs::read_to_string(filename) {
+            Err(e) => panic!("Failed to load file: {}", e),
+            Ok(src) => { src }
+        }
+    }
+
+    #[test]
+    fn all_contracts_test() {
+        match fs::read_dir("bindings/rust/tc/tests/good") {
+            Err(e) => panic!("Failed to read directory: {}", e),
+            Ok(paths) => {
+                for dir_path in paths {
+                    match dir_path {
+                        Err(e) => panic!("Error while reading entries from directory: {}", e),
+                        Ok(path) => {
+                            let src = load_test_file(&path.path().display().to_string());
+                            parse_check_module(src.as_str());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[test]
