@@ -384,7 +384,6 @@ mod tests {
 
         let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
         let mut env = TEnv::new(table);
-        env.init_builtins();
 
         check_module(&module.node, &mut env);
     }
