@@ -28,7 +28,7 @@ impl LocalScope {
 /// Type environment.
 pub struct TEnv {
     /// The root of the scope tree.
-    top_scope: Scope,
+    pub top_scope: Scope,
     /// Path to the currently visited scope in the scope tree.
     current_scope: ScopePath,
     /// If visiting a function, this defines the local
@@ -37,15 +37,15 @@ pub struct TEnv {
     /// List of all currently open `using` directives for name lookup.
     usings: Vec<Using>,
     /// Currently visited node id
-    current_node: cst::NodeId,
+    pub current_node: cst::NodeId,
     /// Currently visited file id
-    current_file: cst::FileId,
+    pub current_file: cst::FileId,
     /// Type table is dynamically built during the inference. It maps
     /// code references to assigned types, whenever it makes sense.
     type_table: CodeTable<Type>,
     /// The number of currently used fresh type refs
     fresh_typeref_count: usize,
-    locations: LocInfoTable,
+    pub locations: LocInfoTable,
 }
 
 /// Constructors

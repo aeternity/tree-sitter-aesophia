@@ -1,9 +1,10 @@
 use crate::ast::ast::{self};
+use crate::cst::HasNodeId;
 use crate::tc::*;
 use type_env::*;
 use scope::*;
 use utype::*;
-use crate::code_table::HasCodeRef;
+use crate::code_table::{CodeTableRef, HasCodeRef};
 
 trait Infer<Env: HasTEnv> {
     fn infer(&self, env: &mut Env) -> Type;
@@ -224,7 +225,11 @@ impl Infer<TEnv> for ast::Expr {
             Var {var} => {
                 match env.get_var(&var.name.node) {
                     None => panic!("UNDEFINED VAR {}", var.name.node),
-                    Some(spec) => Type::Ref(spec.code_ref())
+                    Some(spec) => {
+                        println!("Inferring var node usage: {}", env.current_node);
+                        println!("Inferring var node defition: {}", spec.code_ref());
+                        Type::Ref(spec.code_ref())
+                    }
                 }
             },
             Block {stmts,value} => todo!(),
@@ -361,6 +366,8 @@ impl Infer<TEnv> for ast::FunClause {
 pub fn check_scope(scope: &ast::ScopeDecl, env: &mut TEnv) {
     env.in_scope(scope.name.node.clone(), |env_in| {
         for fun in scope.funs.iter() {
+            let idx = CodeTableRef::new(env_in.current_file, fun.node_id());
+            println!("fun loc: {:?}", env_in.locations.get(idx));
             fun.infer(env_in);
         }
     })
@@ -383,6 +390,14 @@ mod tests {
         let parsed =  crate::ast::parse_str_base(src);
         let module: ast::Node<ast::Module> = parsed.0.expect("Parse error: module");
         let locations = parsed.1;
+
+        for table in &locations.tables {
+            for loc in &table.data {
+                if loc.1.contains(2, 30) {
+                    println!("{} ({}): {:?}", loc.0, loc.1.length(), loc.1)
+                }
+            }
+        }
 
         let table = TypeTable::new(vec!["builtins".to_string(), "fresh_typerefs".to_string(), "item".to_string(), "type".to_string()]);
         let mut env = TEnv::new(table, locations);
@@ -420,9 +435,13 @@ mod tests {
     fn contract_test() {
         let src = r#"
             contract C =
-              function f() = 123 + 321
+              function
+                f() =
+                  let x = 1
+                  123 + 321
             "#;
         parse_check_module(src);
+        unimplemented!();
     }
 
     fn check_in<T: crate::cst_ast::CstNode + Infer<TEnv>>(env: &mut TEnv, e: &str, t: &str) {

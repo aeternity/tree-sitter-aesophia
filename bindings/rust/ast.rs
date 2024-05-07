@@ -58,7 +58,7 @@ pub fn parse_str_base<T: cst_ast::CstNode>(src: &str) -> (cst_parse::ParseResult
 
     let src_data: Vec<u16> = src.encode_utf16().collect();
     let subtypes = load_subtypes();
-    let locations = LocInfoTable::new(vec![]);
+    let locations = LocInfoTable::new(vec!["file".to_string()]);
     let mut env = cst_parse::ParseEnv::new(src_data, locations, subtypes, tree.root_node().has_error());
 
     let res = <T as cst_ast::CstNode>::parse(&mut tc, &mut env);

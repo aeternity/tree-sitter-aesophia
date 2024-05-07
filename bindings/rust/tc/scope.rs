@@ -7,7 +7,7 @@ use crate::tc::utype::*;
 /// Function specification for type checking
 #[derive(Clone)]
 pub struct FunSpec {
-    location: CodeTableRef,
+    pub location: CodeTableRef,
     args: Vec<Type>,
     ret_t: Type
 }
