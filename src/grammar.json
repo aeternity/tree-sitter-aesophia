@@ -555,7 +555,7 @@
           "name": "scope",
           "content": {
             "type": "SYMBOL",
-            "name": "constructor"
+            "name": "scope_name"
           }
         },
         {
@@ -780,7 +780,7 @@
           "name": "name",
           "content": {
             "type": "SYMBOL",
-            "name": "constructor"
+            "name": "scope_name"
           }
         },
         {
@@ -806,7 +806,7 @@
                             "name": "implements",
                             "content": {
                               "type": "SYMBOL",
-                              "name": "qual_constructor"
+                              "name": "qual_scope_name"
                             }
                           },
                           {
@@ -821,7 +821,7 @@
                       "name": "implements",
                       "content": {
                         "type": "SYMBOL",
-                        "name": "qual_constructor"
+                        "name": "qual_scope_name"
                       }
                     }
                   ]
@@ -1620,7 +1620,7 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_expr_variable"
+          "name": "expr_variable"
         },
         {
           "type": "SYMBOL",
@@ -3419,22 +3419,9 @@
         }
       ]
     },
-    "_expr_variable": {
-      "type": "PREC",
-      "value": "EXPR_VAR",
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "SYMBOL",
-            "name": "identifier"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "qual_identifier"
-          }
-        ]
-      }
+    "expr_variable": {
+      "type": "SYMBOL",
+      "name": "qual_identifier"
     },
     "expr_literal": {
       "type": "PREC",
@@ -4489,6 +4476,10 @@
           },
           {
             "type": "SYMBOL",
+            "name": "type_contract"
+          },
+          {
+            "type": "SYMBOL",
             "name": "type_paren"
           }
         ]
@@ -4520,17 +4511,12 @@
       "name": "type_variable_poly_name"
     },
     "type_variable": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "identifier"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "qual_identifier"
-        }
-      ]
+      "type": "SYMBOL",
+      "name": "qual_identifier"
+    },
+    "type_contract": {
+      "type": "SYMBOL",
+      "name": "qual_scope_name"
     },
     "_operator": {
       "type": "CHOICE",
@@ -4699,73 +4685,136 @@
       "name": "_lex_prim_id"
     },
     "identifier": {
-      "type": "SYMBOL",
-      "name": "_lex_low_id"
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_lex_low_id"
+      },
+      "named": true,
+      "value": "identifier"
     },
     "constructor": {
-      "type": "SYMBOL",
-      "name": "_lex_up_id"
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_lex_up_id"
+      },
+      "named": true,
+      "value": "constructor"
+    },
+    "scope_name": {
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_lex_up_id"
+      },
+      "named": true,
+      "value": "scope_name"
+    },
+    "qual_low_id": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "path",
+          "content": {
+            "type": "REPEAT",
+            "content": {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "scope_name"
+                },
+                {
+                  "type": "IMMEDIATE_TOKEN",
+                  "content": {
+                    "type": "STRING",
+                    "value": "."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_lex_low_id"
+          },
+          "named": true,
+          "value": "name"
+        }
+      ]
+    },
+    "qual_up_id": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "path",
+          "content": {
+            "type": "REPEAT",
+            "content": {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "scope_name"
+                },
+                {
+                  "type": "IMMEDIATE_TOKEN",
+                  "content": {
+                    "type": "STRING",
+                    "value": "."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_lex_up_id"
+          },
+          "named": true,
+          "value": "name"
+        }
+      ]
     },
     "qual_identifier": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "FIELD",
-          "name": "path",
-          "content": {
-            "type": "SYMBOL",
-            "name": "qual"
-          }
-        },
-        {
-          "type": "FIELD",
-          "name": "name",
-          "content": {
-            "type": "SYMBOL",
-            "name": "identifier"
-          }
-        }
-      ]
+      "type": "SYMBOL",
+      "name": "qual_low_id"
     },
     "qual_constructor": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "FIELD",
-          "name": "path",
-          "content": {
-            "type": "SYMBOL",
-            "name": "qual"
-          }
-        },
-        {
-          "type": "FIELD",
-          "name": "name",
-          "content": {
-            "type": "SYMBOL",
-            "name": "constructor"
-          }
-        }
-      ]
+      "type": "SYMBOL",
+      "name": "qual_up_id"
+    },
+    "qual_scope_name": {
+      "type": "SYMBOL",
+      "name": "qual_up_id"
     },
     "qual": {
-      "type": "PREC_LEFT",
-      "value": 0,
+      "type": "REPEAT1",
       "content": {
-        "type": "REPEAT1",
-        "content": {
-          "type": "SEQ",
-          "members": [
-            {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "path",
+            "content": {
               "type": "SYMBOL",
-              "name": "constructor"
-            },
-            {
-              "type": "STRING",
-              "value": "."
+              "name": "scope_name"
             }
-          ]
-        }
+          },
+          {
+            "type": "STRING",
+            "value": "."
+          }
+        ]
       }
     },
     "_paren_close": {
@@ -5165,6 +5214,12 @@
     }
   ],
   "inline": [
+    "identifier",
+    "constructor",
+    "scope_name",
+    "qual_constructor",
+    "qual_identifier",
+    "qual_scope_name",
     "_expr_list",
     "_pattern",
     "pat_args",

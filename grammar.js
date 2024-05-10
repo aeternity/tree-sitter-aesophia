@@ -97,16 +97,6 @@ const brackets_comma1 = ($, rule) =>
 const brackets_comma2 = ($, rule) =>
       brackets($, sep_comma2($, rule));
 
-const qual = (q, n) => seq(
-  repeat(seq(q, token.immediate('.'))),
-  n
-);
-
-const qual1 = (q, n) => seq(
-  repeat1(seq(q, token.immediate('.'))),
-  n
-);
-
 
 const OP_ASSOC = {
   'OP_PIPE': 'left',
@@ -162,6 +152,12 @@ module.exports = grammar({
   ],
 
   inline: $ => [
+    $.identifier,
+    $.constructor,
+    $.scope_name,
+    $.qual_constructor,
+    $.qual_identifier,
+    $.qual_scope_name,
     $._expr_list,
     $._pattern,
     $.pat_args,
@@ -289,7 +285,7 @@ module.exports = grammar({
 
     using: $ => seq(
       'using',
-      field("scope", $.constructor),
+      field("scope", $.scope_name),
       optional($.using_as),
       optional(field("select", choice(
         $.using_hiding,
@@ -327,8 +323,8 @@ module.exports = grammar({
       field("modifier", repeat($.scope_modifier)),
       field("head", $.scope_head),
       field("interface", alias(optional('interface'), $.is_interface)),
-      field("name", $.constructor),
-      optional(seq(":", sep1(field("implements", $.qual_constructor), ","))),
+      field("name", $.scope_name),
+      optional(seq(":", sep1(field("implements", $.qual_scope_name), ","))),
       '=',
       block($, field("decl", $._scoped_declaration))
     ),
@@ -463,7 +459,7 @@ module.exports = grammar({
     ),
 
     _expression_simpl: $ => choice(
-      $._expr_variable,
+      $.expr_variable,
       $.expr_typed,
       $.expr_op,
       $.expr_application,
@@ -687,11 +683,7 @@ module.exports = grammar({
       $._expression,
     ),
 
-
-    _expr_variable: $ => prec('EXPR_VAR', choice(
-      $.identifier,
-      $.qual_identifier
-    )),
+    expr_variable: $ => $.qual_identifier,
 
     expr_literal: $ => prec('EXPR_ATOM', field("literal", $._literal)),
 
@@ -863,6 +855,7 @@ module.exports = grammar({
     _type_atom: $ => prec('TYPE_ATOM', choice(
       $.type_variable_poly,
       $.type_variable,
+      $.type_contract,
       $.type_paren,
     )),
 
@@ -874,7 +867,9 @@ module.exports = grammar({
 
     type_variable_poly: $ => $.type_variable_poly_name,
 
-    type_variable: $ => choice($.identifier, $.qual_identifier),
+    type_variable: $ => $.qual_identifier,
+
+    type_contract: $ => $.qual_scope_name,
 
     //**************************************************************************
     // OPERATORS
@@ -928,21 +923,29 @@ module.exports = grammar({
 
     type_variable_poly_name: $ => $._lex_prim_id,
 
-    identifier: $ => $._lex_low_id,
+    identifier: $ => alias($._lex_low_id, $.identifier),
 
-    constructor: $ => $._lex_up_id,
+    constructor: $ => alias($._lex_up_id, $.constructor),
 
-    qual_identifier: $ => seq(
-      field("path", $.qual),
-      field("name", $.identifier),
+    scope_name: $ => alias($._lex_up_id, $.scope_name),
+
+    qual_low_id: $ => seq(
+      field("path", repeat(seq($.scope_name, token.immediate('.')))),
+      alias($._lex_low_id, $.name)
     ),
 
-    qual_constructor: $ => seq(
-      field("path", $.qual),
-      field("name", $.constructor),
+    qual_up_id: $ => seq(
+      field("path", repeat(seq($.scope_name, token.immediate('.')))),
+      alias($._lex_up_id, $.name)
     ),
 
-    qual: $ => prec.left(repeat1(seq($.constructor, '.'))),
+    qual_identifier: $ => $.qual_low_id,
+
+    qual_constructor: $ => $.qual_up_id,
+
+    qual_scope_name: $ => $.qual_up_id,
+
+    qual: $ => repeat1(seq(field("path", $.scope_name), '.')),
 
 
     _paren_close: $ => seq(optional($._inhibit_layout_end), ")"),

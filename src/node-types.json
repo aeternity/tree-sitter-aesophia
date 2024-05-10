@@ -1,10 +1,5 @@
 [
   {
-    "type": "constructor",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "constructor_declaration",
     "named": true,
     "fields": {
@@ -129,15 +124,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -259,15 +250,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -363,15 +350,11 @@
           "named": true
         },
         {
+          "type": "expr_variable",
+          "named": true
+        },
+        {
           "type": "expr_wildcard",
-          "named": true
-        },
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "qual_identifier",
           "named": true
         }
       ]
@@ -486,15 +469,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -595,15 +574,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -697,15 +672,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -811,15 +782,11 @@
           "named": true
         },
         {
+          "type": "expr_variable",
+          "named": true
+        },
+        {
           "type": "expr_wildcard",
-          "named": true
-        },
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "qual_identifier",
           "named": true
         }
       ]
@@ -914,15 +881,11 @@
           "named": true
         },
         {
+          "type": "expr_variable",
+          "named": true
+        },
+        {
           "type": "expr_wildcard",
-          "named": true
-        },
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "qual_identifier",
           "named": true
         }
       ]
@@ -1031,15 +994,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1115,15 +1074,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1217,15 +1172,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1339,15 +1290,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1443,15 +1390,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1547,15 +1490,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1645,15 +1584,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1823,15 +1758,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -1927,15 +1858,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2025,15 +1952,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2129,15 +2052,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2321,15 +2240,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2419,15 +2334,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2523,15 +2434,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2663,15 +2570,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2767,15 +2670,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2891,15 +2790,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -2995,15 +2890,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -3099,15 +2990,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -3118,6 +3005,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -3145,6 +3036,21 @@
     }
   },
   {
+    "type": "expr_variable",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "qual_low_id",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "expr_wildcard",
     "named": true,
     "fields": {}
@@ -3169,6 +3075,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -3314,15 +3224,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -3347,6 +3253,10 @@
           },
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -3467,6 +3377,10 @@
             "named": true
           },
           {
+            "type": "type_contract",
+            "named": true
+          },
+          {
             "type": "type_function",
             "named": true
           },
@@ -3583,15 +3497,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -3681,15 +3591,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -3711,11 +3617,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "identifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "include",
@@ -3827,15 +3728,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -3905,15 +3802,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4009,15 +3902,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4093,15 +3982,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4195,15 +4080,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4239,7 +4120,7 @@
       "required": true,
       "types": [
         {
-          "type": "qual_constructor",
+          "type": "qual_up_id",
           "named": true
         }
       ]
@@ -4443,15 +4324,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4567,15 +4444,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4734,15 +4607,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -4796,70 +4665,63 @@
     }
   },
   {
-    "type": "qual",
+    "type": "qual_low_id",
     "named": true,
-    "fields": {},
+    "fields": {
+      "path": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ".",
+            "named": false
+          },
+          {
+            "type": "scope_name",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
-          "type": "constructor",
+          "type": "name",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "qual_constructor",
+    "type": "qual_up_id",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "constructor",
-            "named": true
-          }
-        ]
-      },
       "path": {
-        "multiple": false,
-        "required": true,
+        "multiple": true,
+        "required": false,
         "types": [
           {
-            "type": "qual",
+            "type": ".",
+            "named": false
+          },
+          {
+            "type": "scope_name",
             "named": true
           }
         ]
       }
-    }
-  },
-  {
-    "type": "qual_identifier",
-    "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      },
-      "path": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "qual",
-            "named": true
-          }
-        ]
-      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "name",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -4987,15 +4849,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -5095,7 +4953,7 @@
         "required": false,
         "types": [
           {
-            "type": "qual_constructor",
+            "type": "qual_up_id",
             "named": true
           }
         ]
@@ -5125,7 +4983,7 @@
         "required": true,
         "types": [
           {
-            "type": "constructor",
+            "type": "scope_name",
             "named": true
           }
         ]
@@ -5231,15 +5089,15 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
             "named": true
           },
           {
             "type": "function_declaration",
-            "named": true
-          },
-          {
-            "type": "identifier",
             "named": true
           },
           {
@@ -5287,10 +5145,6 @@
             "named": true
           },
           {
-            "type": "qual_identifier",
-            "named": true
-          },
-          {
             "type": "record_declaration",
             "named": true
           },
@@ -5308,6 +5162,10 @@
           },
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -5445,15 +5303,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -5509,6 +5363,10 @@
             "named": true
           },
           {
+            "type": "type_contract",
+            "named": true
+          },
+          {
             "type": "type_function",
             "named": true
           },
@@ -5559,6 +5417,21 @@
     }
   },
   {
+    "type": "type_contract",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "qual_up_id",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "type_domain_many",
     "named": true,
     "fields": {
@@ -5568,6 +5441,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -5604,6 +5481,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -5645,6 +5526,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -5718,6 +5603,10 @@
             "named": true
           },
           {
+            "type": "type_contract",
+            "named": true
+          },
+          {
             "type": "type_function",
             "named": true
           },
@@ -5751,6 +5640,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
             "named": true
           },
           {
@@ -5790,6 +5683,10 @@
             "named": true
           },
           {
+            "type": "type_contract",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -5814,11 +5711,7 @@
       "required": true,
       "types": [
         {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "qual_identifier",
+          "type": "qual_low_id",
           "named": true
         }
       ]
@@ -5937,15 +5830,11 @@
             "named": true
           },
           {
+            "type": "expr_variable",
+            "named": true
+          },
+          {
             "type": "expr_wildcard",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "qual_identifier",
             "named": true
           }
         ]
@@ -5961,7 +5850,7 @@
         "required": true,
         "types": [
           {
-            "type": "constructor",
+            "type": "scope_name",
             "named": true
           }
         ]
@@ -6185,6 +6074,10 @@
     "named": false
   },
   {
+    "type": "constructor",
+    "named": true
+  },
+  {
     "type": "contract",
     "named": false
   },
@@ -6223,6 +6116,10 @@
   {
     "type": "hiding",
     "named": false
+  },
+  {
+    "type": "identifier",
+    "named": true
   },
   {
     "type": "if",
@@ -6335,6 +6232,10 @@
   {
     "type": "return",
     "named": false
+  },
+  {
+    "type": "scope_name",
+    "named": true
   },
   {
     "type": "stateful",
