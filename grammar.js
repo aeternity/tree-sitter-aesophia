@@ -247,7 +247,7 @@ module.exports = grammar({
 
     doc_comment: $ => seq(
       $._doc_comment_start,
-      alias($._doc_comment_content, $.doc_commment),
+      alias($._doc_comment_content, $.doc_comment),
       $._block_comment_end,
     ),
 
