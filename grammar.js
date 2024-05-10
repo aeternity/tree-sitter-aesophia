@@ -611,7 +611,7 @@ module.exports = grammar({
     expr_if: $ => prec.right(seq(
       keyword('if'),
       parens($, field("cond", $._expression)),
-      $._if_body,
+      field("then", $._expression_body),
       repeat(
         choice(
           $._inhibit_keyword_termination,
@@ -619,58 +619,22 @@ module.exports = grammar({
         )
       ),
       optional($.expr_else),
-      // optional($._if_alt),
-    )),
-
-    _if_body: $ => prec.right(field("then", $._expression_body)),
-
-
-    _if_alt: $ =>  prec.right(seq(
-    )),
-
-
-
-    _dif_alt: $ =>  prec.right(choice(
-      repeat1(
-        choice(
-          $._inhibit_keyword_termination,
-          $._if_branch
-        )
-      )
     )),
 
     _if_branch: $ => choice($.expr_elif, $.expr_else),
 
-    expr_elif: $ => prec.right(seq(
+    expr_elif: $ => seq(
       keyword('elif'),
       parens($, field("cond", $._expression)),
-      $._if_body,
-    )),
+      field("then", $._expression_body)
+      // $._if_body,
+    ),
 
     expr_else: $ => seq(
       keyword('else'),
-      $._if_body,
+      field("then", $._expression_body)
+      // $._if_body,
     ),
-
-    // expr_if: $ => prec.right(seq(
-    //   'if',
-    //   parens($, field("cond", $._expression)),
-    //   field("then", $._expression_body),
-    //   repeat(seq($._layout_not_at_level, $.expr_elif)),
-    //   optional(seq($._layout_not_at_level, $.expr_else)),
-    // )),
-
-    // expr_elif: $ => prec.right(seq(
-    //   'elif',
-    //   parens($, field("cond", $._expression)),
-    //   field("then", $._expression_body),
-    //   optional(seq($._layout_not_at_level, $.expr_else))
-    // )),
-
-    // expr_else: $ => seq(
-    //   'else',
-    //   field("else", $._expression_body)
-    // ),
 
     expr_switch: $ => seq(
       'switch',
@@ -717,7 +681,7 @@ module.exports = grammar({
     _expr_invalid: $ => choice(
       $.expr_invalid_return,
       $.expr_invalid_while,
-      $.expr_invalid_return,
+      $.expr_invalid_for,
     ),
 
     expr_invalid_return: $ => prec.right('EXPR_APP', seq(
