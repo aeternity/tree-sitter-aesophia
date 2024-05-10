@@ -146,9 +146,9 @@ module.exports = grammar({
   extras: $ => [
     /[\n\r ]+/,
     $._synchronize,
-    $._line_comment,
-    $._block_comment,
-    $._doc_comment,
+    $.line_comment,
+    $.block_comment,
+    $.doc_comment,
   ],
 
   inline: $ => [
@@ -159,7 +159,7 @@ module.exports = grammar({
     $.qual_identifier,
     $.qual_scope_name,
     $._expr_list,
-    $._pattern,
+    $.pattern,
     $.pat_args,
     $._expr_sub,
     $._expression_weak_block
@@ -208,6 +208,8 @@ module.exports = grammar({
     //               ^Should be parsed as typed guard, not x : function
     [ $.expr_typed, $.type_domain_one ],
 
+    [$.expr_invalid_return, $._expression],
+
     [$.expr_list_literal, $.expr_list_comprehension, ],
   ],
 
@@ -232,18 +234,18 @@ module.exports = grammar({
       dispatch($, '_scoped_declaration', $._scoped_declaration),
     ),
 
-    _line_comment: $ => seq(
+    line_comment: $ => seq(
       $._line_comment_start,
       alias($.comment_content, $.line_comment),
     ),
 
-    _block_comment: $ => seq(
+    block_comment: $ => seq(
       $._block_comment_start,
       alias($._block_comment_content, $.block_comment),
       $._block_comment_end,
     ),
 
-    _doc_comment: $ => seq(
+    doc_comment: $ => seq(
       $._doc_comment_start,
       alias($._doc_comment_content, $.doc_commment),
       $._block_comment_end,
@@ -455,7 +457,8 @@ module.exports = grammar({
       $._expr_if,
       $.expr_letval,
       $.expr_switch,
-      $._expression_simpl
+      $._expression_simpl,
+      $._expr_invalid,
     ),
 
     _expression_simpl: $ => choice(
@@ -468,7 +471,7 @@ module.exports = grammar({
       $.expr_map_access,
       $.expr_projection,
       $.expr_tuple,
-      $._expr_atom
+      $._expr_atom,
     ),
 
     _expr_atom: $ => choice(
@@ -630,7 +633,7 @@ module.exports = grammar({
     expr_cases: $ => maybe_block($, field("case", $.switch_case)),
 
     switch_case: $ => seq(
-      field("pattern", $._pattern),
+      field("pattern", $.pattern),
       field("branch", $._switch_branch)
     ),
 
@@ -655,7 +658,7 @@ module.exports = grammar({
 
     expr_letval: $ => seq(
       'let',
-      field("pattern", $._pattern),
+      field("pattern", $.pattern),
       '=',
       field("value", $._expression_body)
     ),
@@ -669,22 +672,22 @@ module.exports = grammar({
       $.expr_invalid_return,
     ),
 
-    expr_invalid_return: $ => seq(
+    expr_invalid_return: $ => prec.right('EXPR_APP', seq(
       'return',
-       optional($._expression)
-    ),
+       optional($._expression_simpl)
+    )),
 
-    expr_invalid_while: $ => seq(
+    expr_invalid_while: $ => prec.right('EXPR_APP', seq(
       'while',
       parens($, $._expression),
       $._expression,
-    ),
+    )),
 
-    expr_invalid_for: $ => seq(
+    expr_invalid_for: $ => prec.right('EXPR_APP', seq(
       'for',
       parens($, sep($._expression, ";")),
       $._expression,
-    ),
+    )),
 
     expr_variable: $ => $.qual_identifier,
 
@@ -744,7 +747,7 @@ module.exports = grammar({
     ),
 
     list_comprehension_bind: $ => seq(
-      field("pattern", $._pattern),
+      field("pattern", $.pattern),
       '<-',
       field("expr", $._expression)
     ),
@@ -767,7 +770,7 @@ module.exports = grammar({
     // PATTERN
     //**************************************************************************
 
-    _pattern: $ => $._expression_simpl,
+    pattern: $ => alias($._expression_simpl, $.pattern),
 
     pat_args: $ => alias($.expr_tuple, $.pat_args),
 

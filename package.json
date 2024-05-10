@@ -47,7 +47,11 @@
   "tree-sitter": [
     {
       "scope": "source.aesophia",
-      "injection-regex": "^aesophia$"
+      "injection-regex": "^aesophia$",
+      "file-types": [
+        "aes",
+        "aesi"
+      ]
     }
   ]
 }

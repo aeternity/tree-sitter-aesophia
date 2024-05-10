@@ -1,5 +1,20 @@
 [
   {
+    "type": "block_comment",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "block_comment",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "constructor_declaration",
     "named": true,
     "fields": {
@@ -23,6 +38,21 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "doc_comment",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "doc_commment",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -61,6 +91,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -194,6 +232,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -295,6 +341,14 @@
         },
         {
           "type": "expr_if",
+          "named": true
+        },
+        {
+          "type": "expr_invalid_return",
+          "named": true
+        },
+        {
+          "type": "expr_invalid_while",
           "named": true
         },
         {
@@ -417,6 +471,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -516,6 +578,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -637,6 +707,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -746,6 +824,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -845,6 +931,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -950,27 +1044,7 @@
           "named": true
         },
         {
-          "type": "expr_elif",
-          "named": true
-        },
-        {
-          "type": "expr_else",
-          "named": true
-        },
-        {
           "type": "expr_hole",
-          "named": true
-        },
-        {
-          "type": "expr_if",
-          "named": true
-        },
-        {
-          "type": "expr_lambda",
-          "named": true
-        },
-        {
-          "type": "expr_letval",
           "named": true
         },
         {
@@ -1018,10 +1092,6 @@
           "named": true
         },
         {
-          "type": "expr_switch",
-          "named": true
-        },
-        {
           "type": "expr_tuple",
           "named": true
         },
@@ -1066,6 +1136,14 @@
         },
         {
           "type": "expr_if",
+          "named": true
+        },
+        {
+          "type": "expr_invalid_return",
+          "named": true
+        },
+        {
+          "type": "expr_invalid_while",
           "named": true
         },
         {
@@ -1186,6 +1264,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -1270,71 +1356,7 @@
         "required": true,
         "types": [
           {
-            "type": "expr_application",
-            "named": true
-          },
-          {
-            "type": "expr_hole",
-            "named": true
-          },
-          {
-            "type": "expr_list_comprehension",
-            "named": true
-          },
-          {
-            "type": "expr_list_literal",
-            "named": true
-          },
-          {
-            "type": "expr_list_range",
-            "named": true
-          },
-          {
-            "type": "expr_literal",
-            "named": true
-          },
-          {
-            "type": "expr_map",
-            "named": true
-          },
-          {
-            "type": "expr_map_access",
-            "named": true
-          },
-          {
-            "type": "expr_map_update",
-            "named": true
-          },
-          {
-            "type": "expr_op",
-            "named": true
-          },
-          {
-            "type": "expr_projection",
-            "named": true
-          },
-          {
-            "type": "expr_record",
-            "named": true
-          },
-          {
-            "type": "expr_record_update",
-            "named": true
-          },
-          {
-            "type": "expr_tuple",
-            "named": true
-          },
-          {
-            "type": "expr_typed",
-            "named": true
-          },
-          {
-            "type": "expr_variable",
-            "named": true
-          },
-          {
-            "type": "expr_wildcard",
+            "type": "pattern",
             "named": true
           }
         ]
@@ -1365,6 +1387,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -1490,6 +1520,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -1591,6 +1629,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -1698,6 +1744,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -1793,6 +1847,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -1974,6 +2036,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -2078,6 +2148,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -2173,6 +2251,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -2277,6 +2363,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -2472,6 +2566,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -2567,6 +2669,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -2671,6 +2781,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -2814,6 +2932,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -2915,6 +3041,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -3042,6 +3176,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -3146,6 +3288,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -3247,6 +3397,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -3485,6 +3643,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -3765,6 +3931,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -3860,6 +4034,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -3976,6 +4158,21 @@
     "fields": {}
   },
   {
+    "type": "line_comment",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "line_comment",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "list_comprehension_bind",
     "named": true,
     "fields": {
@@ -4001,6 +4198,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -4082,71 +4287,7 @@
         "required": true,
         "types": [
           {
-            "type": "expr_application",
-            "named": true
-          },
-          {
-            "type": "expr_hole",
-            "named": true
-          },
-          {
-            "type": "expr_list_comprehension",
-            "named": true
-          },
-          {
-            "type": "expr_list_literal",
-            "named": true
-          },
-          {
-            "type": "expr_list_range",
-            "named": true
-          },
-          {
-            "type": "expr_literal",
-            "named": true
-          },
-          {
-            "type": "expr_map",
-            "named": true
-          },
-          {
-            "type": "expr_map_access",
-            "named": true
-          },
-          {
-            "type": "expr_map_update",
-            "named": true
-          },
-          {
-            "type": "expr_op",
-            "named": true
-          },
-          {
-            "type": "expr_projection",
-            "named": true
-          },
-          {
-            "type": "expr_record",
-            "named": true
-          },
-          {
-            "type": "expr_record_update",
-            "named": true
-          },
-          {
-            "type": "expr_tuple",
-            "named": true
-          },
-          {
-            "type": "expr_typed",
-            "named": true
-          },
-          {
-            "type": "expr_variable",
-            "named": true
-          },
-          {
-            "type": "expr_wildcard",
+            "type": "pattern",
             "named": true
           }
         ]
@@ -4179,6 +4320,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -4266,71 +4415,7 @@
         "required": true,
         "types": [
           {
-            "type": "expr_application",
-            "named": true
-          },
-          {
-            "type": "expr_hole",
-            "named": true
-          },
-          {
-            "type": "expr_list_comprehension",
-            "named": true
-          },
-          {
-            "type": "expr_list_literal",
-            "named": true
-          },
-          {
-            "type": "expr_list_range",
-            "named": true
-          },
-          {
-            "type": "expr_literal",
-            "named": true
-          },
-          {
-            "type": "expr_map",
-            "named": true
-          },
-          {
-            "type": "expr_map_access",
-            "named": true
-          },
-          {
-            "type": "expr_map_update",
-            "named": true
-          },
-          {
-            "type": "expr_op",
-            "named": true
-          },
-          {
-            "type": "expr_projection",
-            "named": true
-          },
-          {
-            "type": "expr_record",
-            "named": true
-          },
-          {
-            "type": "expr_record_update",
-            "named": true
-          },
-          {
-            "type": "expr_tuple",
-            "named": true
-          },
-          {
-            "type": "expr_typed",
-            "named": true
-          },
-          {
-            "type": "expr_variable",
-            "named": true
-          },
-          {
-            "type": "expr_wildcard",
+            "type": "pattern",
             "named": true
           }
         ]
@@ -4361,6 +4446,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -4612,6 +4705,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -4733,6 +4834,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -4903,6 +5012,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -4976,6 +5093,85 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "pattern",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "expr_application",
+          "named": true
+        },
+        {
+          "type": "expr_hole",
+          "named": true
+        },
+        {
+          "type": "expr_list_comprehension",
+          "named": true
+        },
+        {
+          "type": "expr_list_literal",
+          "named": true
+        },
+        {
+          "type": "expr_list_range",
+          "named": true
+        },
+        {
+          "type": "expr_literal",
+          "named": true
+        },
+        {
+          "type": "expr_map",
+          "named": true
+        },
+        {
+          "type": "expr_map_access",
+          "named": true
+        },
+        {
+          "type": "expr_map_update",
+          "named": true
+        },
+        {
+          "type": "expr_op",
+          "named": true
+        },
+        {
+          "type": "expr_projection",
+          "named": true
+        },
+        {
+          "type": "expr_record",
+          "named": true
+        },
+        {
+          "type": "expr_record_update",
+          "named": true
+        },
+        {
+          "type": "expr_tuple",
+          "named": true
+        },
+        {
+          "type": "expr_typed",
+          "named": true
+        },
+        {
+          "type": "expr_variable",
+          "named": true
+        },
+        {
+          "type": "expr_wildcard",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -5146,6 +5342,14 @@
           },
           {
             "type": "expr_if",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
             "named": true
           },
           {
@@ -5393,6 +5597,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -5611,71 +5823,7 @@
         "required": true,
         "types": [
           {
-            "type": "expr_application",
-            "named": true
-          },
-          {
-            "type": "expr_hole",
-            "named": true
-          },
-          {
-            "type": "expr_list_comprehension",
-            "named": true
-          },
-          {
-            "type": "expr_list_literal",
-            "named": true
-          },
-          {
-            "type": "expr_list_range",
-            "named": true
-          },
-          {
-            "type": "expr_literal",
-            "named": true
-          },
-          {
-            "type": "expr_map",
-            "named": true
-          },
-          {
-            "type": "expr_map_access",
-            "named": true
-          },
-          {
-            "type": "expr_map_update",
-            "named": true
-          },
-          {
-            "type": "expr_op",
-            "named": true
-          },
-          {
-            "type": "expr_projection",
-            "named": true
-          },
-          {
-            "type": "expr_record",
-            "named": true
-          },
-          {
-            "type": "expr_record_update",
-            "named": true
-          },
-          {
-            "type": "expr_tuple",
-            "named": true
-          },
-          {
-            "type": "expr_typed",
-            "named": true
-          },
-          {
-            "type": "expr_variable",
-            "named": true
-          },
-          {
-            "type": "expr_wildcard",
+            "type": "pattern",
             "named": true
           }
         ]
@@ -6138,6 +6286,14 @@
             "named": true
           },
           {
+            "type": "expr_invalid_return",
+            "named": true
+          },
+          {
+            "type": "expr_invalid_while",
+            "named": true
+          },
+          {
             "type": "expr_lambda",
             "named": true
           },
@@ -6438,10 +6594,6 @@
     "named": false
   },
   {
-    "type": "block_comment",
-    "named": true
-  },
-  {
     "type": "compiler",
     "named": false
   },
@@ -6508,10 +6660,6 @@
   {
     "type": "let",
     "named": false
-  },
-  {
-    "type": "line_comment",
-    "named": true
   },
   {
     "type": "main",

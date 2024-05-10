@@ -27,25 +27,17 @@
 #  define _pure_
 #endif
 
+
 #ifdef TREE_SITTER_INTERNAL_BUILD
 #  define dprintf(...) fprintf(stderr, __VA_ARGS__)
 #  define dputs(msg) fputs(msg, stderr)
 #  define DBG(msg)                                                      \
   if (debug_mode)                                                       \
     (void)fprintf(stderr, "lex_aesophia: %s():%d: %s\n", __func__, __LINE__, msg)
-#  define DBG_F(fmt, ...)                                               \
-  if (debug_mode)                                                       \
-    (void)fprintf(                                                      \
-                          stderr, "lex_aesophia: %s():%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
-
-static bool debug_mode = false; /* NOLINT(*-global-variables) */
-#else
-#  define dprintf(...) ((void)0)
-#  define dputs(msg) ((void)0)
-#  define DBG(msg) ((void)0)
-#  define DBG_F(fmt, ...) ((void)0)
-static const bool debug_mode = false;
-#endif
+#define DBG_F(fmt, ...)                                                        \
+  if (debug_mode)                                                              \
+  (void)fprintf(stderr, "lex_aesophia: %s():%d: " fmt, __func__, __LINE__,     \
+                ##__VA_ARGS__)
 
 #define RUNTIME_ASSERT(cond)                                            \
   if (!(cond)) {                                                        \
@@ -55,7 +47,16 @@ static const bool debug_mode = false;
     abort();                                                            \
   }
 
-/* #define RUNTIME_ASSERT(cond) ((void)(0)) */
+static bool debug_mode = false; /* NOLINT(*-global-variables) */
+#else
+#  define dprintf(...) ((void)0)
+#  define dputs(msg) ((void)0)
+#  define DBG(msg) ((void)0)
+#  define DBG_F(fmt, ...) ((void)0)
+static const bool debug_mode = false;
+#define RUNTIME_ASSERT(cond) ((void)(0))
+#endif
+
 
 #define MIN(left, right) ((left) > (right) ? (right) : (left))
 #define MAX(left, right) ((left) < (right) ? (right) : (left))
