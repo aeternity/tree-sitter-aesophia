@@ -226,6 +226,7 @@ enum token_type {
   LAYOUT_NOT_AT_LEVEL,
   LAYOUT_EMPTY,
   INHIBIT_LAYOUT_END,
+  INHIBIT_KEYWORD_TERMINATION,
   COMMA,
   PIPE,
   SYNCHRONIZE,
@@ -247,6 +248,7 @@ const char* const TOKEN_TYPE_STR[TOKEN_TYPE_LEN] = {
   "LAYOUT_NOT_AT_LEVEL",
   "LAYOUT_EMPTY",
   "INHIBIT_LAYOUT_END",
+  "INHIBIT_KEYWORD_TERMINATION",
   "COMMA",
   "PIPE",
   "SYNCHRONIZE",
@@ -616,6 +618,60 @@ LEX_FN(lex_init)
   return context_finish(ctx, SYNCHRONIZE);
 }
 
+
+static bool chrcaseeq(uint32_t lhs, uint32_t rhs)
+{
+  return to_upper(lhs) == to_upper(rhs);
+}
+
+LEX_FN(scan_continuing_keyword)
+{
+#define NEXT_OR_FAIL(chr)                          \
+  do {                                             \
+    context_advance(ctx, false);                   \
+    if (!chrcaseeq(context_lookahead(ctx), chr)) { \
+      return false;                                \
+    }                                              \
+  } while (false)
+
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+#define CONTINUE_ON(cond) \
+  if (!(cond)) {          \
+    return false;         \
+  }
+
+#define FINISH_IF_END                              \
+  do {                                             \
+    context_advance(ctx, false);                   \
+    return !is_identifier(context_lookahead(ctx)); \
+  } while (false)
+
+  if (context_lookahead(ctx) == 'e') {
+    context_advance(ctx, false);
+    if (chrcaseeq(context_lookahead(ctx), 'l')) {
+      context_advance(ctx, false);
+      if (chrcaseeq(context_lookahead(ctx), 's')) {
+        NEXT_OR_FAIL('e');
+        FINISH_IF_END;
+      }
+      else if (chrcaseeq(context_lookahead(ctx), 'i')) {
+        NEXT_OR_FAIL('f');
+        FINISH_IF_END;
+      }
+
+      return false;
+    }
+  }
+
+  return false;
+
+#undef CASE_CHAR
+#undef CONTINUE_ON
+#undef NEXT_OR_FAIL
+#undef FINISH_IF_END
+}
+
+
 const struct valid_tokens NO_LAYOUT_END_CTX =
   VALID_TOKENS(TO_VT_BIT(INHIBIT_LAYOUT_END) | TO_VT_BIT(LONG_STRING_QUOTE));
 
@@ -704,6 +760,13 @@ LEX_FN(lex_indent)
 
   if (valid_tokens_test(ctx->valid_tokens, LAYOUT_TERMINATOR)) {
     if (current_indent <= current_layout) {
+      if (current_indent == current_layout) {
+        if (valid_tokens_test(ctx->valid_tokens, INHIBIT_KEYWORD_TERMINATION) &&
+            scan_continuing_keyword(ctx)) {
+          DBG("found continuing keyword");
+          return false;
+        }
+      }
       return context_finish(ctx, LAYOUT_TERMINATOR);
     }
   }
@@ -761,6 +824,10 @@ LEX_FN(lex_inline_layout)
     }
     return false;
   default:
+    if (!valid_tokens_test(ctx->valid_tokens, INHIBIT_KEYWORD_TERMINATION) &&
+        scan_continuing_keyword(ctx)) {
+      break;
+    }
     return false;
   }
   if (valid_tokens_test(ctx->valid_tokens, LAYOUT_TERMINATOR)) {

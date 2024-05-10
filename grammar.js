@@ -98,6 +98,9 @@ const brackets_comma2 = ($, rule) =>
       brackets($, sep_comma2($, rule));
 
 
+const keyword = (text) => alias(token(text), text);
+
+
 const OP_ASSOC = {
   'OP_PIPE': 'left',
   'OP_DISJ': 'right',
@@ -134,6 +137,7 @@ module.exports = grammar({
     $._layout_not_at_level,
     $._layout_empty,
     $._inhibit_layout_end,
+    $._inhibit_keyword_termination,
     // @ts-ignore: DSL not updated for literals
     ",",
     "|",
@@ -600,29 +604,73 @@ module.exports = grammar({
 
     _expr_if: $ => choice(
       $.expr_if,
-      $.expr_elif,
-      $.expr_else
+      // $.expr_elif,
+      // $.expr_else
     ),
 
     expr_if: $ => prec.right(seq(
-      'if',
+      keyword('if'),
       parens($, field("cond", $._expression)),
-      field("then", $._expression_body),
-      repeat(seq($._layout_not_at_level, $.expr_elif)),
-      optional(seq($._layout_not_at_level, $.expr_else)),
+      $._if_body,
+      repeat(
+        choice(
+          $._inhibit_keyword_termination,
+          $.expr_elif
+        )
+      ),
+      optional($.expr_else),
+      // optional($._if_alt),
     )),
 
+    _if_body: $ => prec.right(field("then", $._expression_body)),
+
+
+    _if_alt: $ =>  prec.right(seq(
+    )),
+
+
+
+    _dif_alt: $ =>  prec.right(choice(
+      repeat1(
+        choice(
+          $._inhibit_keyword_termination,
+          $._if_branch
+        )
+      )
+    )),
+
+    _if_branch: $ => choice($.expr_elif, $.expr_else),
+
     expr_elif: $ => prec.right(seq(
-      'elif',
+      keyword('elif'),
       parens($, field("cond", $._expression)),
-      field("then", $._expression_body),
-      optional(seq($._layout_not_at_level, $.expr_else))
+      $._if_body,
     )),
 
     expr_else: $ => seq(
-      'else',
-      field("else", $._expression_body)
+      keyword('else'),
+      $._if_body,
     ),
+
+    // expr_if: $ => prec.right(seq(
+    //   'if',
+    //   parens($, field("cond", $._expression)),
+    //   field("then", $._expression_body),
+    //   repeat(seq($._layout_not_at_level, $.expr_elif)),
+    //   optional(seq($._layout_not_at_level, $.expr_else)),
+    // )),
+
+    // expr_elif: $ => prec.right(seq(
+    //   'elif',
+    //   parens($, field("cond", $._expression)),
+    //   field("then", $._expression_body),
+    //   optional(seq($._layout_not_at_level, $.expr_else))
+    // )),
+
+    // expr_else: $ => seq(
+    //   'else',
+    //   field("else", $._expression_body)
+    // ),
 
     expr_switch: $ => seq(
       'switch',
