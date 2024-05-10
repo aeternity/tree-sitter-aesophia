@@ -597,6 +597,7 @@ module.exports = grammar({
 
     _expr_if: $ => choice(
       $.expr_if,
+      $.expr_elif,
       $.expr_else
     ),
 
@@ -604,14 +605,16 @@ module.exports = grammar({
       'if',
       parens($, field("cond", $._expression)),
       field("then", $._expression_body),
-      optional(seq($._layout_not_at_level, $.expr_else))
+      repeat(seq($._layout_not_at_level, $.expr_elif)),
+      optional(seq($._layout_not_at_level, $.expr_else)),
     )),
 
-    expr_elif: $ => seq(
+    expr_elif: $ => prec.right(seq(
       'elif',
       parens($, field("cond", $._expression)),
-      field("then", $._expression),
-    ),
+      field("then", $._expression_body),
+      optional(seq($._layout_not_at_level, $.expr_else))
+    )),
 
     expr_else: $ => seq(
       'else',

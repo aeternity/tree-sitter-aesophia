@@ -55,6 +55,8 @@ static const bool debug_mode = false;
     abort();                                                            \
   }
 
+/* #define RUNTIME_ASSERT(cond) ((void)(0)) */
+
 #define MIN(left, right) ((left) > (right) ? (right) : (left))
 #define MAX(left, right) ((left) < (right) ? (right) : (left))
 
