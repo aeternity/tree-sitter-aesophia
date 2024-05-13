@@ -105,8 +105,12 @@ const OP_ASSOC = {
   'OP_PIPE': 'left',
   'OP_DISJ': 'right',
   'OP_CONJ': 'right',
+  'OP_BOR': 'left',
+  'OP_BXOR': 'left',
+  'OP_BAND': 'left',
   'OP_CMP': 'left',
   'OP_LIST': 'right',
+  'OP_SHIFT': 'left',
   'OP_ADD': 'left',
   'OP_NEG': 'unary',
   'OP_MUL': 'left',
@@ -167,29 +171,30 @@ module.exports = grammar({
     $.pattern,
     $.pat_args,
     $._expr_sub,
-    $._expression_weak_block
   ],
 
   precedences: $ => [
     [ // expressions
       'EXPR_ATOM',
-      'EXPR_TUPLE',
-      'EXPR_VAR',
-      'EXPR_PROJECTION',
-      'EXPR_APP',
-      'EXPR_UPDATE_OR_ACCESS',
-      'EXPR_MATCH',
-      'EXPR_TYPED',
       'EXPR_LETVAL',
-      'EXPR_BLOCK',
+      'EXPR_APP',
+      $.expr_typed,
+      $.expr_op,
+      $._expression_body,
+    ],
 
+    [
       'OP_NOT',
       'OP_POW',
       'OP_MUL',
       'OP_NEG',
       'OP_ADD',
+      'OP_SHIFT',
       'OP_LIST',
       'OP_CMP',
+      'OP_BAND',
+      'OP_BXOR',
+      'OP_BOR',
       'OP_CONJ',
       'OP_DISJ',
       'OP_PIPE',
@@ -212,15 +217,11 @@ module.exports = grammar({
 
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
-    [ $.expr_typed, $.type_domain_one ],
+    [ $.type_domain_one, $.expr_typed, ],
 
     [$.expr_invalid_return, $._expression],
 
     [$.expr_list_literal, $.expr_list_comprehension, ],
-
-    // r {x.y ...
-    // Confusion over qualified ids and nested fields
-    // [$.record_field_update, $.qual_low_id],
   ],
 
   word: $ => $._lex_low_id,
@@ -373,9 +374,28 @@ module.exports = grammar({
       field("name", $.identifier),
       field("args", $.pat_args),
       field("ret_type", optional(seq(':', $._type))),
+      field("body", $._function_body),
+    ),
+
+    _function_body: $ => choice(
+      $.unguarded_body,
+      $.guarded_bodies,
+    ),
+
+    unguarded_body: $ => seq(
       '=',
+      field("body", $._expression_body),
+    ),
+
+    guarded_bodies: $ => prec.right(repeat1(seq(
+      '|', field("branch", $.guarded_body)
+    ))),
+
+    guarded_body: $ => seq(
+      sep1(field("guard", $._expr_guard), ','), '=',
       field("body", $._expression_body)
     ),
+
 
     function_head: $ => choice(
       'function',
@@ -445,14 +465,9 @@ module.exports = grammar({
     // EXPRESSION
     //**************************************************************************
 
-    _expression_body: $ => prec('EXPR_BLOCK', choice(
+    _expression_body: $ => choice(
       $._expr_sub,
       $.expr_block
-    )),
-
-    _expression_weak_block: $ => choice(
-      $._expr_sub,
-      block($, $._expression)
     ),
 
     _expr_sub: $ => seq(
@@ -460,7 +475,7 @@ module.exports = grammar({
       $._expression,
     ),
 
-    expr_block: $ => prec('EXPR_BLOCK', block($, $._expression)),
+    expr_block: $ => block($, $._expression),
 
     _expression: $ => choice(
       $.expr_lambda,
@@ -468,11 +483,10 @@ module.exports = grammar({
       $.expr_letval,
       $.expr_switch,
       $._expression_simpl,
-      $._expr_invalid,
+      // $._expr_invalid,
     ),
 
     _expression_simpl: $ => choice(
-      $.expr_variable,
       $.expr_typed,
       $.expr_op,
       $.expr_application,
@@ -487,6 +501,7 @@ module.exports = grammar({
 
     _expr_atom: $ => choice(
       $.expr_literal,
+      $.expr_variable,
       $.expr_record,
       $.expr_map,
       $._expr_list,
@@ -505,6 +520,9 @@ module.exports = grammar({
         [$.op_pipe, 'OP_PIPE'],
         [$.op_or,   'OP_DISJ'],
         [$.op_and,  'OP_CONJ'],
+        [$.op_bor,  'OP_BOR'],
+        [$.op_bxor, 'OP_BXOR'],
+        [$.op_band, 'OP_BAND'],
         [$.op_lt,   'OP_CMP'],
         [$.op_gt,   'OP_CMP'],
         [$.op_le,   'OP_CMP'],
@@ -513,6 +531,8 @@ module.exports = grammar({
         [$.op_neq,  'OP_CMP'],
         [$.op_cons, 'OP_LIST'],
         [$.op_cat,  'OP_LIST'],
+        [$.op_bsl,  'OP_SHIFT'],
+        [$.op_bsr,  'OP_SHIFT'],
         [$.op_add,  'OP_ADD'],
         [$.op_sub,  'OP_ADD'],
         [$.op_sub,  'OP_NEG'],
@@ -520,6 +540,7 @@ module.exports = grammar({
         [$.op_div,  'OP_MUL'],
         [$.op_mod,  'OP_MUL'],
         [$.op_pow,  'OP_POW'],
+        [$.op_bnot, 'OP_NOT'],
         [$.op_not,  'OP_NOT'],
       ].map(([operator, precedence]) =>
         (OP_ASSOC[precedence] === 'left' ? prec.left :
@@ -533,13 +554,13 @@ module.exports = grammar({
           ) : seq(
             field("op_l", $._expression),
             field("op", operator),
-            field("op_r", $._expression_weak_block)
+            field("op_r", $._expression_body)
           )
         )
       )
     ),
 
-    expr_typed: $ => prec.left('EXPR_TYPED', seq(
+    expr_typed: $ => prec.left(seq(
       field("expr", $._expression), ':',
       field("type", $._type)
     )),
@@ -553,12 +574,12 @@ module.exports = grammar({
       field("arg", $.expr_argument)
     ),
 
-    expr_argument: $ => prec('EXPR_MATCH', seq(
+    expr_argument: $ => seq(
       optional(seq(field("name", $.identifier), '=')),
       field("value", $._expression)
-    )),
+    ),
 
-    expr_record_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
+    expr_record_update: $ => prec.left('EXPR_APP', seq(
       field("record", $._expression),
       field("updates", $.record_field_updates),
     )),
@@ -570,6 +591,7 @@ module.exports = grammar({
     record_field_update: $ => seq(
       field("field", $.field_name),
       optional(field("path", $._nested_query_path)),
+      optional($._optional_value),
       '=',
       field("new_value", $._expression)
     ),
@@ -582,10 +604,13 @@ module.exports = grammar({
 
     _nested_query_path: $ => seq(
       repeat1($._nested_query_elem),
-      optional(seq('@', field("old_value", $.identifier))),
     ),
 
-    expr_map_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
+    _optional_value: $ => seq(
+      seq('@', field("old_value", $.identifier)),
+    ),
+
+    expr_map_update: $ => prec.left('EXPR_APP', seq(
       field("map", $._expression),
       field("updates", $.map_updates),
     )),
@@ -597,11 +622,12 @@ module.exports = grammar({
     map_update: $ => seq(
       field("key", $.expr_map_key),
       optional(field("path", $._nested_query_path)),
+      optional($._optional_value),
       '=',
       field("new_value", $._expression)
     ),
 
-    expr_map_access: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
+    expr_map_access: $ => prec.left('EXPR_APP', seq(
       field("map", $._expression),
       field("key", $.expr_map_key)
     )),
@@ -611,7 +637,7 @@ module.exports = grammar({
       optional(seq('=', field("default_value", $._expression))),
     ),
 
-    expr_projection: $ => prec.left('EXPR_PROJECTION', seq(
+    expr_projection: $ => prec.left('EXPR_APP', seq(
       field("expr", $._expression), '.',
       field("field", $.identifier)
     )),
@@ -624,8 +650,7 @@ module.exports = grammar({
     ),
 
     expr_if: $ => prec.right(seq(
-      keyword('if'),
-      parens($, field("cond", $._expression)),
+      $._if_head,
       field("then", $._expression_body),
       repeat(
         choice(
@@ -635,6 +660,11 @@ module.exports = grammar({
       ),
       optional($.expr_else),
     )),
+
+    _if_head: $ => seq(
+      keyword('if'),
+      parens($, field("cond", $._expression)),
+    ),
 
     _if_branch: $ => choice($.expr_elif, $.expr_else),
 
@@ -679,18 +709,22 @@ module.exports = grammar({
     ))),
 
     guarded_branch: $ => seq(
-      sep1(field("guard", $._expression), ','), '=>',
+      sep1(field("guard", $._expr_guard), ','), '=>',
       field("body", $._expression_body)
     ),
 
-    expr_letval: $ => prec.right('EXPR_LETVAL', seq(
+    _expr_guard: $ => $._expression,
+
+    _expr_letval: $ => prec.right('EXPR_LETVAL', seq(
       keyword('let'),
       field("pattern", $.pattern),
       '=',
       field("value", $._expression_body),
     )),
 
-    _expr_match: $ => prec.right('EXPR_MATCH', seq(
+    expr_letval: $ => $._expr_letval,
+
+    _expr_match: $ => prec.right(seq(
       field("pattern", $.pattern),
       '=',
       field("value", $.pattern)
@@ -698,24 +732,24 @@ module.exports = grammar({
 
     // We allow tree sitter to parse commonly misplaced invalid expressions for better error
     // messages
-    _expr_invalid: $ => choice(
-      $.expr_invalid_return,
-      $.expr_invalid_while,
-      $.expr_invalid_for,
-    ),
+    // _expr_invalid: $ => choice(
+    //   $.expr_invalid_return,
+    //   $.expr_invalid_while,
+    //   $.expr_invalid_for,
+    // ),
 
-    expr_invalid_return: $ => prec.right('EXPR_APP', seq(
+    expr_invalid_return: $ => prec.right('EXPR_LETVAL', seq(
       'return',
        optional($._expression_simpl)
     )),
 
-    expr_invalid_while: $ => prec.right('EXPR_APP', seq(
+    expr_invalid_while: $ => prec.right('EXPR_LETVAL', seq(
       'while',
       parens($, $._expression),
       $._expression,
     )),
 
-    expr_invalid_for: $ => prec.right('EXPR_APP', seq(
+    expr_invalid_for: $ => prec.right('EXPR_LETVAL', seq(
       'for',
       parens($, sep($._expression, ";")),
       $._expression,
@@ -723,20 +757,20 @@ module.exports = grammar({
 
     expr_variable: $ => $.qual_identifier,
 
-    expr_literal: $ => prec('EXPR_ATOM', field("literal", $._literal)),
+    expr_literal: $ =>field("literal", $._literal),
 
-    expr_record: $ => prec('EXPR_ATOM', braces_comma1($,
+    expr_record: $ => braces_comma1($,
       field("field", $.expr_record_field)
-    )),
+    ),
 
     expr_record_field: $ => seq(
       field("name", $.identifier), '=',
       field("value", $._expression)
     ),
 
-    expr_map: $ => prec('EXPR_ATOM', braces_comma1($,
+    expr_map: $ => braces_comma1($,
       field("assign", $.map_assign)
-    )),
+    ),
 
     map_assign: $ => prec.left(seq(
       field("key", $.expr_map_key), '=',
@@ -774,28 +808,31 @@ module.exports = grammar({
 
     _list_comprehension_filter: $ => choice(
       $.list_comprehension_bind,
-      alias($.expr_letval, $.list_comprehension_let),
-      $.list_comprehension_if
+      $.list_comprehension_let,
+      $.list_comprehension_if,
     ),
 
+    list_comprehension_let: $ => $._expr_letval,
+
     list_comprehension_bind: $ => seq(
-      field("pattern", $.pattern),
+      field("pattern", $.expr_variable),
+      // field("pattern", $.pattern),
       '<-',
       field("expr", $._expression)
     ),
 
 
     list_comprehension_if: $ => seq(
-      'if', parens($, field("cond", $._expression)),
+      $._if_head,
     ),
 
-    expr_tuple: $ => prec('EXPR_TUPLE', parens_comma($,
+    expr_tuple: $ => parens_comma($,
       field("elem", $._expression)
-    )),
+    ),
 
-    expr_hole: $ => prec('EXPR_ATOM', $._lex_hole),
+    expr_hole: $ => $._lex_hole,
 
-    expr_wildcard: $ => prec('EXPR_ATOM', $._lex_wildcard),
+    expr_wildcard: $ => $._lex_wildcard,
 
 
     //**************************************************************************
@@ -938,6 +975,9 @@ module.exports = grammar({
     op_pipe: $ => '|>',
     op_or: $ => '||',
     op_and: $ => '&&',
+    op_bor: $ => 'bor',
+    op_bxor: $ => 'bxor',
+    op_band: $ => 'band',
     op_lt: $ => '<',
     op_gt: $ => '>',
     op_le: $ => '=<',
@@ -946,12 +986,15 @@ module.exports = grammar({
     op_neq: $ => '!=',
     op_cons: $ => '::',
     op_cat: $ => '++',
+    op_bsl: $ => '<<',
+    op_bsr: $ => '>>',
     op_add: $ => '+',
     op_sub: $ => '-',
     op_mul: $ => '*',
     op_div: $ => '/',
     op_mod: $ => 'mod',
     op_pow: $ => '^',
+    op_bnot: $ => 'bnot',
     op_not: $ => '!',
 
     //**************************************************************************
