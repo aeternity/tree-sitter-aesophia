@@ -3487,6 +3487,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -3557,6 +3561,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -3570,22 +3578,6 @@
           },
           {
             "type": "type_variable_poly",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "field_path",
-    "named": true,
-    "fields": {
-      "field": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
             "named": true
           }
         ]
@@ -3743,6 +3735,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -3861,6 +3857,10 @@
           },
           {
             "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_integer",
             "named": true
           },
           {
@@ -4884,6 +4884,28 @@
             "named": true
           }
         ]
+      },
+      "path": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ".",
+            "named": false
+          },
+          {
+            "type": "@",
+            "named": false
+          },
+          {
+            "type": "expr_map_key",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
       }
     }
   },
@@ -5273,6 +5295,16 @@
     "type": "record_field_update",
     "named": true,
     "fields": {
+      "field": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field",
+            "named": true
+          }
+        ]
+      },
       "new_value": {
         "multiple": false,
         "required": true,
@@ -5386,11 +5418,23 @@
         ]
       },
       "path": {
-        "multiple": false,
-        "required": true,
+        "multiple": true,
+        "required": false,
         "types": [
           {
-            "type": "field_path",
+            "type": ".",
+            "named": false
+          },
+          {
+            "type": "@",
+            "named": false
+          },
+          {
+            "type": "expr_map_key",
+            "named": true
+          },
+          {
+            "type": "identifier",
             "named": true
           }
         ]
@@ -5698,6 +5742,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -5832,6 +5880,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -5913,6 +5965,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -5950,6 +6006,10 @@
           },
           {
             "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_integer",
             "named": true
           },
           {
@@ -5998,6 +6058,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -6036,6 +6100,11 @@
     }
   },
   {
+    "type": "type_integer",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "type_param_decls",
     "named": true,
     "fields": {
@@ -6069,6 +6138,10 @@
           },
           {
             "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_integer",
             "named": true
           },
           {
@@ -6112,6 +6185,10 @@
             "named": true
           },
           {
+            "type": "type_integer",
+            "named": true
+          },
+          {
             "type": "type_paren",
             "named": true
           },
@@ -6145,6 +6222,10 @@
           },
           {
             "type": "type_contract",
+            "named": true
+          },
+          {
+            "type": "type_integer",
             "named": true
           },
           {
@@ -6565,6 +6646,10 @@
   {
     "type": "false",
     "named": false
+  },
+  {
+    "type": "field",
+    "named": true
   },
   {
     "type": "for",

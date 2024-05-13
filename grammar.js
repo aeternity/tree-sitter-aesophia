@@ -158,6 +158,7 @@ module.exports = grammar({
   inline: $ => [
     $.identifier,
     $.constructor,
+    $.field_name,
     $.scope_name,
     $.qual_constructor,
     $.qual_identifier,
@@ -179,6 +180,7 @@ module.exports = grammar({
       'EXPR_UPDATE_OR_ACCESS',
       'EXPR_MATCH',
       'EXPR_TYPED',
+      'EXPR_LETVAL',
       'EXPR_BLOCK',
 
       'OP_NOT',
@@ -206,7 +208,7 @@ module.exports = grammar({
 
     // (x)
     // this is somehow unclear whether it's a tuple or a beginning of a lambda
-    [ $.expr_lambda, $._expression_simpl ],
+    [ $._expression_simpl, $.expr_lambda, ],
 
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
@@ -215,6 +217,10 @@ module.exports = grammar({
     [$.expr_invalid_return, $._expression],
 
     [$.expr_list_literal, $.expr_list_comprehension, ],
+
+    // r {x.y ...
+    // Confusion over qualified ids and nested fields
+    // [$.record_field_update, $.qual_low_id],
   ],
 
   word: $ => $._lex_low_id,
@@ -277,7 +283,7 @@ module.exports = grammar({
     ),
 
     pragma_compiler_vsn: $ => seq(
-      'compiler',
+      token.immediate('compiler'),
       field("op", choice(
         $.op_lt, $.op_le, $.op_gt, $.op_ge, $.op_eq, $.op_neq,
       )),
@@ -332,7 +338,7 @@ module.exports = grammar({
       field("name", $.scope_name),
       optional(seq(":", sep1(field("implements", $.qual_scope_name), ","))),
       '=',
-      block($, field("decl", $._scoped_declaration))
+      maybe_block($, field("decl", $._scoped_declaration))
     ),
 
     scope_modifier: $ => choice(
@@ -475,6 +481,7 @@ module.exports = grammar({
       $.expr_map_access,
       $.expr_projection,
       $.expr_tuple,
+      // alias($._expr_match, $.expr_match),
       $._expr_atom,
     ),
 
@@ -561,15 +568,22 @@ module.exports = grammar({
     ),
 
     record_field_update: $ => seq(
-      field("path", $.field_path),
-      optional(seq('@', field("old_value", $.identifier))),
+      field("field", $.field_name),
+      optional(field("path", $._nested_query_path)),
       '=',
       field("new_value", $._expression)
     ),
 
-    field_path: $ => prec.left(seq(
-      sep1(field("field", $.identifier), '.'),
-    )),
+
+    _nested_query_elem: $ => choice(
+      seq('.', $.identifier),
+      $.expr_map_key,
+    ),
+
+    _nested_query_path: $ => seq(
+      repeat1($._nested_query_elem),
+      optional(seq('@', field("old_value", $.identifier))),
+    ),
 
     expr_map_update: $ => prec.left('EXPR_UPDATE_OR_ACCESS', seq(
       field("map", $._expression),
@@ -581,8 +595,9 @@ module.exports = grammar({
     ),
 
     map_update: $ => seq(
-      field("key", $.expr_map_key), '=',
-      optional(seq('@', field("old_value", $.identifier))),
+      field("key", $.expr_map_key),
+      optional(field("path", $._nested_query_path)),
+      '=',
       field("new_value", $._expression)
     ),
 
@@ -668,13 +683,18 @@ module.exports = grammar({
       field("body", $._expression_body)
     ),
 
-    expr_letval: $ => seq(
-      'let',
+    expr_letval: $ => prec.right('EXPR_LETVAL', seq(
+      keyword('let'),
       field("pattern", $.pattern),
       '=',
-      field("value", $._expression_body)
-    ),
+      field("value", $._expression_body),
+    )),
 
+    _expr_match: $ => prec.right('EXPR_MATCH', seq(
+      field("pattern", $.pattern),
+      '=',
+      field("value", $.pattern)
+    )),
 
     // We allow tree sitter to parse commonly misplaced invalid expressions for better error
     // messages
@@ -875,6 +895,7 @@ module.exports = grammar({
       $.type_variable,
       $.type_contract,
       $.type_paren,
+      alias($.lit_integer, $.type_integer),
     )),
 
     type_paren: $ => seq(
@@ -945,6 +966,8 @@ module.exports = grammar({
 
     constructor: $ => alias($._lex_up_id, $.constructor),
 
+    field_name: $ => alias($._lex_low_id, $.field),
+
     scope_name: $ => alias($._lex_up_id, $.scope_name),
 
     qual_low_id: $ => seq(
@@ -984,8 +1007,8 @@ module.exports = grammar({
       /_[0-9a-zA-Z]+/,
     )),
 
-    _lex_low_id: $ => token(/([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
-    _lex_up_id: $ => token(/[A-Z][a-zA-Z0-9_]*/),
+    _lex_low_id: $ => token(/([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_']*/),
+    _lex_up_id: $ => token(/[A-Z][a-zA-Z0-9_']*/),
 
     _lex_prim_id: $ => token(/'*([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
 
