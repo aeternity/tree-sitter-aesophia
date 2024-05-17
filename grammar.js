@@ -103,6 +103,7 @@ const keyword = (text) => alias(token(text), text);
 
 const OP_ASSOC = {
   'OP_PIPE': 'left',
+  'OP_PIPE': 'left',
   'OP_TYPE': 'left',
   'OP_DISJ': 'right',
   'OP_CONJ': 'right',
@@ -201,6 +202,8 @@ module.exports = grammar({
       'OP_PIPE',
     ],
 
+    // conflicts
+
     [ // types
       // $.type_application, $.type_tuple, $._type_in_tuple,
       $.type_domain, $.type_function,
@@ -214,7 +217,6 @@ module.exports = grammar({
       $.type_tuple, $._type,
     ],
 
-    // conflicts
 
     // (x)
     // this is somehow unclear whether it's a tuple or a beginning of a lambda
@@ -225,7 +227,11 @@ module.exports = grammar({
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
     [
-      $.type_domain, $.expr_typed,
+      $.expr_typed, $.type_domain,
+    ],
+
+    [
+      $.argument_name, $.qual_low_id, $._expr_match,
     ],
 
     // [$.expr_invalid_return, $._expression],
@@ -510,7 +516,7 @@ module.exports = grammar({
       $.expr_map_access,
       $.expr_projection,
       $.expr_tuple,
-      // alias($._expr_match, $.expr_match),
+      alias($._expr_match, $.expr_match),
       $._expr_atom,
     ),
 
@@ -590,9 +596,11 @@ module.exports = grammar({
     ),
 
     expr_argument: $ => seq(
-      optional(seq(field("name", $.identifier), '=')),
+      optional(seq(field("name", $.argument_name), '=')),
       field("value", $._expression)
     ),
+
+    argument_name: $ => alias($.identifier, $._),
 
     expr_record_update: $ => prec.left('EXPR_APP', seq(
       field("record", $._expression_simpl),
@@ -648,7 +656,7 @@ module.exports = grammar({
     )),
 
     map_key: $ => brackets($,
-      field("key", $._expression),
+      field("key", $._expression_simpl),
       optional(seq('=', field("default_value", $._expression))),
     ),
 
@@ -731,7 +739,7 @@ module.exports = grammar({
     expr_letval: $ => prec('EXPR_LETVAL', $._letval),
 
     _expr_match: $ => prec.right(seq(
-      field("pattern", $.pattern),
+      field("pattern", $.identifier),
       '=',
       field("value", $.pattern)
     )),
@@ -1063,7 +1071,7 @@ module.exports = grammar({
 
     _lex_prim_id: $ => token(/'*([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
 
-    _lex_bytes: $ => token(/#[0-9a-fA-F]{2}(_?[0-9a-fA-F]{2})*/),
+    _lex_bytes: $ => token(/#[0-9a-fA-F](_?[0-9a-fA-F])*/),
 
     _lex_wildcard: $ => token('_'),
 

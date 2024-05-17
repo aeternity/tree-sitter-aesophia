@@ -1752,6 +1752,15 @@
           "name": "expr_tuple"
         },
         {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expr_match"
+          },
+          "named": true,
+          "value": "expr_match"
+        },
+        {
           "type": "SYMBOL",
           "name": "_expr_atom"
         }
@@ -2764,7 +2773,7 @@
                   "name": "name",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "identifier"
+                    "name": "argument_name"
                   }
                 },
                 {
@@ -2787,6 +2796,15 @@
           }
         }
       ]
+    },
+    "argument_name": {
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "identifier"
+      },
+      "named": true,
+      "value": "_"
     },
     "expr_record_update": {
       "type": "PREC_LEFT",
@@ -3163,7 +3181,7 @@
           "name": "key",
           "content": {
             "type": "SYMBOL",
-            "name": "_expression"
+            "name": "_expression_simpl"
           }
         },
         {
@@ -3670,7 +3688,7 @@
             "name": "pattern",
             "content": {
               "type": "SYMBOL",
-              "name": "pattern"
+              "name": "identifier"
             }
           },
           {
@@ -5330,7 +5348,7 @@
       "type": "TOKEN",
       "content": {
         "type": "PATTERN",
-        "value": "#[0-9a-fA-F]{2}(_?[0-9a-fA-F]{2})*"
+        "value": "#[0-9a-fA-F](_?[0-9a-fA-F])*"
       }
     },
     "_lex_wildcard": {
@@ -5509,11 +5527,25 @@
     [
       {
         "type": "SYMBOL",
-        "name": "type_domain"
+        "name": "expr_typed"
       },
       {
         "type": "SYMBOL",
-        "name": "expr_typed"
+        "name": "type_domain"
+      }
+    ],
+    [
+      {
+        "type": "SYMBOL",
+        "name": "argument_name"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "qual_low_id"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "_expr_match"
       }
     ]
   ],
