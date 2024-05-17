@@ -2545,6 +2545,10 @@
             "named": false
           },
           {
+            "type": "public",
+            "named": false
+          },
+          {
             "type": "stateful",
             "named": false
           }
@@ -2560,6 +2564,10 @@
           },
           {
             "type": "private",
+            "named": false
+          },
+          {
+            "type": "public",
             "named": false
           },
           {
@@ -4496,7 +4504,7 @@
       },
       "type": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "type_application",
@@ -5662,6 +5670,10 @@
   },
   {
     "type": "private",
+    "named": false
+  },
+  {
+    "type": "public",
     "named": false
   },
   {

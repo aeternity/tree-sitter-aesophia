@@ -228,7 +228,7 @@ enum token_type {
   INHIBIT_LAYOUT_END,
   INHIBIT_KEYWORD_TERMINATION,
   COMMA,
-  PIPE,
+  /* PIPE, */
   SYNCHRONIZE,
   INVALID_LAYOUT,
   UNARY_OP,
@@ -250,7 +250,7 @@ const char* const TOKEN_TYPE_STR[TOKEN_TYPE_LEN] = {
   "INHIBIT_LAYOUT_END",
   "INHIBIT_KEYWORD_TERMINATION",
   "COMMA",
-  "PIPE",
+  /* "PIPE", */
   "SYNCHRONIZE",
   "INVALID_LAYOUT",
   "UNARY_OP",
@@ -809,11 +809,11 @@ LEX_FN(lex_inline_layout)
       return false;
     }
     break;
-  case '|':
-    if (valid_tokens_test(ctx->valid_tokens, PIPE)) {
-      return false;
-    }
-    break;
+  /* case '|': */
+  /*   if (valid_tokens_test(ctx->valid_tokens, PIPE)) { */
+  /*     return false; */
+  /*   } */
+  /*   break; */
   case ')':
   case ']':
   case '}':

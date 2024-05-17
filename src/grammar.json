@@ -1242,6 +1242,10 @@
         {
           "type": "STRING",
           "value": "private"
+        },
+        {
+          "type": "STRING",
+          "value": "public"
         }
       ]
     },
@@ -1364,6 +1368,23 @@
             ]
           }
         },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_type_alias_body"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        }
+      ]
+    },
+    "_type_alias_body": {
+      "type": "SEQ",
+      "members": [
         {
           "type": "STRING",
           "value": "="
@@ -4998,7 +5019,7 @@
       "type": "TOKEN",
       "content": {
         "type": "PATTERN",
-        "value": "([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_']*"
+        "value": "([a-z_]|(_[a-zA-Z]))[a-zA-Z0-9_']*"
       }
     },
     "_lex_up_id": {
@@ -5272,10 +5293,6 @@
     {
       "type": "STRING",
       "value": ","
-    },
-    {
-      "type": "STRING",
-      "value": "|"
     },
     {
       "type": "SYMBOL",

@@ -143,7 +143,7 @@ module.exports = grammar({
     $._inhibit_keyword_termination,
     // @ts-ignore: DSL not updated for literals
     ",",
-    "|",
+    // "|",
     $._synchronize,
     $._invalid_layout,
     $._prefix_operator,
@@ -420,7 +420,8 @@ module.exports = grammar({
     _function_modifier: $ => choice(
       'payable',
       'stateful',
-      'private'
+      'private',
+      'public',
     ),
 
     //**************************************************************************
@@ -441,6 +442,10 @@ module.exports = grammar({
       'type',
       field("name", $.identifier),
       field("params", optional($.type_param_decls)),
+      optional($._type_alias_body),
+    ),
+
+    _type_alias_body: $ => seq(
       '=',
       field("type", $._type)
     ),
@@ -1034,7 +1039,7 @@ module.exports = grammar({
       /_[0-9a-zA-Z]+/,
     )),
 
-    _lex_low_id: $ => token(/([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_']*/),
+    _lex_low_id: $ => token(/([a-z_]|(_[a-zA-Z]))[a-zA-Z0-9_']*/),
     _lex_up_id: $ => token(/[A-Z][a-zA-Z0-9_']*/),
 
     _lex_prim_id: $ => token(/'*([a-z]|(_[a-zA-Z]))[a-zA-Z0-9_]*/),
