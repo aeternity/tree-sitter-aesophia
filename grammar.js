@@ -121,9 +121,6 @@ const OP_ASSOC = {
 module.exports = grammar({
   name: 'aesophia',
 
-  conflicts: $ => [
-  ],
-
   extras: $ => [
     /[\n\r ]+/,
     $._synchronize,
@@ -173,17 +170,21 @@ module.exports = grammar({
     $._expr_sub,
   ],
 
+  conflicts: $ => [
+    [$.type_tuple]
+  ],
+
   precedences: $ => [
     [ // expressions
       'EXPR_ATOM',
       'EXPR_LETVAL',
       'EXPR_APP',
-      $.expr_typed,
       $.expr_op,
       $._expression_body,
+      $.expr_typed,
     ],
 
-    [
+    [ // operators
       'OP_NOT',
       'OP_POW',
       'OP_MUL',
@@ -201,12 +202,16 @@ module.exports = grammar({
     ],
 
     [ // types
-      'TYPE_ATOM',
-      'TYPE_QUAL',
-      'TYPE_APP',
-      'TYPE_DOMAIN',
-      'TYPE_TUPLE',
-      'TYPE_FUN',
+      // $.type_application, $.type_tuple, $._type_in_tuple,
+      $.type_domain, $.type_function,
+    ],
+
+    [
+      $.type_application, $._type_in_tuple,
+    ],
+
+    [
+      $._type, $.type_tuple,
     ],
 
     // conflicts
@@ -217,7 +222,7 @@ module.exports = grammar({
 
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
-    [ $.type_domain_one, $.expr_typed, ],
+    [ $.type_domain, $.expr_typed, ],
 
     [$.expr_invalid_return, $._expression],
 
@@ -554,7 +559,7 @@ module.exports = grammar({
           ) : seq(
             field("op_l", $._expression),
             field("op", operator),
-            field("op_r", $._expression_body)
+            field("op_r", $._expression)
           )
         )
       )
@@ -885,61 +890,49 @@ module.exports = grammar({
     // TYPE
     //**************************************************************************
 
-    _type: $ => prec('TYPE_ATOM', choice(
-      $.type_function,
+    _type: $ => choice(
       $.type_tuple,
-      $._type_in_tuple
-    )),
-
-    type_function: $ => prec.right('TYPE_FUN', seq(
-      field("domain", $._type_domain),
-      '=>',
-      field("codomain", $._type)
-    )),
-
-    _type_domain: $ => prec('TYPE_DOMAIN', choice(
-      $.type_domain_zero,
-      $.type_domain_one,
-      $.type_domain_many
-    )),
-
-    type_domain_zero: $ => parens($),
-
-    type_domain_one: $ => prec('TYPE_DOMAIN', field("param", $._type)),
-
-    type_domain_many: $ => parens_comma2($,
-      field("param", $._type)
+      $.type_function,
+      $._type_in_tuple,
     ),
-
-    type_tuple: $ => prec.left('TYPE_TUPLE', sep2(field("elem", $._type_in_tuple), '*')),
 
     _type_in_tuple: $ => choice(
       $.type_application,
-      $._type_atom,
-    ),
-
-    type_application: $ => prec.left('TYPE_APP', seq(
-      field("fun", $.type_variable),
-      field("params", $.type_params),
-    )),
-
-    type_params: $ => parens_comma($,
-      field("param", $._type)
-    ),
-
-    _type_atom: $ => prec('TYPE_ATOM', choice(
       $.type_variable_poly,
       $.type_variable,
       $.type_contract,
       $.type_paren,
       alias($.lit_integer, $.type_integer),
+    ),
+
+    type_function: $ => prec.right(seq(
+      $.type_domain,
+      '=>',
+      field("codomain", $._type)
     )),
 
-    type_paren: $ => seq(
+    type_domain: $ => choice(
+      parens_comma2($, $._type),
+      seq('(', $._paren_close),
+      $._type,
+    ),
+
+    type_tuple: $ => sep2(field("elem", $._type_in_tuple), '*'),
+
+    type_application: $ => prec.left(seq(
+      field("fun", $.type_variable),
+      field("params", $.type_params),
+    )),
+
+    type_params: $ => choice(
+      parens_comma($, field("param", $._type))
+    ),
+
+    type_paren: $ => prec.right(seq(
       '(',
       field("type", $._type),
       $._paren_close
-    ),
+    )),
 
     type_variable_poly: $ => $.type_variable_poly_name,
 

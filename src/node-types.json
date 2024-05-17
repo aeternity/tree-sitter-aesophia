@@ -2176,10 +2176,6 @@
             "named": true
           },
           {
-            "type": "expr_block",
-            "named": true
-          },
-          {
             "type": "expr_hole",
             "named": true
           },
@@ -5354,97 +5350,47 @@
     }
   },
   {
-    "type": "type_domain_many",
+    "type": "type_domain",
     "named": true,
-    "fields": {
-      "param": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "type_application",
-            "named": true
-          },
-          {
-            "type": "type_contract",
-            "named": true
-          },
-          {
-            "type": "type_function",
-            "named": true
-          },
-          {
-            "type": "type_integer",
-            "named": true
-          },
-          {
-            "type": "type_paren",
-            "named": true
-          },
-          {
-            "type": "type_tuple",
-            "named": true
-          },
-          {
-            "type": "type_variable",
-            "named": true
-          },
-          {
-            "type": "type_variable_poly",
-            "named": true
-          }
-        ]
-      }
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "type_application",
+          "named": true
+        },
+        {
+          "type": "type_contract",
+          "named": true
+        },
+        {
+          "type": "type_function",
+          "named": true
+        },
+        {
+          "type": "type_integer",
+          "named": true
+        },
+        {
+          "type": "type_paren",
+          "named": true
+        },
+        {
+          "type": "type_tuple",
+          "named": true
+        },
+        {
+          "type": "type_variable",
+          "named": true
+        },
+        {
+          "type": "type_variable_poly",
+          "named": true
+        }
+      ]
     }
-  },
-  {
-    "type": "type_domain_one",
-    "named": true,
-    "fields": {
-      "param": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "type_application",
-            "named": true
-          },
-          {
-            "type": "type_contract",
-            "named": true
-          },
-          {
-            "type": "type_function",
-            "named": true
-          },
-          {
-            "type": "type_integer",
-            "named": true
-          },
-          {
-            "type": "type_paren",
-            "named": true
-          },
-          {
-            "type": "type_tuple",
-            "named": true
-          },
-          {
-            "type": "type_variable",
-            "named": true
-          },
-          {
-            "type": "type_variable_poly",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "type_domain_zero",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "type_function",
@@ -5487,25 +5433,17 @@
             "named": true
           }
         ]
-      },
-      "domain": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "type_domain_many",
-            "named": true
-          },
-          {
-            "type": "type_domain_one",
-            "named": true
-          },
-          {
-            "type": "type_domain_zero",
-            "named": true
-          }
-        ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "type_domain",
+          "named": true
+        }
+      ]
     }
   },
   {
