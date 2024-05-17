@@ -176,13 +176,13 @@ module.exports = grammar({
 
   precedences: $ => [
     [ // expressions
-      'EXPR_ATOM',
       'EXPR_LETVAL',
       'EXPR_APP',
       $.expr_op,
       $._expression_body,
       $.expr_typed,
     ],
+
 
     [ // operators
       'OP_NOT',
@@ -218,16 +218,17 @@ module.exports = grammar({
 
     // (x)
     // this is somehow unclear whether it's a tuple or a beginning of a lambda
-    [ $._expression_simpl, $.expr_lambda, ],
+    [
+      $._expression_simpl, $.expr_lambda,
+    ],
 
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
-    // [ $.type_domain, $.expr_typed, ],
-    // [$.type_tuple, $.expr_typed],
+    [
+      $.type_domain, $.expr_typed,
+    ],
 
-    [$.expr_invalid_return, $._expression],
-
-    [$.expr_list_literal, $.expr_list_comprehension, ],
+    // [$.expr_invalid_return, $._expression],
   ],
 
   word: $ => $._lex_low_id,
@@ -359,6 +360,8 @@ module.exports = grammar({
     _scoped_declaration: $ => choice(
       $._type_definition,
       $.function_declaration,
+      alias($._letval, $.letval),
+      $.using,
     ),
 
     function_declaration: $ => seq(
@@ -484,12 +487,18 @@ module.exports = grammar({
     expr_block: $ => block($, $._expression),
 
     _expression: $ => choice(
+      $._expression_simpl,
+      $._expression_complex,
+      // $._expr_invalid,
+    ),
+
+    // Things that open unconstrained scopes
+    _expression_complex: $ => choice(
       $.expr_lambda,
-      $._expr_if,
+      $.expr_if,
+      alias($.using, $.expr_using),
       $.expr_letval,
       $.expr_switch,
-      $._expression_simpl,
-      // $._expr_invalid,
     ),
 
     _expression_simpl: $ => choice(
@@ -561,8 +570,6 @@ module.exports = grammar({
             field("op_l", $._expression),
             field("op", operator),
             field("op_r", $._expression),
-
-            // field("op_r", precedence === 'OP_TYPE' ? $._type  : $._expression)
           )
         )
       )
@@ -650,13 +657,6 @@ module.exports = grammar({
       field("field", $.identifier)
     )),
 
-
-    _expr_if: $ => choice(
-      $.expr_if,
-      // $.expr_elif,
-      // $.expr_else
-    ),
-
     expr_if: $ => prec.right(seq(
       $._if_head,
       field("then", $._expression_body),
@@ -680,13 +680,11 @@ module.exports = grammar({
       keyword('elif'),
       parens($, field("cond", $._expression)),
       field("then", $._expression_body)
-      // $._if_body,
     ),
 
     expr_else: $ => seq(
       keyword('else'),
       field("then", $._expression_body)
-      // $._if_body,
     ),
 
     expr_switch: $ => seq(
@@ -708,7 +706,7 @@ module.exports = grammar({
     )),
 
     unguarded_branch: $ => seq(
-      // '=>',
+      '=>',
       field("body", $._expression_body),
     ),
 
@@ -717,20 +715,20 @@ module.exports = grammar({
     ))),
 
     guarded_branch: $ => seq(
-      // sep1(field("guard", $._expr_guard), ','), '=>',
+      sep1(field("guard", $._expr_guard), ','), '=>',
       field("body", $._expression_body)
     ),
 
     _expr_guard: $ => $._expression,
 
-    _expr_letval: $ => prec.right('EXPR_LETVAL', seq(
+    _letval: $ => seq(
       keyword('let'),
       field("pattern", $.pattern),
       '=',
       field("value", $._expression_body),
-    )),
+    ),
 
-    expr_letval: $ => $._expr_letval,
+    expr_letval: $ => prec('EXPR_LETVAL', $._letval),
 
     _expr_match: $ => prec.right(seq(
       field("pattern", $.pattern),
@@ -820,19 +818,17 @@ module.exports = grammar({
       $.list_comprehension_if,
     ),
 
-    list_comprehension_let: $ => $._expr_letval,
+    list_comprehension_let: $ => $._letval,
 
     list_comprehension_bind: $ => seq(
-      field("pattern", $.expr_variable),
-      // field("pattern", $.pattern),
+      // field("pattern", $.expr_variable),
+      field("pattern", $.pattern),
       '<-',
       field("expr", $._expression)
     ),
 
 
-    list_comprehension_if: $ => seq(
-      $._if_head,
-    ),
+    list_comprehension_if: $ => $._if_head,
 
     expr_tuple: $ => parens_comma($,
       field("elem", $._expression)
