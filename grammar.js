@@ -565,23 +565,23 @@ module.exports = grammar({
           precedence,
           OP_ASSOC[precedence] === 'unary' ? seq(
             field("op", operator),
-            field("op_r", $._expression),
+            field("op_r", $._expression_simpl),
           ) : seq(
-            field("op_l", $._expression),
+            field("op_l", $._expression_simpl),
             field("op", operator),
-            field("op_r", $._expression),
+            field("op_r", $._expression_simpl),
           )
         )
       )
     ),
 
     expr_typed: $ => prec.left(seq(
-      field("expr", $._expression), ':',
+      field("expr", $._expression_simpl), ':',
       field("type", $._type)
     )),
 
     expr_application: $ => prec.left('EXPR_APP', seq(
-      field("fun", $._expression),
+      field("fun", $._expression_simpl),
       field("args", $.expr_args),
     )),
 
@@ -595,7 +595,7 @@ module.exports = grammar({
     ),
 
     expr_record_update: $ => prec.left('EXPR_APP', seq(
-      field("record", $._expression),
+      field("record", $._expression_simpl),
       field("updates", $.record_field_updates),
     )),
 
@@ -614,7 +614,7 @@ module.exports = grammar({
 
     _nested_query_elem: $ => choice(
       seq('.', $.identifier),
-      $.expr_map_key,
+      $.map_key,
     ),
 
     _nested_query_path: $ => seq(
@@ -626,7 +626,7 @@ module.exports = grammar({
     ),
 
     expr_map_update: $ => prec.left('EXPR_APP', seq(
-      field("map", $._expression),
+      field("map", $._expression_simpl),
       field("updates", $.map_updates),
     )),
 
@@ -635,7 +635,7 @@ module.exports = grammar({
     ),
 
     map_update: $ => seq(
-      field("key", $.expr_map_key),
+      field("key", $.map_key),
       optional(field("path", $._nested_query_path)),
       optional($._optional_value),
       '=',
@@ -643,17 +643,17 @@ module.exports = grammar({
     ),
 
     expr_map_access: $ => prec.left('EXPR_APP', seq(
-      field("map", $._expression),
-      field("key", $.expr_map_key)
+      field("map", $._expression_simpl),
+      field("key", $.map_key)
     )),
 
-    expr_map_key: $ => brackets($,
+    map_key: $ => brackets($,
       field("key", $._expression),
       optional(seq('=', field("default_value", $._expression))),
     ),
 
     expr_projection: $ => prec.left('EXPR_APP', seq(
-      field("expr", $._expression), '.',
+      field("expr", $._expression_simpl), '.',
       field("field", $.identifier)
     )),
 
@@ -779,7 +779,7 @@ module.exports = grammar({
     ),
 
     map_assign: $ => prec.left(seq(
-      field("key", $.expr_map_key), '=',
+      field("key", $.map_key), '=',
       optional(seq('@', field("old_value", $.identifier))),
       field("new_value", $._expression)
     )),
@@ -901,6 +901,7 @@ module.exports = grammar({
       $.type_variable,
       $.type_contract,
       $.type_paren,
+      $.type_wildcard,
     ),
 
     type_function: $ => prec.right(seq(
@@ -951,6 +952,8 @@ module.exports = grammar({
     type_variable: $ => $.qual_identifier,
 
     type_contract: $ => $.qual_scope_name,
+
+    type_wildcard: $ => $._lex_wildcard,
 
     //**************************************************************************
     // OPERATORS
