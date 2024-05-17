@@ -103,6 +103,7 @@ const keyword = (text) => alias(token(text), text);
 
 const OP_ASSOC = {
   'OP_PIPE': 'left',
+  'OP_TYPE': 'left',
   'OP_DISJ': 'right',
   'OP_CONJ': 'right',
   'OP_BOR': 'left',
@@ -171,7 +172,6 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    [$.type_tuple]
   ],
 
   precedences: $ => [
@@ -211,7 +211,7 @@ module.exports = grammar({
     ],
 
     [
-      $._type, $.type_tuple,
+      $.type_tuple, $._type,
     ],
 
     // conflicts
@@ -222,7 +222,8 @@ module.exports = grammar({
 
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
-    [ $.type_domain, $.expr_typed, ],
+    // [ $.type_domain, $.expr_typed, ],
+    // [$.type_tuple, $.expr_typed],
 
     [$.expr_invalid_return, $._expression],
 
@@ -559,7 +560,9 @@ module.exports = grammar({
           ) : seq(
             field("op_l", $._expression),
             field("op", operator),
-            field("op_r", $._expression)
+            field("op_r", $._expression),
+
+            // field("op_r", precedence === 'OP_TYPE' ? $._type  : $._expression)
           )
         )
       )
@@ -705,7 +708,7 @@ module.exports = grammar({
     )),
 
     unguarded_branch: $ => seq(
-      '=>',
+      // '=>',
       field("body", $._expression_body),
     ),
 
@@ -714,7 +717,7 @@ module.exports = grammar({
     ))),
 
     guarded_branch: $ => seq(
-      sep1(field("guard", $._expr_guard), ','), '=>',
+      // sep1(field("guard", $._expr_guard), ','), '=>',
       field("body", $._expression_body)
     ),
 
@@ -902,7 +905,6 @@ module.exports = grammar({
       $.type_variable,
       $.type_contract,
       $.type_paren,
-      alias($.lit_integer, $.type_integer),
     ),
 
     type_function: $ => prec.right(seq(
@@ -917,15 +919,29 @@ module.exports = grammar({
       $._type,
     ),
 
-    type_tuple: $ => sep2(field("elem", $._type_in_tuple), '*'),
+    type_tuple: $ => prec.right(seq(
+      $._type_in_tuple,
+      '*',
+      $._type_tuple,
+    )),
+
+    _type_tuple: $ => prec.right(seq(
+      $._type_in_tuple,
+      optional(seq('*', $._type_tuple)),
+    )),
 
     type_application: $ => prec.left(seq(
       field("fun", $.type_variable),
       field("params", $.type_params),
     )),
 
+    _type_param: $ => choice(
+      alias($.lit_integer, $.type_integer),
+      $._type,
+    ),
+
     type_params: $ => choice(
-      parens_comma($, field("param", $._type))
+      parens_comma($, field("param", $._type_param))
     ),
 
     type_paren: $ => prec.right(seq(
