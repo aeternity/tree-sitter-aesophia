@@ -942,6 +942,12 @@ module.exports = grammar({
 
     _type_param: $ => choice(
       alias($.lit_integer, $.type_integer),
+      $.type_indexed,
+      $._type,
+    ),
+
+    type_indexed: $ => seq(
+      'indexed',
       $._type,
     ),
 

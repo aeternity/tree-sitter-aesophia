@@ -5786,6 +5786,49 @@
     }
   },
   {
+    "type": "type_indexed",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "type_application",
+          "named": true
+        },
+        {
+          "type": "type_contract",
+          "named": true
+        },
+        {
+          "type": "type_function",
+          "named": true
+        },
+        {
+          "type": "type_paren",
+          "named": true
+        },
+        {
+          "type": "type_tuple",
+          "named": true
+        },
+        {
+          "type": "type_variable",
+          "named": true
+        },
+        {
+          "type": "type_variable_poly",
+          "named": true
+        },
+        {
+          "type": "type_wildcard",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "type_integer",
     "named": true,
     "fields": {}
@@ -5824,6 +5867,10 @@
           },
           {
             "type": "type_function",
+            "named": true
+          },
+          {
+            "type": "type_indexed",
             "named": true
           },
           {
@@ -6471,6 +6518,10 @@
   },
   {
     "type": "include",
+    "named": false
+  },
+  {
+    "type": "indexed",
     "named": false
   },
   {

@@ -4760,6 +4760,23 @@
         },
         {
           "type": "SYMBOL",
+          "name": "type_indexed"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_type"
+        }
+      ]
+    },
+    "type_indexed": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "indexed"
+        },
+        {
+          "type": "SYMBOL",
           "name": "_type"
         }
       ]
