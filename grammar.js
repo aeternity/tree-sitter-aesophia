@@ -173,6 +173,8 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
+    // Modifiers screw them up
+    [$.function_declaration, $.scope_declaration,]
   ],
 
   precedences: $ => [
@@ -249,7 +251,7 @@ module.exports = grammar({
 
     _dispatch: $ => choice(
       dispatch($, 'module', $.module),
-      dispatch($, 'top_decl', $._top_decl),
+      dispatch($, 'decl', $._decl),
       dispatch($, 'type', $._type),
       dispatch($, 'literal', $._literal),
       dispatch($, 'expression', $._expression),
@@ -280,16 +282,17 @@ module.exports = grammar({
     _block_comment_end: $ => token('*/'),
     _doc_comment_start: $ => token('/**'),
 
-    module: $ => repeat1(seq($._top_decl, $._layout_terminator)),
+    module: $ => repeat1(seq($._decl, $._layout_terminator)),
 
-    _top_decl: $ => choice(
-      $.top_pragma,
+    _decl: $ => choice(
+      $.pragma,
       $.include,
       $.using,
-      $.scope_declaration
+      $.scope_declaration,
+      $._scoped_declaration,
     ),
 
-    top_pragma: $ => seq(
+    pragma: $ => seq(
       '@',
       field("pragma", choice(
         $.pragma_compiler_vsn
@@ -346,18 +349,15 @@ module.exports = grammar({
     include_path: $ => $._lex_string,
 
     scope_declaration: $ => seq(
-      field("modifier", repeat($.scope_modifier)),
+      field("modifier", repeat($.modifier)),
       field("head", $.scope_head),
       field("interface", alias(optional('interface'), $.is_interface)),
       field("name", $.scope_name),
       optional(seq(":", sep1(field("implements", $.qual_scope_name), ","))),
       '=',
-      maybe_block($, field("decl", $._scoped_declaration))
+      maybe_block($, field("decl", $._decl))
     ),
 
-    scope_modifier: $ => choice(
-      'main', 'payable'
-    ),
 
     scope_head: $ => choice(
       'contract', 'namespace'
@@ -367,11 +367,10 @@ module.exports = grammar({
       $._type_definition,
       $.function_declaration,
       alias($._letval, $.letval),
-      $.using,
     ),
 
     function_declaration: $ => seq(
-      field("modifiers", repeat(field("modifier", $._function_modifier))),
+      field("modifiers", repeat(field("modifier", $.modifier))),
       field("head", $.function_head),
       maybe_block($, field("clause",
                      choice(
@@ -417,7 +416,8 @@ module.exports = grammar({
       'entrypoint'
     ),
 
-    _function_modifier: $ => choice(
+    modifier: $ => choice(
+      'main',
       'payable',
       'stateful',
       'private',

@@ -2537,20 +2537,8 @@
         "required": false,
         "types": [
           {
-            "type": "payable",
-            "named": false
-          },
-          {
-            "type": "private",
-            "named": false
-          },
-          {
-            "type": "public",
-            "named": false
-          },
-          {
-            "type": "stateful",
-            "named": false
+            "type": "modifier",
+            "named": true
           }
         ]
       },
@@ -2559,20 +2547,8 @@
         "required": false,
         "types": [
           {
-            "type": "payable",
-            "named": false
-          },
-          {
-            "type": "private",
-            "named": false
-          },
-          {
-            "type": "public",
-            "named": false
-          },
-          {
-            "type": "stateful",
-            "named": false
+            "type": "modifier",
+            "named": true
           }
         ]
       }
@@ -3763,6 +3739,11 @@
     }
   },
   {
+    "type": "modifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "module",
     "named": true,
     "fields": {},
@@ -3771,7 +3752,23 @@
       "required": true,
       "types": [
         {
+          "type": "function_declaration",
+          "named": true
+        },
+        {
           "type": "include",
+          "named": true
+        },
+        {
+          "type": "letval",
+          "named": true
+        },
+        {
+          "type": "pragma",
+          "named": true
+        },
+        {
+          "type": "record_declaration",
           "named": true
         },
         {
@@ -3779,11 +3776,15 @@
           "named": true
         },
         {
-          "type": "top_pragma",
+          "type": "type_alias",
           "named": true
         },
         {
           "type": "using",
+          "named": true
+        },
+        {
+          "type": "variant_declaration",
           "named": true
         }
       ]
@@ -3963,6 +3964,22 @@
     }
   },
   {
+    "type": "pragma",
+    "named": true,
+    "fields": {
+      "pragma": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "pragma_compiler_vsn",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "pragma_compiler_vsn",
     "named": true,
     "fields": {
@@ -4133,11 +4150,23 @@
             "named": true
           },
           {
+            "type": "include",
+            "named": true
+          },
+          {
             "type": "letval",
             "named": true
           },
           {
+            "type": "pragma",
+            "named": true
+          },
+          {
             "type": "record_declaration",
+            "named": true
+          },
+          {
+            "type": "scope_declaration",
             "named": true
           },
           {
@@ -4189,7 +4218,7 @@
         "required": false,
         "types": [
           {
-            "type": "scope_modifier",
+            "type": "modifier",
             "named": true
           }
         ]
@@ -4208,11 +4237,6 @@
   },
   {
     "type": "scope_head",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "scope_modifier",
     "named": true,
     "fields": {}
   },
@@ -4353,15 +4377,15 @@
             "named": true
           },
           {
+            "type": "pragma",
+            "named": true
+          },
+          {
             "type": "record_declaration",
             "named": true
           },
           {
             "type": "scope_declaration",
-            "named": true
-          },
-          {
-            "type": "top_pragma",
             "named": true
           },
           {
@@ -4456,22 +4480,6 @@
         "types": [
           {
             "type": "pattern",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "top_pragma",
-    "named": true,
-    "fields": {
-      "pragma": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "pragma_compiler_vsn",
             "named": true
           }
         ]
