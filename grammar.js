@@ -511,8 +511,7 @@ module.exports = grammar({
       $.expr_typed,
       $.expr_op,
       $.expr_application,
-      $.expr_record_update,
-      $.expr_map_update,
+      $.expr_map_or_record,
       $.expr_map_access,
       $.expr_projection,
       $.expr_tuple,
@@ -523,8 +522,6 @@ module.exports = grammar({
     _expr_atom: $ => choice(
       $.expr_literal,
       $.expr_variable,
-      $.expr_record,
-      $.expr_map,
       $._expr_list,
       $.expr_hole,
       $.expr_wildcard,
@@ -602,52 +599,39 @@ module.exports = grammar({
 
     argument_name: $ => alias($.identifier, $._),
 
-    expr_record_update: $ => prec.left('EXPR_APP', seq(
-      field("record", $._expression_simpl),
-      field("updates", $.record_field_updates),
+    expr_map_or_record: $ => prec.left('EXPR_APP', seq(
+      optional(field("source", $._expression_simpl)),
+      field("updates", $.updates),
     )),
 
-    record_field_updates: $ => braces_comma1($,
-      field("update", $.record_field_update)
-    ),
+    updates: $ => braces_comma($,
+      field("update", $.update)
+                               ),
 
-    record_field_update: $ => seq(
-      field("field", $.field_name),
-      optional(field("path", $._nested_query_path)),
+    update: $ => seq(
+      field("path_head", $._update_path_head),
+      optional(field("path", $.update_path)),
       optional($._optional_value),
       '=',
       field("new_value", $._expression)
     ),
 
-
-    _nested_query_elem: $ => choice(
-      seq('.', $.identifier),
+    _update_path_head: $ => choice(
+      $.field_name,
       $.map_key,
     ),
 
-    _nested_query_path: $ => seq(
-      repeat1($._nested_query_elem),
+    _update_path_elem: $ => choice(
+      seq('.', $.field_name),
+      $.map_key,
+    ),
+
+    update_path: $ => seq(
+      repeat1($._update_path_elem),
     ),
 
     _optional_value: $ => seq(
       seq('@', field("old_value", $.identifier)),
-    ),
-
-    expr_map_update: $ => prec.left('EXPR_APP', seq(
-      field("map", $._expression_simpl),
-      field("updates", $.map_updates),
-    )),
-
-    map_updates: $ => braces_comma1($,
-      field("update", $.map_update)
-    ),
-
-    map_update: $ => seq(
-      field("key", $.map_key),
-      optional(field("path", $._nested_query_path)),
-      optional($._optional_value),
-      '=',
-      field("new_value", $._expression)
     ),
 
     expr_map_access: $ => prec.left('EXPR_APP', seq(
@@ -773,25 +757,6 @@ module.exports = grammar({
 
     expr_literal: $ =>field("literal", $._literal),
 
-    expr_record: $ => braces_comma1($,
-      field("field", $.expr_record_field)
-    ),
-
-    expr_record_field: $ => seq(
-      field("name", $.identifier), '=',
-      field("value", $._expression)
-    ),
-
-    expr_map: $ => braces_comma1($,
-      field("assign", $.map_assign)
-    ),
-
-    map_assign: $ => prec.left(seq(
-      field("key", $.map_key), '=',
-      optional(seq('@', field("old_value", $.identifier))),
-      field("new_value", $._expression)
-    )),
-
     _expr_list: $ => choice(
       $.expr_list_literal,
       $.expr_list_range,
@@ -866,7 +831,6 @@ module.exports = grammar({
       $.lit_lambda_op,
       $.lit_integer,
       $.lit_bool,
-      $.lit_empty_map_or_record,
       $.lit_string,
       $.lit_char,
     ),
@@ -885,8 +849,6 @@ module.exports = grammar({
     ),
 
     lit_bool: $ => choice('true', 'false'),
-
-    lit_empty_map_or_record: $ => braces($),
 
     lit_string: $ => $._lex_string,
 
