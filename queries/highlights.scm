@@ -33,11 +33,14 @@
 (((expr_variable) @expr.state)
  (#match @expr.state "state")
  )
-(expr_projection field: _ @field.expr)
 (expr_application fun: (expr_variable) @variable.expr.function)
 (member_assign old_value: (identifier) @variable.map_old_value)
 (expr_hole) @symbol.hole.expr
 
+(expr_projection field: (identifier) @field)
+(member_assign path_head: (identifier) @field)
+(member_path (identifier) @field)
+(member_access (identifier) @field)
 
 ;; Patterns
 
@@ -82,7 +85,6 @@
 ;; Identifiers
 
 (identifier) @variable
-(field_name) @variable.field
 (scope_name) @variable.scope
 (constructor) @variable.constructor
 

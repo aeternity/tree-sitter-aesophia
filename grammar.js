@@ -165,7 +165,6 @@ module.exports = grammar({
   inline: $ => [
     $.identifier,
     $.constructor,
-    $.field_name,
     $.scope_name,
     $.qual_constructor,
     $.qual_identifier,
@@ -507,9 +506,12 @@ module.exports = grammar({
       $.variant_declaration
     ),
 
-    type_param_decls: $ => parens_comma($,
-      field("name", $.type_variable_poly_name)
+    type_param_decls: $ => parens_comma(
+      $,
+      field("name", $.type_param)
     ),
+
+    type_param: $ => $.type_variable_poly_name,
 
 
     type_alias: $ => seq(
@@ -703,12 +705,12 @@ module.exports = grammar({
     ),
 
     _member_path_head: $ => choice(
-      $.field_name,
+      $.identifier,
       $.map_key,
     ),
 
     _member_path_elem: $ => choice(
-      seq('.', $.field_name),
+      seq('.', $.identifier),
       $.map_key,
     ),
 
@@ -1234,8 +1236,6 @@ module.exports = grammar({
     identifier: $ => alias($._lex_low_id, $.identifier),
 
     constructor: $ => alias($._lex_up_id, $.constructor),
-
-    field_name: $ => alias($._lex_low_id, $.field_name),
 
     scope_name: $ => alias($._lex_up_id, $.scope_name),
 

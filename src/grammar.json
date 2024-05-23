@@ -1328,7 +1328,7 @@
                             "name": "name",
                             "content": {
                               "type": "SYMBOL",
-                              "name": "type_variable_poly_name"
+                              "name": "type_param"
                             }
                           },
                           {
@@ -1343,7 +1343,7 @@
                       "name": "name",
                       "content": {
                         "type": "SYMBOL",
-                        "name": "type_variable_poly_name"
+                        "name": "type_param"
                       }
                     }
                   ]
@@ -1372,6 +1372,10 @@
           "name": "_paren_close"
         }
       ]
+    },
+    "type_param": {
+      "type": "SYMBOL",
+      "name": "type_variable_poly_name"
     },
     "type_alias": {
       "type": "SEQ",
@@ -2978,7 +2982,7 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "field_name"
+          "name": "identifier"
         },
         {
           "type": "SYMBOL",
@@ -2998,7 +3002,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "field_name"
+              "name": "identifier"
             }
           ]
         },
@@ -5884,15 +5888,6 @@
       "named": true,
       "value": "constructor"
     },
-    "field_name": {
-      "type": "ALIAS",
-      "content": {
-        "type": "SYMBOL",
-        "name": "_lex_low_id"
-      },
-      "named": true,
-      "value": "field_name"
-    },
     "scope_name": {
       "type": "ALIAS",
       "content": {
@@ -6448,7 +6443,6 @@
   "inline": [
     "identifier",
     "constructor",
-    "field_name",
     "scope_name",
     "qual_constructor",
     "qual_identifier",
