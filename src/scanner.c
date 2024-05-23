@@ -400,6 +400,8 @@ LEX_FN(lex_main) {
   TRY_LEX(ctx, lex_comment_content);
   TRY_LEX(ctx, lex_long_string_quote);
 
+  scan_spaces(ctx, false);
+
   TRY_LEX(ctx, lex_indent_query);
   TRY_LEX(ctx, lex_indent);
   TRY_LEX(ctx, lex_inline_layout);
