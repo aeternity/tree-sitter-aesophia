@@ -1,0 +1,41 @@
+==================
+If simple block
+==================
+
+contract Test =
+  function f() =
+    if(x)
+      x
+
+---
+
+ (source
+      (module
+        (scope_declaration
+          (scope_head)
+          (scope_name)
+          (vopen)
+          (function_declaration
+            (function_head)
+            (function_clause
+              (identifier)
+              (pat_args)
+              (unguarded_body
+                (expr_block
+                  (vopen)
+                  (expr_if
+                    (expr_variable
+                      (qual_low_id
+                        (name)))
+                    (expr_block
+                      (vopen)
+                      (expr_variable
+                        (qual_low_id
+                          (name)))
+                      (vsemi)
+                      (vclose)))
+                  (vsemi)
+                  (vclose)))))
+          (vsemi)
+          (vclose))
+        (vsemi)))
