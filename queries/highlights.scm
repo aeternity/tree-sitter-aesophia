@@ -35,15 +35,22 @@
  )
 (expr_projection field: _ @field.expr)
 (expr_application fun: (expr_variable) @variable.expr.function)
-
 (member_assign old_value: (identifier) @variable.map_old_value)
-(expr_letval pattern: (_)  @variable.expr.letval)
+(expr_hole) @symbol.hole.expr
+
+
+;; Patterns
+
+(pat_variable) @variable.pattern
+(pat_hole) @symbol.hole.pattern
+(pat_wildcard) @symbol.wildcard.pattern
 
 
 ;; Operators
 
 (expr_op op: _ @operator.expr)
 (expr_typed ":" @operator.type.expr)
+(pat_typed ":" @operator.type.pattern)
 (function_signature ":" @operator.type.function)
 (function_clause ":" @operator.type.function)
 (field_declaration ":" @operator.type.field)
@@ -59,6 +66,7 @@
 (((type_variable) @type.variable.state)
  (#match? @type.variable.state "state")
  )
+(type_wildcard) @symbol.wildcard.type
 
 
 ;; Constants / literals
