@@ -102,8 +102,8 @@ const brackets_comma2 = ($, rule) =>
       brackets($, sep_comma2($, rule));
 
 
+
 const OP_ASSOC = {
-  'OP_PIPE': 'left',
   'OP_PIPE': 'left',
   'OP_TYPE': 'left',
   'OP_DISJ': 'right',
@@ -145,7 +145,6 @@ module.exports = grammar({
     $._layout_empty,
     $._inhibit_layout_end,
     $._inhibit_keyword_termination,
-    // @ts-ignore: DSL not updated for literals
     ",",
     $._synchronize,
     $._invalid_layout,
@@ -171,19 +170,13 @@ module.exports = grammar({
     $.qual_constructor,
     $.qual_identifier,
     $.qual_scope_name,
-    $._expr_list,
-    $.pattern,
-    $.pat_args,
-  ],
-
-
-  conflicts: $ => [
-    // Modifiers screw them up
-    [$.function_declaration, $.scope_declaration,]
+    $.expr_literal,
+    $.pat_literal,
   ],
 
 
   precedences: $ => [
+
     [ // expressions
       'EXPR_LETVAL',
       'EXPR_APP',
@@ -191,6 +184,15 @@ module.exports = grammar({
       $._expression_body,
       $.expr_typed,
       'EXPR_INVALID',
+    ],
+
+
+    [ // patterns
+      $.pat_variable,
+      'PAT_APP',
+      $.pat_op,
+      $.pat_match,
+      $.pat_typed,
     ],
 
 
@@ -225,28 +227,58 @@ module.exports = grammar({
     ],
 
 
-    // (x)
-    // this is somehow unclear whether it's a tuple or a beginning of a lambda
-    [
-      $._expression_simpl, $.expr_lambda,
-    ],
-
     // switch(x) p | x : type => ...
     //               ^Should be parsed as typed guard, not x : function
     [
-      $.expr_typed, $.type_domain,
+      $.expr_typed, $.pat_typed, $.type_domain,
     ],
 
+    // (x, y) =>
+    // This is a lambda obviously
     [
-      $.argument_name, $.qual_low_id, $._expr_match,
+      $._pat_paren_comma, $.expr_tuple,
     ],
 
+
+    // invalid stuff can be quite arbitrary
     [
-      $._expression, $._expr_invalid_for_content,
+      $._expression, $._expr_invalid_content,
     ],
   ],
 
+
+  conflicts: $ => [
+    // Modifiers screw them up
+    [$.function_declaration, $.scope_declaration,],
+
+    [$.pat_variable, $.qual_low_id],
+    [$._expression_simple, $._pattern],
+    [$.pat_list, $.expr_list_literal],
+    [$.member_assigns, $.pat_map_or_record],
+    [$.member_assigns, $.pat_map_or_record],
+  ],
+
+
+  supertypes: $ => [
+    $._decl,
+    $._using_select,
+    $._scoped_declaration,
+    $._type_definition,
+    $._expression,
+    $._expression_body,
+    $._expression,
+    $._expression_simple,
+    $._expr_invalid,
+    $._list_comprehension_filter,
+    $._pattern,
+    $._operator,
+    $._literal,
+    $._type,
+  ],
+
+
   word: $ => $._lex_low_id,
+
 
   rules: {
     source: $ => seq(
@@ -398,12 +430,12 @@ module.exports = grammar({
     ),
 
 
-    _letval: $ => seq(
+    _letval: $ => prec.right(seq(
       'let',
-      field("pattern", $.pattern),
+      field("pattern", $._pattern),
       '=',
       field("value", $._expression_body),
-    ),
+    )),
 
 
     //**************************************************************************
@@ -541,22 +573,16 @@ module.exports = grammar({
 
     /// Expressions that are not indented blocks
     _expression: $ => choice(
-      $._expression_complex,
-      $._expression_simpl,
-      $._expr_invalid,
-    ),
-
-    /// Things that may contain unwrapped indented blocks
-    _expression_complex: $ => choice(
       $.expr_lambda,
       $.expr_if,
-      alias($.using, $.expr_using),
       $.expr_letval,
       $.expr_switch,
+      $._expression_simple,
     ),
 
     /// Things that have unambiguous beginning and end
-    _expression_simpl: $ => choice(
+    _expression_simple: $ => choice(
+      alias($.using, $.expr_using),
       $.expr_typed,
       $.expr_op,
       $.expr_application,
@@ -564,22 +590,17 @@ module.exports = grammar({
       $.expr_map_access,
       $.expr_projection,
       $.expr_tuple,
-      alias($._expr_match, $.expr_match),
-      $._expr_atom,
-    ),
-
-    _expr_atom: $ => choice(
       $.expr_literal,
       $.expr_variable,
       $._expr_list,
-      $.expr_hole,
-      $.expr_wildcard,
+      alias($._lex_hole, $.expr_hole),
+      $._expr_invalid,
     ),
 
 
     /// (x, y) => x + y
     expr_lambda: $ => prec.right(seq(
-      field("args", $.pat_args),
+      $.pat_args,
       '=>',
       field("body", $._expression_body)
     )),
@@ -621,11 +642,11 @@ module.exports = grammar({
           precedence,
           OP_ASSOC[precedence] === 'unary' ? seq(
             field("op", operator),
-            field("op_r", $._expression_simpl),
+            field("op_r", $._expression_simple),
           ) : seq(
-            field("op_l", $._expression_simpl),
+            field("op_l", $._expression_simple),
             field("op", operator),
-            field("op_r", $._expression_simpl),
+            field("op_r", $._expression_simple),
           )
         )
       )
@@ -634,14 +655,14 @@ module.exports = grammar({
 
     /// x : int
     expr_typed: $ => prec.left(seq(
-      field("expr", $._expression_simpl), ':',
+      field("expr", $._expression_simple), ':',
       field("type", $._type)
     )),
 
 
     /// f(x, y)
     expr_application: $ => prec.left('EXPR_APP', seq(
-      field("fun", $._expression_simpl),
+      field("fun", $._expression_simple),
       field("args", $.expr_args),
     )),
 
@@ -664,7 +685,7 @@ module.exports = grammar({
     /// - r{f.g[k] = 2}
     /// - m{[k] = 3}
     expr_map_or_record: $ => prec.left('EXPR_APP', seq(
-      optional(field("source", $._expression_simpl)),
+      optional(field("source", $._expression_simple)),
       field("updates", $.member_assigns),
     )),
 
@@ -674,25 +695,25 @@ module.exports = grammar({
     ),
 
     member_assign: $ => seq(
-      field("path_head", $._member_assign_path_head),
-      optional(field("path", $.member_assign_path)),
+      field("path_head", $._member_path_head),
+      optional(field("path", $.member_path)),
       optional(field("old_value", $._default_value)),
       '=',
       field("new_value", $._expression)
     ),
 
-    _member_assign_path_head: $ => choice(
+    _member_path_head: $ => choice(
       $.field_name,
       $.map_key,
     ),
 
-    _member_assign_path_elem: $ => choice(
+    _member_path_elem: $ => choice(
       seq('.', $.field_name),
       $.map_key,
     ),
 
-    member_assign_path: $ => seq(
-      repeat1($._member_assign_path_elem),
+    member_path: $ => seq(
+      repeat1($._member_path_elem),
     ),
 
     _default_value: $ => seq(
@@ -703,13 +724,13 @@ module.exports = grammar({
 
     /// m[k]
     expr_map_access: $ => prec.left('EXPR_APP', seq(
-      field("map", $._expression_simpl),
+      field("map", $._expression_simple),
       field("key", $.map_key)
     )),
 
     map_key: $ => brackets(
       $,
-      field("key", $._expression_simpl),
+      field("key", $._expression_simple),
       optional(field("default", $._map_default_value)),
     ),
 
@@ -721,7 +742,7 @@ module.exports = grammar({
 
     /// r.f
     expr_projection: $ => prec.left('EXPR_APP', seq(
-      field("expr", $._expression_simpl), '.',
+      field("expr", $._expression_simple), '.',
       field("field", $.identifier)
     )),
 
@@ -771,7 +792,7 @@ module.exports = grammar({
     expr_cases: $ => maybe_block($, field("case", $.switch_case)),
 
     switch_case: $ => seq(
-      field("pattern", $.pattern),
+      field("pattern", $._pattern),
       field("branch", $._switch_branch)
     ),
 
@@ -800,17 +821,7 @@ module.exports = grammar({
     /// We allow meaningless letval expressions to relief the parser. It's the AST builder which
     /// will check if that's a statement
     /// let x = 2
-    expr_letval: $ => prec('EXPR_LETVAL', $._letval),
-
-
-    /// Used in patterns
-    /// x = y
-    _expr_match: $ => prec.right(seq(
-      field("pattern", $.identifier),
-      '=',
-      field("value", $.pattern)
-    )),
-
+    expr_letval: $ => prec.right('EXPR_LETVAL', $._letval),
 
     _expr_list: $ => choice(
       $.expr_list_literal,
@@ -855,8 +866,7 @@ module.exports = grammar({
     list_comprehension_let: $ => $._letval,
 
     list_comprehension_bind: $ => seq(
-      // field("pattern", $.expr_variable),
-      field("pattern", $.pattern),
+      field("pattern", $._pattern),
       '<-',
       field("expr", $._expression)
     ),
@@ -875,15 +885,7 @@ module.exports = grammar({
 
 
     /// 1
-    expr_literal: $ =>field("literal", $._literal),
-
-
-    /// ???
-    expr_hole: $ => $._lex_hole,
-
-
-    /// _
-    expr_wildcard: $ => $._lex_wildcard,
+    expr_literal: $ => field("literal", alias($._literal, $.expr_literal)),
 
 
     // We allow tree sitter to parse commonly misplaced invalid expressions for better error
@@ -896,22 +898,21 @@ module.exports = grammar({
 
     expr_invalid_return: $ => prec.right('EXPR_INVALID', seq(
       'return',
-       optional($._expression_simpl)
+       optional($._expression_simple)
     )),
 
     expr_invalid_while: $ => prec.right('EXPR_INVALID', seq(
       'while',
-      parens($, $._expression),
-      $._expression,
+      $._expr_invalid_content,
     )),
 
     expr_invalid_for: $ => prec.right('EXPR_INVALID', seq(
       'for',
-      $._expr_invalid_for_content,
+      $._expr_invalid_content,
     )),
 
-    _expr_invalid_for_content: $ => prec.right('EXPR_INVALID', choice(
-      'in', ';', $._expression_simpl, parens($, $._expr_invalid_for_content),
+    _expr_invalid_content: $ => prec.right('EXPR_INVALID', choice(
+      'in', ';', $._expression_simple, parens($, $._expr_invalid_content),
     )),
 
 
@@ -919,9 +920,129 @@ module.exports = grammar({
     // PATTERN
     //**************************************************************************
 
-    pattern: $ => alias($._expression_simpl, $.pattern),
+    _pattern: $ => choice(
+      $.pat_typed,
+      $.pat_op,
+      $.pat_application,
+      $.pat_map_or_record,
+      $.pat_match,
+      $.pat_list,
+      $.pat_tuple,
+      $.pat_variable,
+      $.pat_literal,
+      $.pat_wildcard,
+      alias($._lex_hole, $.pat_hole),
+    ),
 
-    pat_args: $ => alias($.expr_tuple, $.pat_args),
+
+    /// x + y
+    pat_op: $ => choice(
+      ...[
+        [$.op_pipe, 'OP_PIPE'],
+        [$.op_or,   'OP_DISJ'],
+        [$.op_and,  'OP_CONJ'],
+        [$.op_bor,  'OP_BOR'],
+        [$.op_bxor, 'OP_BXOR'],
+        [$.op_band, 'OP_BAND'],
+        [$.op_lt,   'OP_CMP'],
+        [$.op_gt,   'OP_CMP'],
+        [$.op_le,   'OP_CMP'],
+        [$.op_ge,   'OP_CMP'],
+        [$.op_eq,   'OP_CMP'],
+        [$.op_neq,  'OP_CMP'],
+        [$.op_cons, 'OP_LIST'],
+        [$.op_cat,  'OP_LIST'],
+        [$.op_bsl,  'OP_SHIFT'],
+        [$.op_bsr,  'OP_SHIFT'],
+        [$.op_add,  'OP_ADD'],
+        [$.op_sub,  'OP_ADD'],
+        [$.op_sub,  'OP_NEG'],
+        [$.op_mul,  'OP_MUL'],
+        [$.op_div,  'OP_MUL'],
+        [$.op_mod,  'OP_MUL'],
+        [$.op_pow,  'OP_POW'],
+        [$.op_bnot, 'OP_NOT'],
+        [$.op_not,  'OP_NOT'],
+      ].map(([operator, precedence]) =>
+        (OP_ASSOC[precedence] === 'left' ? prec.left :
+         OP_ASSOC[precedence] === 'right' ? prec.right :
+         prec
+        )(
+          precedence,
+          OP_ASSOC[precedence] === 'unary' ? seq(
+            field("op", operator),
+            field("op_r", $._pattern),
+          ) : seq(
+            field("op_l", $._pattern),
+            field("op", operator),
+            field("op_r", $._pattern),
+          )
+        )
+      )
+    ),
+
+
+    /// x : int
+    pat_typed: $ => prec.left(seq(
+      field("pattern", $._pattern), ':',
+      field("type", $._type)
+    )),
+
+
+    /// f(x, y)
+    pat_application: $ => prec.left('PAT_APP', seq(
+      field("function", $._pattern),
+      field("args", $.pat_args),
+    )),
+
+
+    pat_args: $ => field("arg", $._pat_paren_comma),
+
+
+    pat_map_or_record: $ => braces_comma(
+      $,
+      field("access", $.member_access)
+    ),
+
+    member_access: $ => seq(
+      field("path_head", $._member_path_head),
+      optional(field("path", $.member_path)),
+      '=',
+      field("pattern", $._pattern)
+    ),
+
+
+    /// x = y
+    pat_match: $ => prec.right(seq(
+      field("pattern", $.identifier),
+      '=',
+      field("value", $._pattern)
+    )),
+
+
+    pat_list: $ => brackets_comma(
+      $,
+      field("elem", $._pattern)
+    ),
+
+    _pat_paren_comma: $ => parens_comma($,
+      $._pattern
+    ),
+
+    /// (1, 2, x)
+    pat_tuple: $ => field("elem", $._pat_paren_comma),
+
+
+    /// x
+    pat_variable: $ => $.identifier,
+
+
+    /// 1
+    pat_literal: $ => field("literal", alias($._literal, $.pat_literal)),
+
+
+    /// _
+    pat_wildcard: $ => $._lex_wildcard,
 
 
     //**************************************************************************
@@ -1133,8 +1254,6 @@ module.exports = grammar({
     qual_constructor: $ => $.qual_up_id,
 
     qual_scope_name: $ => $.qual_up_id,
-
-    qual: $ => repeat1(seq(field("path", $.scope_name), '.')),
 
 
     _paren_close: $ => seq(optional($._inhibit_layout_end), ")"),
