@@ -244,8 +244,8 @@ LEX_FN(scan_continuing_keyword) {
 #undef FINISH_IF_END
 }
 
-const static struct valid_tokens NO_LAYOUT_END_CTX =
-    VALID_TOKENS(TO_VT_BIT(INHIBIT_LAYOUT_END) | TO_VT_BIT(LONG_STRING_QUOTE));
+const static struct valid_tokens NO_VCLOSE_CTX =
+    VALID_TOKENS(TO_VT_BIT(INHIBIT_VCLOSE) | TO_VT_BIT(LONG_STRING_QUOTE));
 
 LEX_FN(lex_indent_query) {
   if (valid_tokens_is_error(ctx->valid_tokens)) {
@@ -299,13 +299,13 @@ LEX_FN(lex_indent) {
     return false;
   }
 
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_START)) {
+  if (valid_tokens_test(ctx->valid_tokens, VOPEN)) {
     if (current_indent > current_layout) {
       if (indent_vec_push(&ctx->state->layout_stack, current_indent) < 0) {
         DBG("could not extend layout stack");
         return false;
       }
-      return context_finish(ctx, LAYOUT_START);
+      return context_finish(ctx, VOPEN);
     }
   }
 
@@ -321,30 +321,30 @@ LEX_FN(lex_indent) {
     }
   }
 
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_TERMINATOR)) {
+  if (valid_tokens_test(ctx->valid_tokens, VSEMI)) {
     if (current_indent <= current_layout) {
       if (current_indent == current_layout) {
-        if (valid_tokens_test(ctx->valid_tokens, INHIBIT_KEYWORD_TERMINATION) &&
+        if (valid_tokens_test(ctx->valid_tokens, INHIBIT_VSEMI) &&
             scan_continuing_keyword(ctx)) {
           DBG("found continuing keyword");
           return false;
         }
       }
-      return context_finish(ctx, LAYOUT_TERMINATOR);
+      return context_finish(ctx, VSEMI);
     }
   }
 
   // Implicit layout changes
-  if (!valid_tokens_any_valid(ctx->valid_tokens, NO_LAYOUT_END_CTX) ||
+  if (!valid_tokens_any_valid(ctx->valid_tokens, NO_VCLOSE_CTX) ||
       valid_tokens_is_error(ctx->valid_tokens) ||
       // Allow EOF to force a layout_end, which would lead to better error
       // recovery
       context_eof(ctx)) {
-    // LAYOUT_END
+    // VCLOSE
     if (current_indent < current_layout || context_eof(ctx)) {
       if (ctx->state->layout_stack.len > 1) {
         indent_vec_pop(&ctx->state->layout_stack);
-        return context_finish(ctx, LAYOUT_END);
+        return context_finish(ctx, VCLOSE);
       }
     }
   }
@@ -373,22 +373,22 @@ LEX_FN(lex_inline_layout) {
     }
     return false;
   default:
-    if (!valid_tokens_test(ctx->valid_tokens, INHIBIT_KEYWORD_TERMINATION) &&
+    if (!valid_tokens_test(ctx->valid_tokens, INHIBIT_VSEMI) &&
         scan_continuing_keyword(ctx)) {
       break;
     }
     return false;
   }
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_TERMINATOR)) {
+  if (valid_tokens_test(ctx->valid_tokens, VSEMI)) {
     DBG("terminate via inline element");
-    return context_finish(ctx, LAYOUT_TERMINATOR);
+    return context_finish(ctx, VSEMI);
   }
 
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_END) &&
+  if (valid_tokens_test(ctx->valid_tokens, VCLOSE) &&
       ctx->state->layout_stack.len > 1) {
     DBG("end layout via inline element");
     indent_vec_pop(&ctx->state->layout_stack);
-    return context_finish(ctx, LAYOUT_END);
+    return context_finish(ctx, VCLOSE);
   }
 
   return false;

@@ -1,12 +1,12 @@
 const sub = ($, rule) => seq(
-  $._layout_start,
+  $.vopen,
   rule,
-  $._layout_end,
+  $.vclose,
 );
 
-const block = ($, rule) => sub($, repeat1(seq(rule, $._layout_terminator)));
+const block = ($, rule) => sub($, repeat1(seq(rule, $.vsemi)));
 
-const weak_block = ($, rule) => sub($, repeat1(seq(rule, $._layout_terminator)));
+const weak_block = ($, rule) => sub($, repeat1(seq(rule, $.vsemi)));
 
 const maybe_block = ($, rule) => choice(
   rule,
@@ -137,14 +137,14 @@ module.exports = grammar({
     $._doc_comment_content,
     $.comment_content, // used to notify the scanner
     $._long_string_quote,
-    $._layout_start,
-    $._layout_end,
-    $._layout_terminator,
+    $.vopen,
+    $.vclose,
+    $.vsemi,
     $._layout_at_level,
     $._layout_not_at_level,
     $._layout_empty,
-    $._inhibit_layout_end,
-    $._inhibit_keyword_termination,
+    $._inhibit_vclose,
+    $._inhibit_vsemi,
     ",",
     $._synchronize,
     $._invalid_layout,
@@ -331,7 +331,7 @@ module.exports = grammar({
     // TOP LEVEL
     //**************************************************************************
 
-    module: $ => repeat1(seq($._decl, $._layout_terminator)),
+    module: $ => repeat1(seq($._decl, $.vsemi)),
 
     _decl: $ => choice(
       $.pragma,
@@ -756,7 +756,7 @@ module.exports = grammar({
       field("then", $._expression_body),
       repeat(
         choice(
-          $._inhibit_keyword_termination,
+          $._inhibit_vsemi,
           $.expr_elif
         )
       ),
@@ -1256,9 +1256,9 @@ module.exports = grammar({
     qual_scope_name: $ => $.qual_up_id,
 
 
-    _paren_close: $ => seq(optional($._inhibit_layout_end), ")"),
-    _bracket_close: $ => seq(optional($._inhibit_layout_end), "]"),
-    _brace_close: $ => seq(optional($._inhibit_layout_end), "}"),
+    _paren_close: $ => seq(optional($._inhibit_vclose), ")"),
+    _bracket_close: $ => seq(optional($._inhibit_vclose), "]"),
+    _brace_close: $ => seq(optional($._inhibit_vclose), "}"),
 
     //**************************************************************************
     // LEXEMES

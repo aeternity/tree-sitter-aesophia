@@ -402,7 +402,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "_layout_terminator"
+            "name": "vsemi"
           }
         ]
       }
@@ -830,7 +830,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "_layout_start"
+                  "name": "vopen"
                 },
                 {
                   "type": "REPEAT1",
@@ -847,14 +847,14 @@
                       },
                       {
                         "type": "SYMBOL",
-                        "name": "_layout_terminator"
+                        "name": "vsemi"
                       }
                     ]
                   }
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_layout_end"
+                  "name": "vclose"
                 }
               ]
             }
@@ -1023,7 +1023,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "_layout_start"
+                  "name": "vopen"
                 },
                 {
                   "type": "REPEAT1",
@@ -1049,14 +1049,14 @@
                       },
                       {
                         "type": "SYMBOL",
-                        "name": "_layout_terminator"
+                        "name": "vsemi"
                       }
                     ]
                   }
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_layout_end"
+                  "name": "vclose"
                 }
               ]
             }
@@ -1693,7 +1693,7 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_layout_start"
+          "name": "vopen"
         },
         {
           "type": "REPEAT1",
@@ -1706,14 +1706,14 @@
               },
               {
                 "type": "SYMBOL",
-                "name": "_layout_terminator"
+                "name": "vsemi"
               }
             ]
           }
         },
         {
           "type": "SYMBOL",
-          "name": "_layout_end"
+          "name": "vclose"
         }
       ]
     },
@@ -3162,7 +3162,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "_inhibit_keyword_termination"
+                  "name": "_inhibit_vsemi"
                 },
                 {
                   "type": "SYMBOL",
@@ -3338,7 +3338,7 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_layout_start"
+              "name": "vopen"
             },
             {
               "type": "REPEAT1",
@@ -3355,14 +3355,14 @@
                   },
                   {
                     "type": "SYMBOL",
-                    "name": "_layout_terminator"
+                    "name": "vsemi"
                   }
                 ]
               }
             },
             {
               "type": "SYMBOL",
-              "name": "_layout_end"
+              "name": "vclose"
             }
           ]
         }
@@ -3851,10 +3851,6 @@
         "named": true,
         "value": "expr_literal"
       }
-    },
-    "expr_hole": {
-      "type": "SYMBOL",
-      "name": "_lex_hole"
     },
     "_expr_invalid": {
       "type": "CHOICE",
@@ -6000,7 +5996,7 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_inhibit_layout_end"
+              "name": "_inhibit_vclose"
             },
             {
               "type": "BLANK"
@@ -6021,7 +6017,7 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_inhibit_layout_end"
+              "name": "_inhibit_vclose"
             },
             {
               "type": "BLANK"
@@ -6042,7 +6038,7 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_inhibit_layout_end"
+              "name": "_inhibit_vclose"
             },
             {
               "type": "BLANK"
@@ -6398,15 +6394,15 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_layout_start"
+      "name": "vopen"
     },
     {
       "type": "SYMBOL",
-      "name": "_layout_end"
+      "name": "vclose"
     },
     {
       "type": "SYMBOL",
-      "name": "_layout_terminator"
+      "name": "vsemi"
     },
     {
       "type": "SYMBOL",
@@ -6422,11 +6418,11 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_inhibit_layout_end"
+      "name": "_inhibit_vclose"
     },
     {
       "type": "SYMBOL",
-      "name": "_inhibit_keyword_termination"
+      "name": "_inhibit_vsemi"
     },
     {
       "type": "STRING",
