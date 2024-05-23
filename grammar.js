@@ -1114,7 +1114,7 @@ module.exports = grammar({
 
     constructor: $ => alias($._lex_up_id, $.constructor),
 
-    field_name: $ => alias($._lex_low_id, $.field),
+    field_name: $ => alias($._lex_low_id, $.field_name),
 
     scope_name: $ => alias($._lex_up_id, $.scope_name),
 

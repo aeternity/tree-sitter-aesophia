@@ -4758,7 +4758,7 @@
         "name": "_lex_low_id"
       },
       "named": true,
-      "value": "field"
+      "value": "field_name"
     },
     "scope_name": {
       "type": "ALIAS",

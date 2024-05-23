@@ -4406,7 +4406,7 @@
         "required": true,
         "types": [
           {
-            "type": "field",
+            "type": "field_name",
             "named": true
           },
           {
@@ -4426,7 +4426,7 @@
       "required": true,
       "types": [
         {
-          "type": "field",
+          "type": "field_name",
           "named": true
         },
         {
@@ -6128,7 +6128,7 @@
     "named": false
   },
   {
-    "type": "field",
+    "type": "field_name",
     "named": true
   },
   {
