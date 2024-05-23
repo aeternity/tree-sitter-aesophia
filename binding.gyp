@@ -17,6 +17,10 @@
         ["OS!='win'", {
           "cflags_c": [
             "-std=c11",
+            "-Weverything",
+            "-Wno-padded",
+            "-Wno-declaration-after-statement",
+            "-Werror",
           ],
         }, { # OS == "win"
           "cflags_c": [
