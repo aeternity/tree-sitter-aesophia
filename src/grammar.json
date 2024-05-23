@@ -773,21 +773,21 @@
           "type": "FIELD",
           "name": "modifier",
           "content": {
-            "type": "ALIAS",
-            "content": {
-              "type": "CHOICE",
-              "members": [
-                {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "ALIAS",
+                "content": {
                   "type": "STRING",
                   "value": "interface"
                 },
-                {
-                  "type": "BLANK"
-                }
-              ]
-            },
-            "named": true,
-            "value": "interface"
+                "named": true,
+                "value": "interface"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
           }
         },
         {

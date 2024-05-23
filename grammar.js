@@ -405,7 +405,7 @@ module.exports = grammar({
     scope_declaration: $ => seq(
       field("modifier", repeat($.modifier)),
       field("head", $.scope_head),
-      field("modifier", alias(optional('interface'), $.interface)),
+      field("modifier", optional(alias('interface', $.interface))),
       field("name", $.scope_name),
       optional($._implemented_interfaces),
       '=',
