@@ -26,6 +26,7 @@ const sep1 = (rule, delimiter) => seq(
 
 const sep = (rule, delimiter) => optional(sep1(rule, delimiter));
 
+
 const lex_dispatch_begin = '@ts.parse(';
 const lex_dispatch_end = ')\n';
 
@@ -35,6 +36,7 @@ const dispatch = ($, trigger, rule) => seq(
   lex_dispatch_end,
   field("content", rule),
 );
+
 
 const parens = ($, ...rule) => seq(
   '(',
@@ -79,6 +81,7 @@ const parens_comma1 = ($, rule) =>
 const parens_comma2 = ($, rule) =>
       parens($, sep_comma2($, rule));
 
+
 const braces_comma = ($, rule) =>
       braces($, sep_comma($, rule));
 
@@ -88,6 +91,7 @@ const braces_comma1 = ($, rule) =>
 const braces_comma2 = ($, rule) =>
       braces($, sep_comma2($, rule));
 
+
 const brackets_comma = ($, rule) =>
       brackets($, sep_comma($, rule));
 
@@ -96,9 +100,6 @@ const brackets_comma1 = ($, rule) =>
 
 const brackets_comma2 = ($, rule) =>
       brackets($, sep_comma2($, rule));
-
-
-const keyword = (text) => alias(token(text), text);
 
 
 const OP_ASSOC = {
@@ -120,13 +121,16 @@ const OP_ASSOC = {
   'OP_NOT': 'unary',
 };
 
+
 module.exports = grammar({
   name: 'aesophia',
+
 
   extras: $ => [
     /[\n\r ]+/,
     $._synchronize,
   ],
+
 
   externals: $ => [
     $._block_comment_content,
@@ -143,12 +147,12 @@ module.exports = grammar({
     $._inhibit_keyword_termination,
     // @ts-ignore: DSL not updated for literals
     ",",
-    // "|",
     $._synchronize,
     $._invalid_layout,
     $._prefix_operator,
     $._symbol_export_marker,
   ],
+
 
   extras: $ => [
     /[\n\r ]+/,
@@ -157,6 +161,7 @@ module.exports = grammar({
     $.block_comment,
     $.doc_comment,
   ],
+
 
   inline: $ => [
     $.identifier,
@@ -169,13 +174,14 @@ module.exports = grammar({
     $._expr_list,
     $.pattern,
     $.pat_args,
-    $._expr_sub,
   ],
+
 
   conflicts: $ => [
     // Modifiers screw them up
     [$.function_declaration, $.scope_declaration,]
   ],
+
 
   precedences: $ => [
     [ // expressions
@@ -184,6 +190,7 @@ module.exports = grammar({
       $.expr_op,
       $._expression_body,
       $.expr_typed,
+      'EXPR_INVALID',
     ],
 
 
@@ -203,8 +210,6 @@ module.exports = grammar({
       'OP_DISJ',
       'OP_PIPE',
     ],
-
-    // conflicts
 
     [ // types
       // $.type_application, $.type_tuple, $._type_in_tuple,
@@ -236,7 +241,9 @@ module.exports = grammar({
       $.argument_name, $.qual_low_id, $._expr_match,
     ],
 
-    // [$.expr_invalid_return, $._expression],
+    [
+      $._expression, $._expr_invalid_for_content,
+    ],
   ],
 
   word: $ => $._lex_low_id,
@@ -260,6 +267,11 @@ module.exports = grammar({
       dispatch($, '_scoped_declaration', $._scoped_declaration),
     ),
 
+
+    //**************************************************************************
+    // COMMENTS
+    //**************************************************************************
+
     line_comment: $ => seq(
       $._line_comment_start,
       alias($.comment_content, $.line_comment),
@@ -282,6 +294,11 @@ module.exports = grammar({
     _block_comment_end: $ => token('*/'),
     _doc_comment_start: $ => token('/**'),
 
+
+    //**************************************************************************
+    // TOP LEVEL
+    //**************************************************************************
+
     module: $ => repeat1(seq($._decl, $._layout_terminator)),
 
     _decl: $ => choice(
@@ -291,6 +308,7 @@ module.exports = grammar({
       $.scope_declaration,
       $._scoped_declaration,
     ),
+
 
     pragma: $ => seq(
       '@',
@@ -312,19 +330,22 @@ module.exports = grammar({
       '.'
     ),
 
+
     using: $ => seq(
       'using',
       field("scope", $.scope_name),
-      optional($.using_as),
-      optional(field("select", choice(
-        $.using_hiding,
-        $.using_for,
-      )))
+      optional(field("as", $.using_as)),
+      optional(field("select", $._using_select))
     ),
 
     using_as: $ => seq(
       'as',
       field("alias", $.name)
+    ),
+
+    _using_select: $ => choice(
+      $.using_hiding,
+      $.using_for,
     ),
 
     using_hiding: $ => seq(
@@ -341,6 +362,7 @@ module.exports = grammar({
       field("name", $.name)
     ),
 
+
     include: $ => seq(
       'include',
       field("path", $.include_path)
@@ -348,26 +370,45 @@ module.exports = grammar({
 
     include_path: $ => $._lex_string,
 
+
     scope_declaration: $ => seq(
       field("modifier", repeat($.modifier)),
       field("head", $.scope_head),
-      field("interface", alias(optional('interface'), $.is_interface)),
+      field("modifier", alias(optional('interface'), $.interface)),
       field("name", $.scope_name),
-      optional(seq(":", sep1(field("implements", $.qual_scope_name), ","))),
+      optional($._implemented_interfaces),
       '=',
       maybe_block($, field("decl", $._decl))
     ),
 
+    _implemented_interfaces: $ => seq(
+      ':',
+      sep1(field("implements", $.qual_scope_name), ",")
+    ),
 
     scope_head: $ => choice(
       'contract', 'namespace'
     ),
+
 
     _scoped_declaration: $ => choice(
       $._type_definition,
       $.function_declaration,
       alias($._letval, $.letval),
     ),
+
+
+    _letval: $ => seq(
+      'let',
+      field("pattern", $.pattern),
+      '=',
+      field("value", $._expression_body),
+    ),
+
+
+    //**************************************************************************
+    // FUNCTION DECLARATION
+    //**************************************************************************
 
     function_declaration: $ => seq(
       field("modifiers", repeat(field("modifier", $.modifier))),
@@ -438,6 +479,7 @@ module.exports = grammar({
       field("name", $.type_variable_poly_name)
     ),
 
+
     type_alias: $ => seq(
       'type',
       field("name", $.identifier),
@@ -449,6 +491,7 @@ module.exports = grammar({
       '=',
       field("type", $._type)
     ),
+
 
     record_declaration: $ => seq(
       'record',
@@ -468,6 +511,7 @@ module.exports = grammar({
       field("type", $._type)
     ),
 
+
     variant_declaration: $ => seq(
       'datatype',
       field("name", $.identifier),
@@ -485,25 +529,24 @@ module.exports = grammar({
     // EXPRESSION
     //**************************************************************************
 
-    _expression_body: $ => choice(
-      $._expr_sub,
-      $.expr_block
-    ),
 
-    _expr_sub: $ => seq(
-      $._layout_not_at_level,
+    /// Expressions that might be indented blocks
+    _expression_body: $ => choice(
+      $.expr_block,
       $._expression,
     ),
 
     expr_block: $ => block($, $._expression),
 
+
+    /// Expressions that are not indented blocks
     _expression: $ => choice(
-      $._expression_simpl,
       $._expression_complex,
-      // $._expr_invalid,
+      $._expression_simpl,
+      $._expr_invalid,
     ),
 
-    // Things that open unconstrained scopes
+    /// Things that may contain unwrapped indented blocks
     _expression_complex: $ => choice(
       $.expr_lambda,
       $.expr_if,
@@ -512,6 +555,7 @@ module.exports = grammar({
       $.expr_switch,
     ),
 
+    /// Things that have unambiguous beginning and end
     _expression_simpl: $ => choice(
       $.expr_typed,
       $.expr_op,
@@ -532,12 +576,16 @@ module.exports = grammar({
       $.expr_wildcard,
     ),
 
+
+    /// (x, y) => x + y
     expr_lambda: $ => prec.right(seq(
       field("args", $.pat_args),
       '=>',
       field("body", $._expression_body)
     )),
 
+
+    /// x + y
     expr_op: $ => choice(
       ...[
         [$.op_pipe, 'OP_PIPE'],
@@ -583,11 +631,15 @@ module.exports = grammar({
       )
     ),
 
+
+    /// x : int
     expr_typed: $ => prec.left(seq(
       field("expr", $._expression_simpl), ':',
       field("type", $._type)
     )),
 
+
+    /// f(x, y)
     expr_application: $ => prec.left('EXPR_APP', seq(
       field("fun", $._expression_simpl),
       field("args", $.expr_args),
@@ -604,56 +656,80 @@ module.exports = grammar({
 
     argument_name: $ => alias($.identifier, $._),
 
+
+    /// Maps and records are basically the same thing for the parser.
+    /// - {}
+    /// - {f = 3}
+    /// - {[k] = 3}
+    /// - r{f.g[k] = 2}
+    /// - m{[k] = 3}
     expr_map_or_record: $ => prec.left('EXPR_APP', seq(
       optional(field("source", $._expression_simpl)),
-      field("updates", $.updates),
+      field("updates", $.member_assigns),
     )),
 
-    updates: $ => braces_comma($,
-      field("update", $.update)
-                               ),
+    member_assigns: $ => braces_comma(
+      $,
+      field("update", $.member_assign)
+    ),
 
-    update: $ => seq(
-      field("path_head", $._update_path_head),
-      optional(field("path", $.update_path)),
-      optional($._optional_value),
+    member_assign: $ => seq(
+      field("path_head", $._member_assign_path_head),
+      optional(field("path", $.member_assign_path)),
+      optional(field("old_value", $._default_value)),
       '=',
       field("new_value", $._expression)
     ),
 
-    _update_path_head: $ => choice(
+    _member_assign_path_head: $ => choice(
       $.field_name,
       $.map_key,
     ),
 
-    _update_path_elem: $ => choice(
+    _member_assign_path_elem: $ => choice(
       seq('.', $.field_name),
       $.map_key,
     ),
 
-    update_path: $ => seq(
-      repeat1($._update_path_elem),
+    member_assign_path: $ => seq(
+      repeat1($._member_assign_path_elem),
     ),
 
-    _optional_value: $ => seq(
-      seq('@', field("old_value", $.identifier)),
+    _default_value: $ => seq(
+      '@',
+      $.identifier,
     ),
 
+
+    /// m[k]
     expr_map_access: $ => prec.left('EXPR_APP', seq(
       field("map", $._expression_simpl),
       field("key", $.map_key)
     )),
 
-    map_key: $ => brackets($,
+    map_key: $ => brackets(
+      $,
       field("key", $._expression_simpl),
-      optional(seq('=', field("default_value", $._expression))),
+      optional(field("default", $._map_default_value)),
     ),
 
+    _map_default_value: $ => seq(
+      '=',
+      $._expression
+    ),
+
+
+    /// r.f
     expr_projection: $ => prec.left('EXPR_APP', seq(
       field("expr", $._expression_simpl), '.',
       field("field", $.identifier)
     )),
 
+
+    /// if(x)
+    ///   if(y) 3
+    /// else
+    ///   2
     expr_if: $ => prec.right(seq(
       $._if_head,
       field("then", $._expression_body),
@@ -667,23 +743,25 @@ module.exports = grammar({
     )),
 
     _if_head: $ => seq(
-      keyword('if'),
+      'if',
       parens($, field("cond", $._expression)),
     ),
 
     _if_branch: $ => choice($.expr_elif, $.expr_else),
 
     expr_elif: $ => seq(
-      keyword('elif'),
+      'elif',
       parens($, field("cond", $._expression)),
       field("then", $._expression_body)
     ),
 
     expr_else: $ => seq(
-      keyword('else'),
+      'else',
       field("then", $._expression_body)
     ),
 
+
+    /// switch(x) y => y
     expr_switch: $ => seq(
       'switch',
       parens($, field("expr", $._expression)),
@@ -718,49 +796,21 @@ module.exports = grammar({
 
     _expr_guard: $ => $._expression,
 
-    _letval: $ => seq(
-      keyword('let'),
-      field("pattern", $.pattern),
-      '=',
-      field("value", $._expression_body),
-    ),
 
+    /// We allow meaningless letval expressions to relief the parser. It's the AST builder which
+    /// will check if that's a statement
+    /// let x = 2
     expr_letval: $ => prec('EXPR_LETVAL', $._letval),
 
+
+    /// Used in patterns
+    /// x = y
     _expr_match: $ => prec.right(seq(
       field("pattern", $.identifier),
       '=',
       field("value", $.pattern)
     )),
 
-    // We allow tree sitter to parse commonly misplaced invalid expressions for better error
-    // messages
-    // _expr_invalid: $ => choice(
-    //   $.expr_invalid_return,
-    //   $.expr_invalid_while,
-    //   $.expr_invalid_for,
-    // ),
-
-    expr_invalid_return: $ => prec.right('EXPR_LETVAL', seq(
-      'return',
-       optional($._expression_simpl)
-    )),
-
-    expr_invalid_while: $ => prec.right('EXPR_LETVAL', seq(
-      'while',
-      parens($, $._expression),
-      $._expression,
-    )),
-
-    expr_invalid_for: $ => prec.right('EXPR_LETVAL', seq(
-      'for',
-      parens($, sep($._expression, ";")),
-      $._expression,
-    )),
-
-    expr_variable: $ => $.qual_identifier,
-
-    expr_literal: $ =>field("literal", $._literal),
 
     _expr_list: $ => choice(
       $.expr_list_literal,
@@ -768,17 +818,23 @@ module.exports = grammar({
       $.expr_list_comprehension,
     ),
 
+
+    /// [1, 2, 3]
     expr_list_literal: $ => brackets_comma(
       $,
       field("elem", $._expression)
     ),
 
+
+    /// [1 .. 2]
     expr_list_range: $ => brackets($,
       field("start", $._expression),
       '..',
       field("end", $._expression),
     ),
 
+
+    /// [ x | x <- l ]
     expr_list_comprehension: $ => brackets(
       $,
       $._list_comprehension_yield,
@@ -805,16 +861,58 @@ module.exports = grammar({
       field("expr", $._expression)
     ),
 
-
     list_comprehension_if: $ => $._if_head,
 
+
+    /// (1, 2, x)
     expr_tuple: $ => parens_comma($,
       field("elem", $._expression)
     ),
 
+
+    /// x
+    expr_variable: $ => $.qual_identifier,
+
+
+    /// 1
+    expr_literal: $ =>field("literal", $._literal),
+
+
+    /// ???
     expr_hole: $ => $._lex_hole,
 
+
+    /// _
     expr_wildcard: $ => $._lex_wildcard,
+
+
+    // We allow tree sitter to parse commonly misplaced invalid expressions for better error
+    // messages
+    _expr_invalid: $ => choice(
+      $.expr_invalid_return,
+      $.expr_invalid_while,
+      $.expr_invalid_for,
+    ),
+
+    expr_invalid_return: $ => prec.right('EXPR_INVALID', seq(
+      'return',
+       optional($._expression_simpl)
+    )),
+
+    expr_invalid_while: $ => prec.right('EXPR_INVALID', seq(
+      'while',
+      parens($, $._expression),
+      $._expression,
+    )),
+
+    expr_invalid_for: $ => prec.right('EXPR_INVALID', seq(
+      'for',
+      $._expr_invalid_for_content,
+    )),
+
+    _expr_invalid_for_content: $ => prec.right('EXPR_INVALID', choice(
+      'in', ';', $._expression_simpl, parens($, $._expr_invalid_for_content),
+    )),
 
 
     //**************************************************************************
@@ -825,116 +923,6 @@ module.exports = grammar({
 
     pat_args: $ => alias($.expr_tuple, $.pat_args),
 
-    //**************************************************************************
-    // LITERAL
-    //**************************************************************************
-
-    _literal: $ => choice(
-      $.lit_constructor,
-      $.lit_bytes,
-      $.lit_address,
-      $.lit_lambda_op,
-      $.lit_integer,
-      $.lit_bool,
-      $.lit_string,
-      $.lit_char,
-    ),
-
-    lit_constructor: $ => $.qual_constructor,
-
-    lit_bytes: $ => $._lex_bytes,
-
-    lit_address: $ => $._lex_address,
-
-    lit_lambda_op: $ => parens($, field("op", $._operator)),
-
-    lit_integer: $ => choice(
-      $._lex_int_dec,
-      $._lex_int_hex,
-    ),
-
-    lit_bool: $ => choice('true', 'false'),
-
-    lit_string: $ => $._lex_string,
-
-    lit_char: $ => $._lex_char,
-
-
-    //**************************************************************************
-    // TYPE
-    //**************************************************************************
-
-    _type: $ => choice(
-      $.type_tuple,
-      $.type_function,
-      $._type_in_tuple,
-    ),
-
-    _type_in_tuple: $ => choice(
-      $.type_application,
-      $.type_variable_poly,
-      $.type_variable,
-      $.type_contract,
-      $.type_paren,
-      $.type_wildcard,
-    ),
-
-    type_function: $ => prec.right(seq(
-      $.type_domain,
-      '=>',
-      field("codomain", $._type)
-    )),
-
-    type_domain: $ => choice(
-      parens_comma2($, $._type),
-      seq('(', $._paren_close),
-      $._type,
-    ),
-
-    type_tuple: $ => prec.right(seq(
-      $._type_in_tuple,
-      '*',
-      $._type_tuple,
-    )),
-
-    _type_tuple: $ => prec.right(seq(
-      $._type_in_tuple,
-      optional(seq('*', $._type_tuple)),
-    )),
-
-    type_application: $ => prec.left(seq(
-      field("fun", $.type_variable),
-      field("params", $.type_params),
-    )),
-
-    _type_param: $ => choice(
-      alias($.lit_integer, $.type_integer),
-      $.type_indexed,
-      $._type,
-    ),
-
-    type_indexed: $ => seq(
-      'indexed',
-      $._type,
-    ),
-
-    type_params: $ => choice(
-      parens_comma($, field("param", $._type_param))
-    ),
-
-    type_paren: $ => prec.right(seq(
-      '(',
-      field("type", $._type),
-      $._paren_close
-    )),
-
-    type_variable_poly: $ => $.type_variable_poly_name,
-
-    type_variable: $ => $.qual_identifier,
-
-    type_contract: $ => $.qual_scope_name,
-
-    type_wildcard: $ => $._lex_wildcard,
 
     //**************************************************************************
     // OPERATORS
@@ -985,6 +973,134 @@ module.exports = grammar({
     op_pow: $ => '^',
     op_bnot: $ => 'bnot',
     op_not: $ => '!',
+
+    //**************************************************************************
+    // LITERAL
+    //**************************************************************************
+
+    _literal: $ => choice(
+      $.lit_constructor,
+      $.lit_bytes,
+      $.lit_address,
+      $.lit_lambda_op,
+      $.lit_integer,
+      $.lit_bool,
+      $.lit_string,
+      $.lit_char,
+    ),
+
+    lit_constructor: $ => $.qual_constructor,
+
+    lit_bytes: $ => $._lex_bytes,
+
+    lit_address: $ => $._lex_address,
+
+    lit_lambda_op: $ => parens($, field("op", $._operator)),
+
+    lit_integer: $ => choice(
+      $._lex_int_dec,
+      $._lex_int_hex,
+    ),
+
+    lit_bool: $ => choice('true', 'false'),
+
+    lit_string: $ => $._lex_string,
+
+    lit_char: $ => $._lex_char,
+
+
+    //**************************************************************************
+    // TYPE
+    //**************************************************************************
+
+    /// Only for constructors
+    type_indexed: $ => seq(
+      'indexed',
+      $._type,
+    ),
+
+    _type: $ => choice(
+      $.type_tuple,
+      $.type_function,
+      $._type_in_tuple,
+    ),
+
+    /// Tuple and function types are open and unprecedenced. This confuses the parses, thus we need
+    /// to separate types that must not be tuple members without parens.
+    _type_in_tuple: $ => choice(
+      $.type_application,
+      $.type_variable_poly,
+      $.type_variable,
+      $.type_contract,
+      $.type_paren,
+      $.type_wildcard,
+    ),
+
+
+    /// int => int
+    type_function: $ => prec.right(seq(
+      $.type_domain,
+      '=>',
+      field("codomain", $._type)
+    )),
+
+    type_domain: $ => choice(
+      parens_comma2($, $._type),
+      seq('(', $._paren_close),
+      $._type,
+    ),
+
+
+    /// int * int * int
+    type_tuple: $ => prec.right(seq(
+      $._type_in_tuple,
+      '*',
+      $._type_tuple,
+    )),
+
+    _type_tuple: $ => prec.right(seq(
+      $._type_in_tuple,
+      optional(seq('*', $._type_tuple)),
+    )),
+
+
+    /// list(int)
+    type_application: $ => prec.left(seq(
+      field("fun", $.type_variable),
+      field("params", $.type_params),
+    )),
+
+    type_params: $ => choice(
+      parens_comma($, field("param", $._type_param))
+    ),
+
+    _type_param: $ => choice(
+      alias($.lit_integer, $.type_integer),
+      $.type_indexed,
+      $._type,
+    ),
+
+
+    /// (int)
+    type_paren: $ => prec.right(seq(
+      '(',
+      field("type", $._type),
+      $._paren_close
+    )),
+
+
+    /// 'a
+    type_variable_poly: $ => $.type_variable_poly_name,
+
+    /// int
+    type_variable: $ => $.qual_identifier,
+
+    /// Auction
+    type_contract: $ => $.qual_scope_name,
+
+    /// _
+    type_wildcard: $ => $._lex_wildcard,
+
 
     //**************************************************************************
     // NAMES
