@@ -5,8 +5,6 @@
 
 #ifdef __GNUC__
 
-#pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
-
 #define _nonnull_(...) __attribute__((nonnull(__VA_ARGS__)))
 #define _returns_nonnull_ __attribute__((returns_nonnull))
 #define _const_ __attribute__((const))
@@ -62,18 +60,18 @@ enum token_type {
   BLOCK_COMMENT_CONTENT = TOKEN_TYPE_START,
   BLOCK_DOC_COMMENT_CONTENT,
   COMMENT_CONTENT,
-  LONG_STRING_QUOTE,
   VOPEN,
   VCLOSE,
   VSEMI,
-  LAYOUT_AT_LEVEL,
-  LAYOUT_NOT_AT_LEVEL,
-  LAYOUT_EMPTY,
+  INVALID_INDENT,
+  INDENT_AT_LEVEL,
+  INDENT_NOT_AT_LEVEL,
+  BLOCK_EMPTY,
   INHIBIT_VCLOSE,
   INHIBIT_VSEMI,
   COMMA,
+  PIPE,
   SYNCHRONIZE,
-  INVALID_LAYOUT,
   UNARY_OP,
   TOKEN_TYPE_LEN // hack to get the size of this enum
 };
@@ -84,18 +82,18 @@ const char *const TOKEN_TYPE_STR[TOKEN_TYPE_LEN] = {
     "BLOCK_COMMENT_CONTENT",
     "BLOCK_DOC_COMMENT_CONTENT",
     "COMMENT_CONTENT",
-    "LONG_STRING_QUOTE",
     "VOPEN",
     "VCLOSE",
     "VSEMI",
-    "LAYOUT_AT_LEVEL",
-    "LAYOUT_NOT_AT_LEVEL",
-    "LAYOUT_EMPTY",
+    "INVALID_INDENT",
+    "INDENT_AT_LEVEL",
+    "INDENT_NOT_AT_LEVEL",
+    "BLOCK_EMPTY",
     "INHIBIT_VCLOSE",
     "INHIBIT_VSEMI",
     "COMMA",
+    "PIPE",
     "SYNCHRONIZE",
-    "INVALID_LAYOUT",
     "UNARY_OP",
 };
 #endif // TREE_SITTER_INTERNAL_BUILD

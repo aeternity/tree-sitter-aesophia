@@ -1,12 +1,21 @@
+const field_miss = ($, pred, name, rule) => seq(pred, choice(
+  field(name, rule),
+  alias($._block_empty, $['MISSING_' + name]),
+));
+
+const miss = ($, pred, name, rule) => seq(pred, choice(
+  rule,
+  alias($._block_empty, $['MISSING_' + name]),
+));
+
 const sub = ($, rule) => seq(
   $.vopen,
   rule,
   $.vclose,
 );
 
-const block = ($, rule) => sub($, repeat1(seq(rule, $.vsemi)));
-
-const weak_block = ($, rule) => sub($, repeat1(seq(rule, $.vsemi)));
+const block = ($, rule) =>
+      sub($, repeat1(seq(rule, $.vsemi)));
 
 const maybe_block = ($, rule) => choice(
   rule,
@@ -126,28 +135,22 @@ module.exports = grammar({
   name: 'aesophia',
 
 
-  extras: $ => [
-    /[\n\r ]+/,
-    $._synchronize,
-  ],
-
-
   externals: $ => [
     $._block_comment_content,
     $._doc_comment_content,
-    $.comment_content, // used to notify the scanner
-    $._long_string_quote,
-    $.vopen,
-    $.vclose,
-    $.vsemi,
-    $._layout_at_level,
-    $._layout_not_at_level,
-    $._layout_empty,
+    $.comment_content,
+    $._vopen,
+    $._vclose,
+    $._vsemi,
+    $.invalid_indent,
+    $._indent_at_level,
+    $._indent_not_at_level,
+    $._block_empty,
     $._inhibit_vclose,
     $._inhibit_vsemi,
     ",",
+    "|",
     $._synchronize,
-    $._invalid_layout,
     $._prefix_operator,
     $._symbol_export_marker,
   ],
@@ -235,13 +238,13 @@ module.exports = grammar({
     // (x, y) =>
     // This is a lambda obviously
     [
-      $._pat_paren_comma, $.expr_tuple,
+      $.expr_tuple, $.pat_args, $.pat_tuple,
     ],
 
 
-    // invalid stuff can be quite arbitrary
+    // INVALID stuff can be quite arbitrary
     [
-      $._expression, $._expr_invalid_content,
+      $._expression, $._INVALID_expr_content,
     ],
   ],
 
@@ -253,7 +256,8 @@ module.exports = grammar({
     [$.pat_variable, $.qual_low_id],
     [$._expression_simple, $._pattern],
     [$.pat_list, $.expr_list_literal],
-    [$.member_assigns, $.pat_map_or_record],
+    [$.pat_args, $.pat_tuple],
+    [$.pat_match, $._old_value],
     [$.member_assigns, $.pat_map_or_record],
   ],
 
@@ -267,7 +271,7 @@ module.exports = grammar({
     $._expression_body,
     $._expression,
     $._expression_simple,
-    $._expr_invalid,
+    $._INVALID_expr,
     $._list_comprehension_filter,
     $._pattern,
     $._operator,
@@ -330,7 +334,7 @@ module.exports = grammar({
     // TOP LEVEL
     //**************************************************************************
 
-    module: $ => repeat1(seq($._decl, $.vsemi)),
+    module: $ => repeat1(seq(field("decl", $._decl), $.vsemi)),
 
     _decl: $ => choice(
       $.pragma,
@@ -364,7 +368,7 @@ module.exports = grammar({
 
     using: $ => seq(
       'using',
-      field("scope", $.scope_name),
+      field("scope", $.qual_scope_name),
       optional(field("as", $.using_as)),
       optional(field("select", $._using_select))
     ),
@@ -408,14 +412,13 @@ module.exports = grammar({
       field("modifier", optional(alias('interface', $.interface))),
       field("name", $.scope_name),
       optional($._implemented_interfaces),
-      '=',
-      maybe_block($, field("decl", $._decl))
+      miss($, '=', "decls",
+           maybe_block($, field("decl", $._decl))),
     ),
 
-    _implemented_interfaces: $ => seq(
-      ':',
-      sep1(field("implements", $.qual_scope_name), ",")
-    ),
+    _implemented_interfaces: $ =>
+      miss($, ':', "interfaces", sep1(field("implements", $.qual_scope_name), ","))
+    ,
 
     scope_head: $ => choice(
       'contract', 'namespace'
@@ -452,8 +455,8 @@ module.exports = grammar({
     ),
 
     function_signature: $ => seq(
-      field("name", $.identifier), ':',
-      field("type", $._type)
+      field("name", $.identifier),
+      field_miss($, ':', "type", $._type)
     ),
 
     function_clause: $ => seq(
@@ -468,24 +471,23 @@ module.exports = grammar({
       $.guarded_bodies,
     ),
 
-    unguarded_body: $ => seq(
-      '=',
-      field("body", $._expression_body),
-    ),
+    unguarded_body: $ =>
+    field_miss($, '=', "body", $._expression_body),
 
-    guarded_bodies: $ => prec.right(repeat1(seq(
-      '|', field("branch", $.guarded_body)
-    ))),
+    guarded_bodies: $ => prec.right(repeat1(
+      field("branch", $.guarded_body)
+    )),
 
     guarded_body: $ => seq(
-      sep1(field("guard", $._expr_guard), ','), '=',
+      '|',
+      sep1(field("guard", $._expression), ','),
+      '=',
       field("body", $._expression_body)
     ),
 
-
     function_head: $ => choice(
       'function',
-      'entrypoint'
+      'entrypoint',
     ),
 
     modifier: $ => choice(
@@ -531,7 +533,9 @@ module.exports = grammar({
       'record',
       field("name", $.identifier),
       field("params", optional($.type_param_decls)),
+
       '=',
+      repeat($._inhibit_vsemi),
       field("fields", $.record_fields),
     ),
 
@@ -550,8 +554,7 @@ module.exports = grammar({
       'datatype',
       field("name", $.identifier),
       field("params", optional($.type_param_decls)),
-      '=',
-      sep1(field("constructor", $.constructor_declaration), '|')
+      miss($, '=', "constructors", sep1(field("constructor", $.constructor_declaration), '|')),
     ),
 
     constructor_declaration: $ => seq(
@@ -570,7 +573,7 @@ module.exports = grammar({
       $._expression,
     ),
 
-    expr_block: $ => block($, $._expression),
+    expr_block: $ => block($, field("stmt", $._expression)),
 
 
     /// Expressions that are not indented blocks
@@ -596,13 +599,13 @@ module.exports = grammar({
       $.expr_variable,
       $._expr_list,
       alias($._lex_hole, $.expr_hole),
-      $._expr_invalid,
+      $._INVALID_expr,
     ),
 
 
     /// (x, y) => x + y
     expr_lambda: $ => prec.right(seq(
-      $.pat_args,
+      field("args", $.pat_args),
       '=>',
       field("body", $._expression_body)
     )),
@@ -669,15 +672,13 @@ module.exports = grammar({
     )),
 
     expr_args: $ => parens_comma($,
-      field("arg", $.expr_argument)
+      field("arg", $.expr_arg)
     ),
 
-    expr_argument: $ => seq(
-      optional(seq(field("name", $.argument_name), '=')),
+    expr_arg: $ => seq(
+      optional(seq(field("name", $.identifier), '=')),
       field("value", $._expression)
     ),
-
-    argument_name: $ => alias($.identifier, $._),
 
 
     /// Maps and records are basically the same thing for the parser.
@@ -688,18 +689,18 @@ module.exports = grammar({
     /// - m{[k] = 3}
     expr_map_or_record: $ => prec.left('EXPR_APP', seq(
       optional(field("source", $._expression_simple)),
-      field("updates", $.member_assigns),
+      field("assigns", $.member_assigns),
     )),
 
     member_assigns: $ => braces_comma(
       $,
-      field("update", $.member_assign)
+      field("assign", $.member_assign)
     ),
 
     member_assign: $ => seq(
       field("path_head", $._member_path_head),
       optional(field("path", $.member_path)),
-      optional(field("old_value", $._default_value)),
+      optional($._old_value),
       '=',
       field("new_value", $._expression)
     ),
@@ -718,9 +719,9 @@ module.exports = grammar({
       repeat1($._member_path_elem),
     ),
 
-    _default_value: $ => seq(
+    _old_value: $ => seq(
       '@',
-      $.identifier,
+      field("old_value", $._pattern),
     ),
 
 
@@ -733,12 +734,12 @@ module.exports = grammar({
     map_key: $ => brackets(
       $,
       field("key", $._expression_simple),
-      optional(field("default", $._map_default_value)),
+      optional($._map_default_value),
     ),
 
     _map_default_value: $ => seq(
       '=',
-      $._expression
+      field("default", $._expression)
     ),
 
 
@@ -754,8 +755,10 @@ module.exports = grammar({
     /// else
     ///   2
     expr_if: $ => prec.right(seq(
-      $._if_head,
-      field("then", $._expression_body),
+      'if',
+      field_miss(
+        $, parens($, field("cond", $._expression)),
+        "then", $._expression_body),
       repeat(
         choice(
           $._inhibit_vsemi,
@@ -765,33 +768,27 @@ module.exports = grammar({
       optional($.expr_else),
     )),
 
-    _if_head: $ => seq(
-      'if',
-      parens($, field("cond", $._expression)),
-    ),
-
     _if_branch: $ => choice($.expr_elif, $.expr_else),
 
     expr_elif: $ => seq(
       'elif',
-      parens($, field("cond", $._expression)),
-      field("then", $._expression_body)
+      field_miss(
+        $, parens($, field("cond", $._expression)),
+        "then", $._expression_body),
     ),
 
-    expr_else: $ => seq(
-      'else',
-      field("then", $._expression_body)
-    ),
-
+    expr_else: $ => field_miss($, 'else', "then", $._expression_body),
 
     /// switch(x) y => y
     expr_switch: $ => seq(
       'switch',
-      parens($, field("expr", $._expression)),
-      field("cases", $.expr_cases)
-   ),
+      field("exprs", $.switch_exprs),
+      field("cases", $.switch_cases)
+    ),
 
-    expr_cases: $ => maybe_block($, field("case", $.switch_case)),
+    switch_exprs: $ => parens_comma1($, field("expr", $._expression)),
+
+    switch_cases: $ => maybe_block($, field("case", $.switch_case)),
 
     switch_case: $ => seq(
       field("pattern", $._pattern),
@@ -813,11 +810,9 @@ module.exports = grammar({
     ))),
 
     guarded_branch: $ => seq(
-      sep1(field("guard", $._expr_guard), ','), '=>',
+      sep1(field("guard", $._expression), ','), '=>',
       field("body", $._expression_body)
     ),
-
-    _expr_guard: $ => $._expression,
 
 
     /// We allow meaningless letval expressions to relief the parser. It's the AST builder which
@@ -873,7 +868,10 @@ module.exports = grammar({
       field("expr", $._expression)
     ),
 
-    list_comprehension_if: $ => $._if_head,
+    list_comprehension_if: $ => seq(
+      'if',
+      parens($, field("cond", $._expression)),
+    ),
 
 
     /// (1, 2, x)
@@ -887,34 +885,34 @@ module.exports = grammar({
 
 
     /// 1
-    expr_literal: $ => field("literal", alias($._literal, $.expr_literal)),
+    expr_literal: $ => alias($._literal, $.expr_literal),
 
 
-    // We allow tree sitter to parse commonly misplaced invalid expressions for better error
+    // We allow tree sitter to parse commonly misplaced INVALID expressions for better error
     // messages
-    _expr_invalid: $ => choice(
-      $.expr_invalid_return,
-      $.expr_invalid_while,
-      $.expr_invalid_for,
+    _INVALID_expr: $ => choice(
+      $.INVALID_expr_return,
+      $.INVALID_expr_while,
+      $.INVALID_expr_for,
     ),
 
-    expr_invalid_return: $ => prec.right('EXPR_INVALID', seq(
+    INVALID_expr_return: $ => prec.right('EXPR_INVALID', seq(
       'return',
        optional($._expression_simple)
     )),
 
-    expr_invalid_while: $ => prec.right('EXPR_INVALID', seq(
+    INVALID_expr_while: $ => prec.right('EXPR_INVALID', seq(
       'while',
-      $._expr_invalid_content,
+      $._INVALID_expr_content,
     )),
 
-    expr_invalid_for: $ => prec.right('EXPR_INVALID', seq(
+    INVALID_expr_for: $ => prec.right('EXPR_INVALID', seq(
       'for',
-      $._expr_invalid_content,
+      $._INVALID_expr_content,
     )),
 
-    _expr_invalid_content: $ => prec.right('EXPR_INVALID', choice(
-      'in', ';', $._expression_simple, parens($, $._expr_invalid_content),
+    _INVALID_expr_content: $ => prec.right('EXPR_INVALID', choice(
+      'in', ';', $._expression_simple, parens($, $._INVALID_expr_content),
     )),
 
 
@@ -926,8 +924,8 @@ module.exports = grammar({
       $.pat_typed,
       $.pat_op,
       $.pat_application,
-      $.pat_map_or_record,
       $.pat_match,
+      $.pat_map_or_record,
       $.pat_list,
       $.pat_tuple,
       $.pat_variable,
@@ -997,8 +995,10 @@ module.exports = grammar({
       field("args", $.pat_args),
     )),
 
-
-    pat_args: $ => field("arg", $._pat_paren_comma),
+    pat_args: $ => parens_comma(
+      $,
+      field("arg", $._pattern),
+    ),
 
 
     pat_map_or_record: $ => braces_comma(
@@ -1015,10 +1015,10 @@ module.exports = grammar({
 
 
     /// x = y
-    pat_match: $ => prec.right(seq(
-      field("pattern", $.identifier),
+    pat_match: $ => prec.left(seq(
+      field("left", $._pattern),
       '=',
-      field("value", $._pattern)
+      field("right", $._pattern)
     )),
 
 
@@ -1027,12 +1027,12 @@ module.exports = grammar({
       field("elem", $._pattern)
     ),
 
-    _pat_paren_comma: $ => parens_comma($,
-      $._pattern
-    ),
 
     /// (1, 2, x)
-    pat_tuple: $ => field("elem", $._pat_paren_comma),
+    pat_tuple: $ => parens_comma(
+      $,
+      field("elem", $._pattern),
+    ),
 
 
     /// x
@@ -1040,7 +1040,7 @@ module.exports = grammar({
 
 
     /// 1
-    pat_literal: $ => field("literal", alias($._literal, $.pat_literal)),
+    pat_literal: $ => alias($._literal, $.pat_literal),
 
 
     /// _
@@ -1162,15 +1162,15 @@ module.exports = grammar({
 
     /// int => int
     type_function: $ => prec.right(seq(
-      $.type_domain,
+      field("domain", $.type_domain),
       '=>',
       field("codomain", $._type)
     )),
 
     type_domain: $ => choice(
-      parens_comma2($, $._type),
+      parens_comma2($, field("arg", $._type)),
       seq('(', $._paren_close),
-      $._type,
+      field("arg", $._type),
     ),
 
 
@@ -1241,12 +1241,12 @@ module.exports = grammar({
 
     qual_low_id: $ => seq(
       field("path", repeat(seq($.scope_name, token.immediate('.')))),
-      alias($._lex_low_id, $.name)
+      field("name", alias($._lex_low_id, $.name))
     ),
 
     qual_up_id: $ => seq(
       field("path", repeat(seq($.scope_name, token.immediate('.')))),
-      alias($._lex_up_id, $.name)
+      field("name", alias($._lex_up_id, $.name))
     ),
 
     qual_identifier: $ => $.qual_low_id,
@@ -1259,6 +1259,10 @@ module.exports = grammar({
     _paren_close: $ => seq(optional($._inhibit_vclose), ")"),
     _bracket_close: $ => seq(optional($._inhibit_vclose), "]"),
     _brace_close: $ => seq(optional($._inhibit_vclose), "}"),
+
+    vopen: $ => $._vopen,
+    vsemi: $ => $._vsemi,
+    vclose: $ => $._vclose,
 
     //**************************************************************************
     // LEXEMES

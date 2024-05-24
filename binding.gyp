@@ -20,6 +20,7 @@
             "-Weverything",
             "-Wno-padded",
             "-Wno-declaration-after-statement",
+            "-Wno-old-style-declaration",
             "-Werror",
           ],
         }, { # OS == "win"

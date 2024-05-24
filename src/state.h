@@ -136,12 +136,6 @@ _nonnull_(1) static uint32_t context_advance(struct context *self, bool skip) {
   return (uint32_t)self->_lexer->lookahead;
 }
 
-_nonnull_(1) static uint32_t context_consume(struct context *self, bool skip) {
-  uint32_t result = context_advance(self, skip);
-  context_mark_end(self);
-  return result;
-}
-
 _nonnull_(1) static bool context_finish(struct context *self,
                                         enum token_type type) {
   DBG_F("finished scanning token: %s\n", TOKEN_TYPE_STR[type]);

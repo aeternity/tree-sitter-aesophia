@@ -54,11 +54,6 @@ _const_ static bool is_identifier(uint32_t chr) {
   return is_keyword(chr) || is_digit(chr);
 }
 
-_const_ static uint32_t to_upper(uint32_t chr) {
-  const uint32_t lower_case_bit = 1U << 5U;
-  return is_lower(chr) ? chr & ~lower_case_bit : chr;
-}
-
 _nonnull_(1) static size_t scan_spaces(struct context *ctx, bool force_update) {
   bool update_indent = force_update;
   uint8_t indent = 0;
@@ -95,31 +90,6 @@ loop_end:
   }
 
   return spaces;
-}
-
-LEX_FN(lex_long_string_quote) {
-  if (context_lookahead(ctx) != '"' ||
-      !valid_tokens_test(ctx->valid_tokens, LONG_STRING_QUOTE)) {
-    return false;
-  }
-
-  context_consume(ctx, false);
-  uint8_t count = 1;
-  while (context_lookahead(ctx) == '"' && count < 3) {
-    context_advance(ctx, false);
-    count++;
-  }
-
-  if (count < 3) {
-    context_mark_end(ctx);
-    return context_finish(ctx, LONG_STRING_QUOTE);
-  }
-
-  if (context_lookahead(ctx) == '"') {
-    return context_finish(ctx, LONG_STRING_QUOTE);
-  }
-
-  return false;
 }
 
 static const struct valid_tokens COMMENT_TOKENS = VALID_TOKENS(
@@ -202,15 +172,11 @@ LEX_FN(lex_init) {
   return context_finish(ctx, SYNCHRONIZE);
 }
 
-static bool chrcaseeq(uint32_t lhs, uint32_t rhs) {
-  return to_upper(lhs) == to_upper(rhs);
-}
-
-LEX_FN(scan_continuing_keyword) {
+LEX_FN(scan_continuing_symbol) {
 #define NEXT_OR_FAIL(chr)                                                      \
   do {                                                                         \
     context_advance(ctx, false);                                               \
-    if (!chrcaseeq(context_lookahead(ctx), chr)) {                             \
+    if (context_lookahead(ctx) != chr) {                                       \
       return false;                                                            \
     }                                                                          \
   } while (false)
@@ -221,19 +187,23 @@ LEX_FN(scan_continuing_keyword) {
     return !is_identifier(context_lookahead(ctx));                             \
   } while (false)
 
-  if (context_lookahead(ctx) == 'e') {
-    context_advance(ctx, false);
-    if (chrcaseeq(context_lookahead(ctx), 'l')) {
-      context_advance(ctx, false);
-      if (chrcaseeq(context_lookahead(ctx), 's')) {
-        NEXT_OR_FAIL('e');
-        FINISH_IF_END;
-      } else if (chrcaseeq(context_lookahead(ctx), 'i')) {
-        NEXT_OR_FAIL('f');
-        FINISH_IF_END;
-      }
+  // Mainly for record declarations. Can't be in line.
+  if (context_lookahead(ctx) == '{') {
+    if((ctx->flags & FLAG_AFTER_NEWLINE)) {
+      return true;
+    }
+  }
 
-      return false;
+  // else, elif
+  if (context_lookahead(ctx) == 'e') {
+    NEXT_OR_FAIL('l');
+    context_advance(ctx, false);
+    if (context_lookahead(ctx) == 's') {
+      NEXT_OR_FAIL('e');
+      FINISH_IF_END;
+    } else if (context_lookahead(ctx) == 'i') {
+      NEXT_OR_FAIL('f');
+      FINISH_IF_END;
     }
   }
 
@@ -245,7 +215,7 @@ LEX_FN(scan_continuing_keyword) {
 }
 
 const static struct valid_tokens NO_VCLOSE_CTX =
-    VALID_TOKENS(TO_VT_BIT(INHIBIT_VCLOSE) | TO_VT_BIT(LONG_STRING_QUOTE));
+    VALID_TOKENS(TO_VT_BIT(INHIBIT_VCLOSE));
 
 LEX_FN(lex_indent_query) {
   if (valid_tokens_is_error(ctx->valid_tokens)) {
@@ -264,22 +234,20 @@ LEX_FN(lex_indent_query) {
 
   indent_value current_indent = context_indent(ctx);
 
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_NOT_AT_LEVEL) &&
+  if (valid_tokens_test(ctx->valid_tokens, INDENT_NOT_AT_LEVEL) &&
       current_indent > current_layout && !(ctx->flags & FLAG_AFTER_NEWLINE)) {
-    return context_finish(ctx, LAYOUT_NOT_AT_LEVEL);
+    return context_finish(ctx, INDENT_NOT_AT_LEVEL);
   }
 
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_AT_LEVEL) &&
+  if (valid_tokens_test(ctx->valid_tokens, INDENT_AT_LEVEL) &&
       current_indent == current_layout && (ctx->flags & FLAG_AFTER_NEWLINE)) {
-    return context_finish(ctx, LAYOUT_AT_LEVEL);
+    return context_finish(ctx, INDENT_AT_LEVEL);
   }
 
   return false;
 }
 
-// This function is big by design.
-//
-// NOLINTNEXTLINE(*-cognitive-complexity)
+
 LEX_FN(lex_indent) {
   if (ctx->state->layout_stack.len == 0) {
     return false;
@@ -309,14 +277,14 @@ LEX_FN(lex_indent) {
     }
   }
 
-  if (valid_tokens_test(ctx->valid_tokens, LAYOUT_EMPTY)) {
+  if (valid_tokens_test(ctx->valid_tokens, BLOCK_EMPTY)) {
     switch (0) {
     default:
       if (valid_tokens_is_error(ctx->valid_tokens)) {
         break;
       }
       if (current_indent <= current_layout) {
-        return context_finish(ctx, LAYOUT_EMPTY);
+        return context_finish(ctx, BLOCK_EMPTY);
       }
     }
   }
@@ -324,27 +292,35 @@ LEX_FN(lex_indent) {
   if (valid_tokens_test(ctx->valid_tokens, VSEMI)) {
     if (current_indent <= current_layout) {
       if (current_indent == current_layout) {
-        if (valid_tokens_test(ctx->valid_tokens, INHIBIT_VSEMI) &&
-            scan_continuing_keyword(ctx)) {
-          DBG("found continuing keyword");
-          return false;
+        if (valid_tokens_test(ctx->valid_tokens, INHIBIT_VSEMI)) {
+          if(scan_continuing_symbol(ctx)) {
+            DBG("found continuing keyword");
+            return false;
+          }
         }
       }
       return context_finish(ctx, VSEMI);
     }
   }
 
-  // Implicit layout changes
-  if (!valid_tokens_any_valid(ctx->valid_tokens, NO_VCLOSE_CTX) ||
+  if ((valid_tokens_test(ctx->valid_tokens, VCLOSE) && !valid_tokens_any_valid(ctx->valid_tokens, NO_VCLOSE_CTX)) ||
+      // On error, try forcing a vclose to hopefully fix the layout
       valid_tokens_is_error(ctx->valid_tokens) ||
-      // Allow EOF to force a layout_end, which would lead to better error
+      // Allow EOF to force a vclose, which would lead to better error
       // recovery
       context_eof(ctx)) {
-    // VCLOSE
     if (current_indent < current_layout || context_eof(ctx)) {
       if (ctx->state->layout_stack.len > 1) {
         indent_vec_pop(&ctx->state->layout_stack);
-        return context_finish(ctx, VCLOSE);
+
+        if(current_indent > indent_vec_back(&ctx->state->layout_stack)) {
+          // Didn't hit any actual indent level. Make it an error and next time pretend it was
+          // <s>indented</s> intended.
+          indent_vec_push(&ctx->state->layout_stack, current_indent);
+          return context_finish(ctx, INVALID_INDENT);
+        } else {
+          return context_finish(ctx, VCLOSE);
+        }
       }
     }
   }
@@ -352,8 +328,11 @@ LEX_FN(lex_indent) {
   return false;
 }
 
+/** Layout changes due to delimiters. For example, a trailing ')' can yield a vclose, regardless of
+    the actual indent.
+ */
 LEX_FN(lex_inline_layout) {
-  if (ctx->state->layout_stack.len == 0 || (ctx->flags & FLAG_AFTER_NEWLINE)) {
+  if (ctx->state->layout_stack.len == 0) {
     return false;
   }
 
@@ -367,26 +346,34 @@ LEX_FN(lex_inline_layout) {
   case ']':
   case '}':
     break;
-  case '.':
-    if (context_advance(ctx, false) == '}') {
-      break;
+  case '|':
+    valid_tokens_debug(ctx->valid_tokens);
+    context_advance(ctx, false);
+    if (context_lookahead(ctx) == '|' ||
+        context_lookahead(ctx) == '>' ||
+        valid_tokens_test(ctx->valid_tokens, PIPE)
+        ) {
+      return false;
     }
-    return false;
+    break;
   default:
+    // Catching `else` when it's in the same line. TODO: why inhibit must be banned?
     if (!valid_tokens_test(ctx->valid_tokens, INHIBIT_VSEMI) &&
-        scan_continuing_keyword(ctx)) {
+        !(ctx->flags & FLAG_AFTER_NEWLINE) &&
+        scan_continuing_symbol(ctx)) {
       break;
     }
     return false;
   }
+
   if (valid_tokens_test(ctx->valid_tokens, VSEMI)) {
-    DBG("terminate via inline element");
+    DBG("VSEMI via inline element");
     return context_finish(ctx, VSEMI);
   }
 
   if (valid_tokens_test(ctx->valid_tokens, VCLOSE) &&
       ctx->state->layout_stack.len > 1) {
-    DBG("end layout via inline element");
+    DBG("VCLOSE via inline element");
     indent_vec_pop(&ctx->state->layout_stack);
     return context_finish(ctx, VCLOSE);
   }
@@ -398,16 +385,20 @@ LEX_FN(lex_main) {
   TRY_LEX(ctx, lex_init);
 
   TRY_LEX(ctx, lex_comment_content);
-  TRY_LEX(ctx, lex_long_string_quote);
 
   scan_spaces(ctx, false);
 
   TRY_LEX(ctx, lex_indent_query);
-  TRY_LEX(ctx, lex_indent);
   TRY_LEX(ctx, lex_inline_layout);
+  TRY_LEX(ctx, lex_indent);
 
   return false;
 }
+
+
+/******************************************************************************/
+// Interface
+/******************************************************************************/
 
 void *tree_sitter_aesophia_external_scanner_create(void) {
 #ifdef TREE_SITTER_INTERNAL_BUILD

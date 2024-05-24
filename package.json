@@ -1,8 +1,8 @@
 {
   "name": "tree-sitter-aesophia",
   "version": "0.0.1",
-  "description": "Aesophia grammar for tree-sitter",
-  "repository": "github:tree-sitter/tree-sitter-aesophia",
+  "description": "Sophia grammar for tree-sitter",
+  "repository": "github:aeternity/tree-sitter-aesophia",
   "license": "MIT",
   "main": "bindings/node",
   "types": "bindings/node",
@@ -47,7 +47,20 @@
   "tree-sitter": [
     {
       "scope": "source.aesophia",
-      "injection-regex": "^aesophia$"
+      "injection-regex": "^aesophia$",
+      "file-types": [
+        "aes",
+        "aesi"
+      ],
+       "highlights": [
+        "queries/highlights.scm"
+      ],
+      "injections": [
+        "queries/injections.scm"
+      ],
+      "tags": [
+        "queries/tags.scm"
+      ]
     }
   ]
 }
