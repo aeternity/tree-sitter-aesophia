@@ -2202,10 +2202,6 @@
         "required": false,
         "types": [
           {
-            "type": ".",
-            "named": false
-          },
-          {
             "type": "scope_name",
             "named": true
           }
@@ -2231,10 +2227,6 @@
         "multiple": true,
         "required": false,
         "types": [
-          {
-            "type": ".",
-            "named": false
-          },
           {
             "type": "scope_name",
             "named": true
@@ -2602,16 +2594,17 @@
   {
     "type": "type_domain",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "_type",
-          "named": true
-        }
-      ]
+    "fields": {
+      "arg": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_type",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

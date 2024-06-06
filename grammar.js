@@ -114,7 +114,6 @@ const brackets_comma2 = ($, rule) =>
 
 const OP_ASSOC = {
   'OP_PIPE': 'left',
-  'OP_TYPE': 'left',
   'OP_DISJ': 'right',
   'OP_CONJ': 'right',
   'OP_BOR': 'left',
@@ -1240,12 +1239,12 @@ module.exports = grammar({
     scope_name: $ => alias($._lex_up_id, $.scope_name),
 
     qual_low_id: $ => seq(
-      field("path", repeat(seq($.scope_name, token.immediate('.')))),
+      repeat(seq(field("path", $.scope_name), token.immediate('.'))),
       field("name", alias($._lex_low_id, $.name))
     ),
 
     qual_up_id: $ => seq(
-      field("path", repeat(seq($.scope_name, token.immediate('.')))),
+      repeat(seq(field("path", $.scope_name), token.immediate('.'))),
       field("name", alias($._lex_up_id, $.name))
     ),
 
