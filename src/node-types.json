@@ -1679,20 +1679,6 @@
           }
         ]
       },
-      "path_head": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "map_key",
-            "named": true
-          }
-        ]
-      },
       "pattern": {
         "multiple": false,
         "required": true,
@@ -1738,20 +1724,6 @@
             "named": true
           }
         ]
-      },
-      "path_head": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "map_key",
-            "named": true
-          }
-        ]
       }
     }
   },
@@ -1774,20 +1746,21 @@
   {
     "type": "member_path",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "map_key",
-          "named": true
-        }
-      ]
+    "fields": {
+      "member": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "map_key",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

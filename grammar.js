@@ -697,11 +697,15 @@ module.exports = grammar({
     ),
 
     member_assign: $ => seq(
-      field("path_head", $._member_path_head),
       optional(field("path", $.member_path)),
       optional($._old_value),
       '=',
       field("new_value", $._expression)
+    ),
+
+    member_path: $ => seq(
+      field("member", $._member_path_head),
+      repeat($._member_path_elem),
     ),
 
     _member_path_head: $ => choice(
@@ -710,12 +714,8 @@ module.exports = grammar({
     ),
 
     _member_path_elem: $ => choice(
-      seq('.', $.identifier),
-      $.map_key,
-    ),
-
-    member_path: $ => seq(
-      repeat1($._member_path_elem),
+      seq('.', field("member", $.identifier)),
+      field("member", $.map_key),
     ),
 
     _old_value: $ => seq(
@@ -1006,7 +1006,6 @@ module.exports = grammar({
     ),
 
     member_access: $ => seq(
-      field("path_head", $._member_path_head),
       optional(field("path", $.member_path)),
       '=',
       field("pattern", $._pattern)
