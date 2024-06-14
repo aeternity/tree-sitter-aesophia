@@ -17,10 +17,6 @@ fn main() {
     #[cfg(target_env = "msvc")]
     c_config.flag("-utf-8");
 
-    track_file(&mut c_config, &src_dir.join("preamble.h"));
-    track_file(&mut c_config, &src_dir.join("state.h"));
-    track_file(&mut c_config, &src_dir.join("indent_vec.h"));
-    track_file(&mut c_config, &src_dir.join("scanner.h"));
     track_file(&mut c_config, &src_dir.join("scanner.c"));
 
     let parser_path = src_dir.join("parser.c");
