@@ -2425,12 +2425,12 @@
           }
         ]
       },
-      "pattern": {
-        "multiple": true,
+      "patterns": {
+        "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "switch_patterns",
             "named": true
           }
         ]
@@ -2481,6 +2481,22 @@
         "types": [
           {
             "type": "_expression",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "switch_patterns",
+    "named": true,
+    "fields": {
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "_pattern",
             "named": true
           }
         ]
