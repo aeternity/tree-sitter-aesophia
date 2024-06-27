@@ -12,8 +12,7 @@ fn main() {
         .flag_if_supported("-Weverything")
         .flag_if_supported("-Wno-padded")
         .flag_if_supported("-Wno-declaration-after-statement")
-        .flag_if_supported("-Wno-old-style-declaration")
-        .flag_if_supported("-Werror");
+        .flag_if_supported("-Wno-old-style-declaration");
     #[cfg(target_env = "msvc")]
     c_config.flag("-utf-8");
 

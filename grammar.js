@@ -790,8 +790,8 @@ module.exports = grammar({
     switch_cases: $ => maybe_block($, field("case", $.switch_case)),
 
     switch_case: $ => seq(
-      field("pattern", $._pattern),
-      field("branch", $._switch_branch)
+      sep_comma1($, field("pattern", $._pattern)),
+      field("branch", $._switch_branch),
     ),
 
     _switch_branch: $ => prec.right(choice(

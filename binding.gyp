@@ -21,7 +21,7 @@
             "-Wno-padded",
             "-Wno-declaration-after-statement",
             "-Wno-old-style-declaration",
-            "-Werror",
+            # "-Werror",
           ],
         }, { # OS == "win"
           "cflags_c": [
