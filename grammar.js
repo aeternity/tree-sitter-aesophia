@@ -1176,13 +1176,13 @@ module.exports = grammar({
 
     /// int * int * int
     type_tuple: $ => prec.right(seq(
-      $._type_in_tuple,
+      field("elem", $._type_in_tuple),
       '*',
       $._type_tuple,
     )),
 
     _type_tuple: $ => prec.right(seq(
-      $._type_in_tuple,
+      field("elem", $._type_in_tuple),
       optional(seq('*', $._type_tuple)),
     )),
 
