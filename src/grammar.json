@@ -5967,8 +5967,12 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_type_in_tuple"
+            "type": "FIELD",
+            "name": "elem",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_type_in_tuple"
+            }
           },
           {
             "type": "STRING",
@@ -5988,8 +5992,12 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_type_in_tuple"
+            "type": "FIELD",
+            "name": "elem",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_type_in_tuple"
+            }
           },
           {
             "type": "CHOICE",
@@ -6821,3 +6829,4 @@
     "_type"
   ]
 }
+

@@ -2716,36 +2716,37 @@
   {
     "type": "type_tuple",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "type_application",
-          "named": true
-        },
-        {
-          "type": "type_contract",
-          "named": true
-        },
-        {
-          "type": "type_paren",
-          "named": true
-        },
-        {
-          "type": "type_variable",
-          "named": true
-        },
-        {
-          "type": "type_variable_poly",
-          "named": true
-        },
-        {
-          "type": "type_wildcard",
-          "named": true
-        }
-      ]
+    "fields": {
+      "elem": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_contract",
+            "named": true
+          },
+          {
+            "type": "type_paren",
+            "named": true
+          },
+          {
+            "type": "type_variable",
+            "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
+          },
+          {
+            "type": "type_wildcard",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
