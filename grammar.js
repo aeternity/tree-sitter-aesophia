@@ -1153,6 +1153,7 @@ module.exports = grammar({
     /// Tuple and function types are open and unprecedenced. This confuses the parses, thus we need
     /// to separate types that must not be tuple members without parens.
     _type_in_tuple: $ => choice(
+      $.type_bytes,
       $.type_application,
       $.type_variable_poly,
       $.type_variable,
@@ -1188,6 +1189,12 @@ module.exports = grammar({
       optional(seq('*', $._type_tuple)),
     )),
 
+    type_bytes: $ => seq(
+      'bytes',
+      '(',
+      optional(field("size", $.lit_integer)),
+      ')'
+    ),
 
     /// list(int)
     type_application: $ => prec.left(seq(
