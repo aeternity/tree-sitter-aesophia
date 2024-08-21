@@ -1192,7 +1192,7 @@ module.exports = grammar({
     type_bytes: $ => seq(
       'bytes',
       '(',
-      optional(field("size", $._lex_int_dec)),
+      optional(field("size", alias($._lex_int_dec, $.bytes_size))),
       ')'
     ),
 

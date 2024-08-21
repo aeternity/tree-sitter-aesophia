@@ -2587,7 +2587,7 @@
         "required": false,
         "types": [
           {
-            "type": "lit_integer",
+            "type": "bytes_size",
             "named": true
           }
         ]
@@ -3136,6 +3136,10 @@
   {
     "type": "bytes",
     "named": false
+  },
+  {
+    "type": "bytes_size",
+    "named": true
   },
   {
     "type": "compiler",

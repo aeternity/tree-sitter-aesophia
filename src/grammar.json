@@ -6053,8 +6053,13 @@
               "type": "FIELD",
               "name": "size",
               "content": {
-                "type": "SYMBOL",
-                "name": "lit_integer"
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_lex_int_dec"
+                },
+                "named": true,
+                "value": "bytes_size"
               }
             },
             {
