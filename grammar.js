@@ -1105,6 +1105,7 @@ module.exports = grammar({
       $.lit_constructor,
       $.lit_bytes,
       $.lit_address,
+      $.lit_signature,
       $.lit_lambda_op,
       $.lit_integer,
       $.lit_bool,
@@ -1117,6 +1118,7 @@ module.exports = grammar({
     lit_bytes: $ => $._lex_bytes,
 
     lit_address: $ => $._lex_address,
+    lit_signature: $ => $._lex_signature,
 
     lit_lambda_op: $ => parens($, field("op", $._operator)),
 
@@ -1275,6 +1277,10 @@ module.exports = grammar({
     // here...
     _lex_address: $ => token(seq(
       choice('ak', 'ok', 'oq', 'ct'),
+      /_[0-9a-zA-Z]+/,
+    )),
+    _lex_signature: $ => token(seq(
+      'sg',
       /_[0-9a-zA-Z]+/,
     )),
 
