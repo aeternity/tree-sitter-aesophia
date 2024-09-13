@@ -2667,11 +2667,6 @@
     }
   },
   {
-    "type": "type_integer",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "type_param",
     "named": true,
     "fields": {},
@@ -2716,10 +2711,6 @@
           },
           {
             "type": "type_indexed",
-            "named": true
-          },
-          {
-            "type": "type_integer",
             "named": true
           }
         ]

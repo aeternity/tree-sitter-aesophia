@@ -6178,15 +6178,6 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "ALIAS",
-          "content": {
-            "type": "SYMBOL",
-            "name": "lit_integer"
-          },
-          "named": true,
-          "value": "type_integer"
-        },
-        {
           "type": "SYMBOL",
           "name": "type_indexed"
         },
