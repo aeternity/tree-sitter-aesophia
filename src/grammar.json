@@ -5826,6 +5826,10 @@
       "members": [
         {
           "type": "SYMBOL",
+          "name": "type_bytes"
+        },
+        {
+          "type": "SYMBOL",
           "name": "type_application"
         },
         {
@@ -6031,6 +6035,49 @@
         ]
       }
     },
+    "type_bytes": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "bytes"
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "("
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "FIELD",
+                  "name": "size",
+                  "content": {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_lex_int_dec"
+                    },
+                    "named": true,
+                    "value": "bytes_size"
+                  }
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_paren_close"
+            }
+          ]
+        }
+      ]
+    },
     "type_application": {
       "type": "PREC_LEFT",
       "value": 0,
@@ -6135,15 +6182,6 @@
     "_type_param": {
       "type": "CHOICE",
       "members": [
-        {
-          "type": "ALIAS",
-          "content": {
-            "type": "SYMBOL",
-            "name": "lit_integer"
-          },
-          "named": true,
-          "value": "type_integer"
-        },
         {
           "type": "SYMBOL",
           "name": "type_indexed"

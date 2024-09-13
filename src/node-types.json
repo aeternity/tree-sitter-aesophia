@@ -364,6 +364,10 @@
         "named": true
       },
       {
+        "type": "type_bytes",
+        "named": true
+      },
+      {
         "type": "type_contract",
         "named": true
       },
@@ -2575,6 +2579,22 @@
     }
   },
   {
+    "type": "type_bytes",
+    "named": true,
+    "fields": {
+      "size": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "bytes_size",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "type_contract",
     "named": true,
     "fields": {},
@@ -2647,11 +2667,6 @@
     }
   },
   {
-    "type": "type_integer",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "type_param",
     "named": true,
     "fields": {},
@@ -2697,10 +2712,6 @@
           {
             "type": "type_indexed",
             "named": true
-          },
-          {
-            "type": "type_integer",
-            "named": true
           }
         ]
       }
@@ -2732,6 +2743,10 @@
         "types": [
           {
             "type": "type_application",
+            "named": true
+          },
+          {
+            "type": "type_bytes",
             "named": true
           },
           {
@@ -3108,6 +3123,14 @@
   {
     "type": "as",
     "named": false
+  },
+  {
+    "type": "bytes",
+    "named": false
+  },
+  {
+    "type": "bytes_size",
+    "named": true
   },
   {
     "type": "compiler",
