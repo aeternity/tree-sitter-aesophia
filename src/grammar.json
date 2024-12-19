@@ -6211,6 +6211,18 @@
             }
           },
           {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": ","
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          },
+          {
             "type": "SYMBOL",
             "name": "_paren_close"
           }
@@ -6891,4 +6903,3 @@
     "_type"
   ]
 }
-
