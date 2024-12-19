@@ -1214,7 +1214,8 @@ module.exports = grammar({
     type_paren: $ => prec.right(seq(
       '(',
       field("type", $._type),
-      $._paren_close
+      optional(","),
+      $._paren_close,
     )),
 
 
