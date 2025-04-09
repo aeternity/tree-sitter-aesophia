@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "aesophia",
   "word": "_lex_low_id",
   "rules": {
@@ -414,6 +415,14 @@
     "_decl": {
       "type": "CHOICE",
       "members": [
+        {
+          "type": "SYMBOL",
+          "name": "line_comment"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "block_comment"
+        },
         {
           "type": "SYMBOL",
           "name": "pragma"
@@ -856,6 +865,18 @@
                                 }
                               },
                               {
+                                "type": "CHOICE",
+                                "members": [
+                                  {
+                                    "type": "SYMBOL",
+                                    "name": "line_comment"
+                                  },
+                                  {
+                                    "type": "BLANK"
+                                  }
+                                ]
+                              },
+                              {
                                 "type": "SYMBOL",
                                 "name": "vsemi"
                               }
@@ -1083,6 +1104,18 @@
                             }
                           ]
                         }
+                      },
+                      {
+                        "type": "CHOICE",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "line_comment"
+                          },
+                          {
+                            "type": "BLANK"
+                          }
+                        ]
                       },
                       {
                         "type": "SYMBOL",
@@ -1802,6 +1835,18 @@
                   "type": "SYMBOL",
                   "name": "_expression"
                 }
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "line_comment"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
               },
               {
                 "type": "SYMBOL",
@@ -3547,6 +3592,18 @@
                       "type": "SYMBOL",
                       "name": "switch_case"
                     }
+                  },
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "line_comment"
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
                   },
                   {
                     "type": "SYMBOL",
@@ -6586,18 +6643,6 @@
     {
       "type": "SYMBOL",
       "name": "_synchronize"
-    },
-    {
-      "type": "SYMBOL",
-      "name": "line_comment"
-    },
-    {
-      "type": "SYMBOL",
-      "name": "block_comment"
-    },
-    {
-      "type": "SYMBOL",
-      "name": "doc_comment"
     }
   ],
   "conflicts": [
@@ -6901,5 +6946,6 @@
     "_operator",
     "_literal",
     "_type"
-  ]
+  ],
+  "reserved": {}
 }
