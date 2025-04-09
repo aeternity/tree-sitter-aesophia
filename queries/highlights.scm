@@ -31,7 +31,7 @@
 
 (expr_variable) @variable.expr
 (((expr_variable) @expr.state)
- (#match @expr.state "state")
+ (#match? @expr.state "state")
  )
 (expr_application fun: (expr_variable) @variable.expr.function)
 (member_assign old_value: (identifier) @variable.map_old_value)
