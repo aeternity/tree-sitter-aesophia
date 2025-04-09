@@ -15,7 +15,7 @@ const sub = ($, rule) => seq(
 );
 
 const block = ($, rule) =>
-      sub($, repeat1(seq(rule, $.vsemi)));
+  sub($, repeat1(seq(rule, optional($.line_comment), $.vsemi)));
 
 const maybe_block = ($, rule) => choice(
   rule,
@@ -158,9 +158,6 @@ module.exports = grammar({
   extras: $ => [
     /[\n\r ]+/,
     $._synchronize,
-    $.line_comment,
-    $.block_comment,
-    $.doc_comment,
   ],
 
 
@@ -336,6 +333,8 @@ module.exports = grammar({
     module: $ => repeat1(seq(field("decl", $._decl), $.vsemi)),
 
     _decl: $ => choice(
+      $.line_comment,
+      $.block_comment,
       $.pragma,
       $.include,
       $.using,

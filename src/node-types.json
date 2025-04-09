@@ -26,7 +26,15 @@
         "named": true
       },
       {
+        "type": "block_comment",
+        "named": true
+      },
+      {
         "type": "include",
+        "named": true
+      },
+      {
+        "type": "line_comment",
         "named": true
       },
       {
@@ -516,21 +524,6 @@
     }
   },
   {
-    "type": "doc_comment",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "doc_comment",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "expr_application",
     "named": true,
     "fields": {
@@ -618,6 +611,10 @@
       "required": true,
       "types": [
         {
+          "type": "line_comment",
+          "named": true
+        },
+        {
           "type": "vclose",
           "named": true
         },
@@ -693,6 +690,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "expr_hole",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "expr_if",
@@ -1317,6 +1319,10 @@
       "required": false,
       "types": [
         {
+          "type": "line_comment",
+          "named": true
+        },
+        {
           "type": "vclose",
           "named": true
         },
@@ -1860,6 +1866,11 @@
     }
   },
   {
+    "type": "pat_hole",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "pat_list",
     "named": true,
     "fields": {
@@ -2345,6 +2356,10 @@
           "named": true
         },
         {
+          "type": "line_comment",
+          "named": true
+        },
+        {
           "type": "vclose",
           "named": true
         },
@@ -2367,6 +2382,7 @@
   {
     "type": "source",
     "named": true,
+    "root": true,
     "fields": {
       "content": {
         "multiple": false,
@@ -2469,6 +2485,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "line_comment",
+          "named": true
+        },
         {
           "type": "vclose",
           "named": true
@@ -3049,6 +3069,10 @@
     "named": false
   },
   {
+    "type": "*/",
+    "named": false
+  },
+  {
     "type": ",",
     "named": false
   },
@@ -3058,6 +3082,14 @@
   },
   {
     "type": "..",
+    "named": false
+  },
+  {
+    "type": "/*",
+    "named": false
+  },
+  {
+    "type": "//",
     "named": false
   },
   {
@@ -3078,6 +3110,10 @@
   },
   {
     "type": "=>",
+    "named": false
+  },
+  {
+    "type": "???",
     "named": false
   },
   {
@@ -3121,6 +3157,10 @@
     "named": false
   },
   {
+    "type": "_",
+    "named": false
+  },
+  {
     "type": "as",
     "named": false
   },
@@ -3159,10 +3199,6 @@
   {
     "type": "entrypoint",
     "named": false
-  },
-  {
-    "type": "expr_hole",
-    "named": true
   },
   {
     "type": "false",
@@ -3306,10 +3342,6 @@
   },
   {
     "type": "op_sub",
-    "named": true
-  },
-  {
-    "type": "pat_hole",
     "named": true
   },
   {
