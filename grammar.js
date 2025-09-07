@@ -461,7 +461,7 @@ module.exports = grammar({
     function_clause: $ => seq(
       field("name", $.identifier),
       field("args", $.pat_args),
-      field("ret_type", optional(seq(':', $._type))),
+      optional(seq(':', field("ret_type", $._type))),
       field("body", $._function_body),
     ),
 

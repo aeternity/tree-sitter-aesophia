@@ -1248,13 +1248,9 @@
         ]
       },
       "ret_type": {
-        "multiple": true,
+        "multiple": false,
         "required": false,
         "types": [
-          {
-            "type": ":",
-            "named": false
-          },
           {
             "type": "_type",
             "named": true
