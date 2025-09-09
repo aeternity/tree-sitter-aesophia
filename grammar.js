@@ -286,7 +286,8 @@ module.exports = grammar({
     source: $ => seq(
       choice(
         $._dispatch,
-        field("module", $.module)
+        field("module", $.module),
+        seq()
       ),
     ),
 
