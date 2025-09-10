@@ -172,7 +172,7 @@
     "named": true,
     "subtypes": [
       {
-        "type": "lit_address",
+        "type": "lit_b58",
         "named": true
       },
       {
@@ -197,10 +197,6 @@
       },
       {
         "type": "lit_lambda_op",
-        "named": true
-      },
-      {
-        "type": "lit_signature",
         "named": true
       },
       {
@@ -1583,7 +1579,7 @@
     }
   },
   {
-    "type": "lit_address",
+    "type": "lit_b58",
     "named": true,
     "fields": {}
   },
@@ -1637,11 +1633,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "lit_signature",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "lit_string",
