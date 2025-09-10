@@ -1,0 +1,112 @@
+==================
+Type bytes basic
+==================
+
+contract Test =
+  type t = bytes
+
+---
+
+(source
+ (module
+  (scope_declaration
+   (scope_head)
+   (scope_name)
+   (vopen)
+   (type_alias
+    (identifier)
+    (type_bytes))
+   (vsemi)
+   (vclose))
+  (vsemi)))
+
+==================
+Type bytes empty parens
+==================
+
+contract Test =
+  type t = bytes()
+
+---
+
+(source
+ (module
+  (scope_declaration
+   (scope_head)
+   (scope_name)
+   (vopen)
+   (type_alias
+    (identifier)
+    (type_bytes))
+   (vsemi)
+   (vclose))
+  (vsemi)))
+
+==================
+Type bytes with size
+==================
+
+contract Test =
+  type t = bytes(32)
+
+---
+
+(source
+ (module
+  (scope_declaration
+   (scope_head)
+   (scope_name)
+   (vopen)
+   (type_alias
+    (identifier)
+    (type_bytes
+     (bytes_size)))
+   (vsemi)
+   (vclose))
+  (vsemi)))
+
+==================
+Type bytes with zero size
+==================
+
+contract Test =
+  type t = bytes(0)
+
+---
+
+(source
+ (module
+  (scope_declaration
+   (scope_head)
+   (scope_name)
+   (vopen)
+   (type_alias
+    (identifier)
+    (type_bytes
+     (bytes_size)))
+   (vsemi)
+   (vclose))
+  (vsemi)))
+
+==================
+Type bytes with large size
+==================
+
+contract Test =
+  type t = bytes(1048576)
+
+---
+
+(source
+ (module
+  (scope_declaration
+   (scope_head)
+   (scope_name)
+   (vopen)
+   (type_alias
+    (identifier)
+    (type_bytes
+     (bytes_size)))
+   (vsemi)
+   (vclose))
+  (vsemi)))
