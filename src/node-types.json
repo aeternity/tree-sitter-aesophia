@@ -2550,6 +2550,10 @@
           {
             "type": "type_variable",
             "named": true
+          },
+          {
+            "type": "type_variable_poly",
+            "named": true
           }
         ]
       },

@@ -1,0 +1,31 @@
+==================
+Polymorphic type variables as n-ary type constructors
+==================
+
+contract C =
+  type t('m, 'a) = 'm('a)
+
+---
+
+(source
+ (module
+  (scope_declaration
+   (scope_head)
+   (scope_name)
+   (vopen)
+   (type_alias
+    (identifier)
+    (type_param_decls
+     (type_param
+      (type_variable_poly_name))
+     (type_param
+      (type_variable_poly_name)))
+    (type_application
+     (type_variable_poly
+      (type_variable_poly_name))
+     (type_params
+      (type_variable_poly
+       (type_variable_poly_name)))))
+   (vsemi)
+   (vclose))
+  (vsemi)))
