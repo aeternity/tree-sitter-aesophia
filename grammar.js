@@ -1198,7 +1198,7 @@ module.exports = grammar({
 
     /// list(int)
     type_application: $ => prec.left(seq(
-      field("fun", $.type_variable),
+      field("fun", choice($.type_variable, $.type_variable_poly)),
       field("params", $.type_params),
     )),
 

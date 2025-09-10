@@ -6097,8 +6097,17 @@
             "type": "FIELD",
             "name": "fun",
             "content": {
-              "type": "SYMBOL",
-              "name": "type_variable"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "type_variable"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "type_variable_poly"
+                }
+              ]
             }
           },
           {
