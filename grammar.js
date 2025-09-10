@@ -1188,9 +1188,12 @@ module.exports = grammar({
       optional(seq('*', $._type_tuple)),
     )),
 
-    type_bytes: $ => seq(
-      'bytes',
-      parens($, optional(field("size", alias($._lex_int_dec, $.bytes_size)))),
+    type_bytes: $ => choice(
+      prec(1, seq(
+        'bytes',
+        parens($, optional(field("size", alias($._lex_int_dec, $.bytes_size))))
+      )),
+      'bytes'
     ),
 
     /// list(int)
