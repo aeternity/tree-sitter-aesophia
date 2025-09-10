@@ -5696,7 +5696,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "lit_address"
+          "name": "lit_b58"
         },
         {
           "type": "SYMBOL",
@@ -5728,9 +5728,9 @@
       "type": "SYMBOL",
       "name": "_lex_bytes"
     },
-    "lit_address": {
+    "lit_b58": {
       "type": "SYMBOL",
-      "name": "_lex_address"
+      "name": "_lex_b58"
     },
     "lit_lambda_op": {
       "type": "SEQ",
@@ -6468,7 +6468,7 @@
         "value": "0x([0-9a-fA-F](_?[0-9a-fA-F]+)*)"
       }
     },
-    "_lex_address": {
+    "_lex_b58": {
       "type": "TOKEN",
       "content": {
         "type": "SEQ",
@@ -6499,8 +6499,12 @@
             ]
           },
           {
+            "type": "STRING",
+            "value": "_"
+          },
+          {
             "type": "PATTERN",
-            "value": "_[0-9a-zA-Z]+"
+            "value": "[0-9a-zA-Z]+"
           }
         ]
       }

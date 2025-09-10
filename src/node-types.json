@@ -172,7 +172,7 @@
     "named": true,
     "subtypes": [
       {
-        "type": "lit_address",
+        "type": "lit_b58",
         "named": true
       },
       {
@@ -1579,7 +1579,7 @@
     }
   },
   {
-    "type": "lit_address",
+    "type": "lit_b58",
     "named": true,
     "fields": {}
   },

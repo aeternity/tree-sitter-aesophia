@@ -1105,7 +1105,7 @@ module.exports = grammar({
     _literal: $ => choice(
       $.lit_constructor,
       $.lit_bytes,
-      $.lit_address,
+      $.lit_b58,
       $.lit_lambda_op,
       $.lit_integer,
       $.lit_bool,
@@ -1117,7 +1117,7 @@ module.exports = grammar({
 
     lit_bytes: $ => $._lex_bytes,
 
-    lit_address: $ => $._lex_address,
+    lit_b58: $ => $._lex_b58,
 
     lit_lambda_op: $ => parens($, field("op", $._operator)),
 
@@ -1279,9 +1279,10 @@ module.exports = grammar({
 
     // This has to be above _lex_low_id in order to take priority. Somehow precedences don't work
     // here...
-    _lex_address: $ => token(seq(
+    _lex_b58: $ => token(seq(
       choice('ak', 'ok', 'oq', 'ct', 'sg'),
-      /_[0-9a-zA-Z]+/,
+      '_',
+      /[0-9a-zA-Z]+/
     )),
 
     _lex_low_id: $ => token(/([a-z_]|(_[a-zA-Z]))[a-zA-Z0-9_']*/),
