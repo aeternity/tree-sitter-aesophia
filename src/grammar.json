@@ -5700,10 +5700,6 @@
         },
         {
           "type": "SYMBOL",
-          "name": "lit_signature"
-        },
-        {
-          "type": "SYMBOL",
           "name": "lit_lambda_op"
         },
         {
@@ -5735,10 +5731,6 @@
     "lit_address": {
       "type": "SYMBOL",
       "name": "_lex_address"
-    },
-    "lit_signature": {
-      "type": "SYMBOL",
-      "name": "_lex_signature"
     },
     "lit_lambda_op": {
       "type": "SEQ",
@@ -6499,24 +6491,12 @@
               {
                 "type": "STRING",
                 "value": "ct"
+              },
+              {
+                "type": "STRING",
+                "value": "sg"
               }
             ]
-          },
-          {
-            "type": "PATTERN",
-            "value": "_[0-9a-zA-Z]+"
-          }
-        ]
-      }
-    },
-    "_lex_signature": {
-      "type": "TOKEN",
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "sg"
           },
           {
             "type": "PATTERN",

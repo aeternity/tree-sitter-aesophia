@@ -200,10 +200,6 @@
         "named": true
       },
       {
-        "type": "lit_signature",
-        "named": true
-      },
-      {
         "type": "lit_string",
         "named": true
       }
@@ -1637,11 +1633,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "lit_signature",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "lit_string",
