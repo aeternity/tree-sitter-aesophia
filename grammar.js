@@ -282,6 +282,21 @@ module.exports = grammar({
   word: $ => $._lex_low_id,
 
 
+  reserved: {
+    $: ["contract", "namespace", "interface", "main",
+        "include",
+        "using", "as", "for", "hiding",
+        "type", "record", "datatype", "indexed",
+        "function", , "entrypoint",
+        "stateful", "payable", "public", "private",
+        "let", "switch",
+        "if", "elif", "else",
+        "true", "false",
+        "band", "bor", "bxor", "bnot", "mod"
+       ]
+  },
+
+
   rules: {
     source: $ => seq(
       choice(
