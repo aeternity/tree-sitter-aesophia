@@ -31,6 +31,4 @@
 
 (expr_variable) @local.reference.var
 (expr_projection field: (identifier) @local.reference.field)
-(member_assign path_head: (identifier) @local.reference.field)
 (member_path (identifier) @local.reference.field)
-(member_access (identifier) @local.reference.field)

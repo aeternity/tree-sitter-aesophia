@@ -34,13 +34,11 @@
  (#match @expr.state "state")
  )
 (expr_application fun: (expr_variable) @variable.expr.function)
-(member_assign old_value: (identifier) @variable.map_old_value)
+(member_assign old_value: (_) @variable.map_old_value)
 (expr_hole) @symbol.hole.expr
 
 (expr_projection field: (identifier) @field)
-(member_assign path_head: (identifier) @field)
-(member_path (identifier) @field)
-(member_access (identifier) @field)
+(member_path member: (identifier) @field)
 
 ;; Patterns
 
@@ -78,7 +76,7 @@
 (lit_string) @literal.string
 (lit_char) @literal.char
 (lit_bool) @literal.bool
-(lit_address) @literal.address
+(lit_b58) @literal.b58
 (lit_bytes) @literal.bytes
 
 
