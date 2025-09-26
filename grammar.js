@@ -287,7 +287,7 @@ module.exports = grammar({
         "include",
         "using", "as", "for", "hiding",
         "type", "record", "datatype", "indexed",
-        "function", , "entrypoint",
+        "function", "entrypoint",
         "stateful", "payable", "public", "private",
         "let", "switch",
         "if", "elif", "else",
